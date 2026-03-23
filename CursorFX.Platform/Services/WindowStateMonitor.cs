@@ -8,9 +8,13 @@ namespace CursorFX.Platform.Services;
 
 public sealed class WindowStateMonitor : IWindowStateMonitor
 {
+    private const double CenterLockThresholdPixels = 24.0;
+    private const int CenterLockTicksBeforeSuspend = 3;
+
     private readonly DispatcherTimer _timer;
     private bool _isFullscreen;
     private bool _areEffectsSuspended;
+    private int _centerLockedTicks;
 
     public WindowStateMonitor()
     {
@@ -63,7 +67,8 @@ public sealed class WindowStateMonitor : IWindowStateMonitor
         }
 
         var isCursorVisible = IsCursorVisible();
-        var shouldSuspendEffects = isFullscreen && !isCursorVisible;
+        var isCursorCenterLocked = isFullscreen && IsCursorCenterLocked(foregroundWindow);
+        var shouldSuspendEffects = isFullscreen && (!isCursorVisible || isCursorCenterLocked);
         if (shouldSuspendEffects == _areEffectsSuspended)
         {
             return;
@@ -111,6 +116,59 @@ public sealed class WindowStateMonitor : IWindowStateMonitor
 
         return NativeMethods.GetCursorInfo(ref cursorInfo) &&
                (cursorInfo.flags & NativeMethods.CursorShowing) == NativeMethods.CursorShowing;
+    }
+
+    private bool IsCursorCenterLocked(IntPtr foregroundWindow)
+    {
+        if (foregroundWindow == IntPtr.Zero || !NativeMethods.GetWindowRect(foregroundWindow, out var windowRect))
+        {
+            _centerLockedTicks = 0;
+            return false;
+        }
+
+        var monitor = NativeMethods.MonitorFromWindow(foregroundWindow, NativeMethods.MonitorDefaultToNearest);
+        if (monitor == IntPtr.Zero)
+        {
+            _centerLockedTicks = 0;
+            return false;
+        }
+
+        var monitorInfo = new NativeMethods.MONITORINFO
+        {
+            cbSize = Marshal.SizeOf<NativeMethods.MONITORINFO>()
+        };
+
+        if (!NativeMethods.GetMonitorInfo(monitor, ref monitorInfo))
+        {
+            _centerLockedTicks = 0;
+            return false;
+        }
+
+        var cursorInfo = new NativeMethods.CURSORINFO
+        {
+            cbSize = Marshal.SizeOf<NativeMethods.CURSORINFO>()
+        };
+
+        if (!NativeMethods.GetCursorInfo(ref cursorInfo))
+        {
+            _centerLockedTicks = 0;
+            return false;
+        }
+
+        var centerX = (monitorInfo.rcMonitor.Left + monitorInfo.rcMonitor.Right) / 2.0;
+        var centerY = (monitorInfo.rcMonitor.Top + monitorInfo.rcMonitor.Bottom) / 2.0;
+        var dx = cursorInfo.ptScreenPos.X - centerX;
+        var dy = cursorInfo.ptScreenPos.Y - centerY;
+        var isNearCenter = (dx * dx) + (dy * dy) <= (CenterLockThresholdPixels * CenterLockThresholdPixels);
+
+        if (!isNearCenter)
+        {
+            _centerLockedTicks = 0;
+            return false;
+        }
+
+        _centerLockedTicks = Math.Min(CenterLockTicksBeforeSuspend, _centerLockedTicks + 1);
+        return _centerLockedTicks >= CenterLockTicksBeforeSuspend;
     }
 
     private static bool IsDesktopShellWindow(IntPtr windowHandle)
