@@ -532,17 +532,36 @@ public sealed class TemplateEffect : IEffect
     private MatrixParticle CreateMatrixParticle(double lifetime)
     {
         var emitter = GetEmitterPosition();
+        var speedMagnitude = _cursorVelocity.Length;
+        var isIdle = speedMagnitude < GetNumber("idleScatterThreshold", 36);
         var direction = _trailDirection.LengthSquared > 0.0001 ? _trailDirection : new Vector(0, 1);
         var normal = new Vector(-direction.Y, direction.X);
         var spread = GetNumber("matrixSpread", GetNumber("size", 54) * 0.34);
         var speed = GetNumber("matrixSpeed", 64);
         var driftStrength = GetNumber("driftStrength", 2.2);
         var randomness = GetNumber("randomness", 0.6);
-        var lateral = (((_matrixParticles.Count % 7) / 6.0) - 0.5) * spread;
         var phase = _timeSeconds + (_matrixParticles.Count * 0.37);
-        var wobble = Math.Sin(phase * 2.1) * driftStrength;
-        var position = emitter + (normal * (lateral + wobble));
-        var velocity = (direction * speed) + (normal * (Math.Cos(phase * 1.7) * driftStrength * 8.0));
+        Point position;
+        Vector velocity;
+
+        if (isIdle)
+        {
+            var idleRadius = GetNumber("idleScatterRadius", Math.Max(8, spread * 0.55));
+            var idleSpeed = GetNumber("idleScatterSpeed", Math.Max(18, speed * 0.42));
+            var angle = phase * (1.7 + (randomness * 0.08));
+            var radial = new Vector(Math.Cos(angle), Math.Sin(angle));
+            var orbit = new Vector(-radial.Y, radial.X);
+            position = emitter + (radial * (idleRadius * 0.15));
+            velocity = (radial * idleSpeed) + (orbit * (driftStrength * 2.0));
+        }
+        else
+        {
+            var lateral = (((_matrixParticles.Count % 7) / 6.0) - 0.5) * spread;
+            var wobble = Math.Sin(phase * 2.1) * driftStrength;
+            position = emitter + (normal * (lateral + wobble));
+            velocity = (direction * speed) + (normal * (Math.Cos(phase * 1.7) * driftStrength * 8.0));
+        }
+
         if (randomness > 0.01)
         {
             velocity += new Vector(Math.Sin(phase * 3.2), Math.Cos(phase * 2.4)) * (randomness * 6.0);

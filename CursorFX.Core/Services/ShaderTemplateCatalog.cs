@@ -372,7 +372,10 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
                 Number("matrixLifetime", "Particle Lifetime", PluginParameterSection.Shader, "Shader", 0.2, 2.4, 0.05, 1.05),
                 Number("matrixDamping", "Particle Damping", PluginParameterSection.Shader, "Shader", 0.2, 8, 0.1, 1.6),
                 Number("spawnRate", "Spawn Rate", PluginParameterSection.Shader, "Shader", 8, 80, 1, 34),
-                Number("driftStrength", "Drift Strength", PluginParameterSection.Shader, "Shader", 0, 12, 0.25, 1.2)
+                Number("driftStrength", "Drift Strength", PluginParameterSection.Shader, "Shader", 0, 12, 0.25, 1.2),
+                Number("idleScatterThreshold", "Idle Scatter Threshold", PluginParameterSection.Shader, "Shader", 4, 120, 1, 32),
+                Number("idleScatterRadius", "Idle Scatter Radius", PluginParameterSection.Shader, "Shader", 4, 80, 1, 16),
+                Number("idleScatterSpeed", "Idle Scatter Speed", PluginParameterSection.Shader, "Shader", 4, 120, 1, 28)
             ]);
 
     private static ShaderTemplateDefinition BuildSuite(
