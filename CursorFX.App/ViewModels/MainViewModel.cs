@@ -70,6 +70,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         SaveSettingsCommand = new RelayCommand(SaveSettings);
         ChoosePluginIconCommand = new RelayCommand(ChoosePluginIcon, () => SelectedPlugin is not null);
         ClearPluginIconCommand = new RelayCommand(ClearPluginIcon, () => SelectedPlugin is not null && !string.IsNullOrWhiteSpace(SelectedPlugin.ResolvedIconPath));
+        OpenPluginAuthoringGuideCommand = new RelayCommand(OpenPluginAuthoringGuide);
 
         _selectedPlugin = AvailablePlugins.FirstOrDefault(plugin => plugin.Id == _settings.TemplateEffect.SelectedTemplateId)
             ?? AvailablePlugins.FirstOrDefault(plugin => plugin.Id == "neon-suite")
@@ -103,6 +104,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public RelayCommand ChoosePluginIconCommand { get; }
 
     public RelayCommand ClearPluginIconCommand { get; }
+
+    public RelayCommand OpenPluginAuthoringGuideCommand { get; }
 
     public ShaderTemplateDefinition? SelectedPlugin
     {
@@ -386,6 +389,16 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private void OpenPluginFolder()
     {
         OpenFolder(PluginFolderPath, "Plugin folder opened.");
+    }
+
+    private void OpenPluginAuthoringGuide()
+    {
+        var guideWindow = new PluginAuthoringGuideWindow(PluginAuthoringGuidePath)
+        {
+            Owner = System.Windows.Application.Current?.MainWindow
+        };
+
+        guideWindow.ShowDialog();
     }
 
     private void OpenSettings()

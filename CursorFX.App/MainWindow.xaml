@@ -271,11 +271,11 @@
                                 <TextBlock Margin="0,14,0,0"
                                            Foreground="{StaticResource MutedTextBrush}"
                                            TextWrapping="Wrap"
-                                           Text="Detailed JSON + C# structure and recommendations are stored in the TXT guide below." />
-                                <TextBlock Margin="0,10,0,0"
-                                           Foreground="{StaticResource AccentMutedBrush}"
-                                           TextWrapping="Wrap"
-                                           Text="{Binding PluginAuthoringGuidePath}" />
+                                           Text="Open the built-in guide to see how to structure plugin JSON and C# files correctly." />
+                                <Button Margin="0,14,0,0"
+                                        HorizontalAlignment="Left"
+                                        Content="Open Authoring Guide"
+                                        Command="{Binding OpenPluginAuthoringGuideCommand}" />
                             </StackPanel>
                         </Border>
 
