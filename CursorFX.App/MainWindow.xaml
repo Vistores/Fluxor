@@ -1,0 +1,332 @@
+<Window x:Class="CursorFX.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CursorFX.App.ViewModels"
+        mc:Ignorable="d"
+        Title="Fluxor"
+        Icon="pack://application:,,,/Assets/FluxorIco.ico"
+        Width="1240"
+        Height="820"
+        MinWidth="1040"
+        MinHeight="700"
+        Background="{StaticResource WindowBackgroundBrush}">
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:ShaderTemplateParameterViewModel}">
+            <Border Margin="0,0,0,12"
+                    Padding="16"
+                    Background="#0B1623"
+                    BorderBrush="#234360"
+                    BorderThickness="1"
+                    CornerRadius="16">
+                <StackPanel>
+                    <DockPanel LastChildFill="True">
+                        <TextBlock FontSize="15"
+                                   FontWeight="SemiBold"
+                                   Text="{Binding DisplayName}" />
+                    </DockPanel>
+
+                    <StackPanel Margin="0,12,0,0" Visibility="{Binding NumberVisibility}">
+                        <Slider Minimum="{Binding Minimum}"
+                                Maximum="{Binding Maximum}"
+                                Value="{Binding NumberValue}"
+                                TickFrequency="{Binding Step}" />
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Foreground="{StaticResource MutedTextBrush}"
+                                       Text="{Binding NumberValue, StringFormat=Value: {0:F2}}" />
+                            <TextBlock DockPanel.Dock="Right"
+                                       Foreground="{StaticResource MutedTextBrush}"
+                                       Text="{Binding Minimum, StringFormat=Min: {0:F0}}" />
+                        </DockPanel>
+                    </StackPanel>
+
+                    <DockPanel Margin="0,12,0,0" LastChildFill="False" Visibility="{Binding ColorVisibility}">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="22"
+                                    Height="22"
+                                    CornerRadius="11"
+                                    Background="{Binding ColorValue}"
+                                    BorderBrush="#F8FAFC"
+                                    BorderThickness="1" />
+                            <TextBlock Margin="10,0,0,0"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource MutedTextBrush}"
+                                       Text="{Binding ColorValue}" />
+                        </StackPanel>
+                        <Button DockPanel.Dock="Right"
+                                Content="Choose"
+                                Command="{Binding PickColorCommand}" />
+                    </DockPanel>
+
+                    <CheckBox Margin="0,12,0,0"
+                              Visibility="{Binding ToggleVisibility}"
+                              IsChecked="{Binding BooleanValue}"
+                              Content="Enabled" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:PluginCategoryViewModel}">
+            <Border Margin="0,0,0,18" Style="{StaticResource PanelCardStyle}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="{Binding Name}" />
+                    <ItemsControl Margin="0,14,0,0" ItemsSource="{Binding Parameters}" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PluginListItemTemplate">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="58" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Width="42"
+                        Height="42"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Background="{Binding AccentColor}"
+                        CornerRadius="14"
+                        ClipToBounds="True">
+                    <Grid>
+                        <Image Source="{Binding ResolvedIconPath}" Stretch="UniformToFill" />
+                        <TextBlock HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="#08131F"
+                                   Text="{Binding IconGlyph}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ResolvedIconPath}" Value="">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding ResolvedIconPath}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </Border>
+
+                <StackPanel Grid.Column="1">
+                    <DockPanel LastChildFill="False">
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding Name}" />
+                        <Border Margin="10,0,0,0"
+                                Padding="8,3"
+                                Background="#143148"
+                                BorderBrush="#295D72"
+                                BorderThickness="1"
+                                CornerRadius="999">
+                            <TextBlock FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource AccentStrongBrush}"
+                                       Text="{Binding RuntimeKind}" />
+                        </Border>
+                    </DockPanel>
+                    <TextBlock Margin="0,8,0,0"
+                               Foreground="{StaticResource MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding Description}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid Margin="22">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.85*" />
+            <ColumnDefinition Width="1.05*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="0"
+                Margin="0,0,18,0"
+                Padding="22"
+                Background="{StaticResource CardBackgroundBrush}"
+                BorderBrush="{StaticResource CardBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Padding="22"
+                        Background="#102337"
+                        BorderBrush="#295B76"
+                        BorderThickness="1"
+                        CornerRadius="22">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="34" Height="34" Margin="0,0,12,0" Source="pack://application:,,,/Assets/FluxorIco.ico" />
+                                <TextBlock FontSize="34" FontWeight="SemiBold" Text="Fluxor" />
+                            </StackPanel>
+                            <TextBlock Margin="46,10,0,0"
+                                       Foreground="{StaticResource MutedTextBrush}"
+                                       Text="Choose a style, tune it live, and keep cursor effects stable without visual overload." />
+                        </StackPanel>
+                        <WrapPanel Grid.Column="1" VerticalAlignment="Top">
+                            <Button Content="Application Settings" Command="{Binding OpenSettingsCommand}" />
+                            <Button Content="Import Plugin" Command="{Binding ImportTemplateCommand}" />
+                        </WrapPanel>
+                    </Grid>
+                </Border>
+
+                <ScrollViewer x:Name="MainScrollViewer"
+                              Grid.Row="1"
+                              Margin="0,22,0,0"
+                              VerticalScrollBarVisibility="Auto"
+                              PreviewMouseWheel="OnNestedScrollViewerMouseWheel">
+                    <StackPanel>
+                        <Border Style="{StaticResource PanelCardStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Margin="0,0,18,0">
+                                    <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="General" />
+                                    <TextBlock Margin="0,16,0,0" Text="{Binding EffectOpacityLabel}" />
+                                    <Slider Minimum="0.1" Maximum="1.0" Value="{Binding MasterOpacity}" TickFrequency="0.02" />
+                                    <TextBlock Text="{Binding FpsLabel}" />
+                                    <Slider Minimum="30" Maximum="144" Value="{Binding TargetFps}" TickFrequency="1" IsSnapToTickEnabled="True" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Current Profile" />
+                                    <StackPanel Margin="0,16,0,0" Orientation="Horizontal">
+                                        <Border Width="58"
+                                                Height="58"
+                                                Margin="0,0,14,0"
+                                                Background="#132437"
+                                                BorderBrush="#32506E"
+                                                BorderThickness="1"
+                                                CornerRadius="18"
+                                                ClipToBounds="True">
+                                            <Grid>
+                                                <Image Source="{Binding SelectedPluginResolvedIconPath}" Stretch="UniformToFill" />
+                                                <TextBlock HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{StaticResource MutedTextBrush}"
+                                                           Text="Icon">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding SelectedPluginResolvedIconPath}" Value="">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding SelectedPluginResolvedIconPath}" Value="{x:Null}">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+                                        <StackPanel>
+                                            <Button Content="Choose Icon" Command="{Binding ChoosePluginIconCommand}" />
+                                            <Button Content="Clear Icon" Command="{Binding ClearPluginIconCommand}" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <TextBlock Margin="0,16,0,0"
+                                               FontSize="22"
+                                               FontWeight="SemiBold"
+                                               Text="{Binding SelectedPluginName}" />
+                                    <TextBlock Margin="0,10,0,0"
+                                               Foreground="{StaticResource MutedTextBrush}"
+                                               TextWrapping="Wrap"
+                                               Text="{Binding SelectedPluginDescription}" />
+                                    <WrapPanel Margin="0,12,0,0">
+                                        <Button Content="Save Settings" Command="{Binding SaveSettingsCommand}" />
+                                        <Button Content="Reset Profile" Command="{Binding ResetPluginSettingsCommand}" />
+                                        <Button Content="Open Plugin Folder" Command="{Binding OpenPluginFolderCommand}" />
+                                        <Button Content="Delete Plugin"
+                                                Command="{Binding DeletePluginCommand}"
+                                                Background="{StaticResource DangerBrush}"
+                                                BorderBrush="#B91C1C"
+                                                Foreground="White" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Border Margin="0,18,0,0" Style="{StaticResource PanelCardStyle}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Plugin Authoring" />
+                                <TextBlock Margin="0,14,0,0"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="Detailed JSON + C# structure and recommendations are stored in the TXT guide below." />
+                                <TextBlock Margin="0,10,0,0"
+                                           Foreground="{StaticResource AccentMutedBrush}"
+                                           TextWrapping="Wrap"
+                                           Text="{Binding PluginAuthoringGuidePath}" />
+                            </StackPanel>
+                        </Border>
+
+                        <ItemsControl Margin="0,18,0,0" ItemsSource="{Binding PluginCategories}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="1"
+                Padding="22"
+                Background="{StaticResource CardBackgroundSecondaryBrush}"
+                BorderBrush="{StaticResource CardBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel>
+                    <TextBlock FontSize="24" FontWeight="SemiBold" Text="Profiles" />
+                    <TextBlock Margin="0,8,0,0"
+                               Foreground="{StaticResource MutedTextBrush}"
+                               Text="Base suites stay available. Keep only one lightning DLL profile if you want a custom effect." />
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1"
+                              Margin="0,18,0,18"
+                              VerticalScrollBarVisibility="Auto"
+                              PreviewMouseWheel="OnNestedScrollViewerMouseWheel">
+                    <ListBox ItemsSource="{Binding AvailablePlugins}"
+                             SelectedItem="{Binding SelectedPlugin}"
+                             ItemTemplate="{StaticResource PluginListItemTemplate}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled" />
+                </ScrollViewer>
+
+                <Border Grid.Row="2" Style="{StaticResource PanelCardStyle}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Status" />
+                        <TextBlock Margin="0,14,0,0"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding AutosaveStatus}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

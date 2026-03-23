@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorFX.Core", "CursorFX.Core\CursorFX.Core.csproj", "{1AACC1FE-7712-472C-B7B5-BCECCE4FE58F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorFX.Rendering", "CursorFX.Rendering\CursorFX.Rendering.csproj", "{7C498B64-4762-4811-878D-133F197D0688}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorFX.Effects", "CursorFX.Effects\CursorFX.Effects.csproj", "{4A4AAD08-1ECC-4873-B405-FCCB44A67E73}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorFX.Platform", "CursorFX.Platform\CursorFX.Platform.csproj", "{C3140A72-A93C-4285-9935-E623DF089AD6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorFX.App", "CursorFX.App\CursorFX.App.csproj", "{FE79FAA5-AFBE-4140-A27E-489843B4DFB5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorFX.PluginTemplate", "CursorFX.PluginTemplate\CursorFX.PluginTemplate.csproj", "{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1AACC1FE-7712-472C-B7B5-BCECCE4FE58F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AACC1FE-7712-472C-B7B5-BCECCE4FE58F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AACC1FE-7712-472C-B7B5-BCECCE4FE58F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AACC1FE-7712-472C-B7B5-BCECCE4FE58F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C498B64-4762-4811-878D-133F197D0688}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C498B64-4762-4811-878D-133F197D0688}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C498B64-4762-4811-878D-133F197D0688}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C498B64-4762-4811-878D-133F197D0688}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A4AAD08-1ECC-4873-B405-FCCB44A67E73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A4AAD08-1ECC-4873-B405-FCCB44A67E73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A4AAD08-1ECC-4873-B405-FCCB44A67E73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A4AAD08-1ECC-4873-B405-FCCB44A67E73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3140A72-A93C-4285-9935-E623DF089AD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3140A72-A93C-4285-9935-E623DF089AD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3140A72-A93C-4285-9935-E623DF089AD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3140A72-A93C-4285-9935-E623DF089AD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FE79FAA5-AFBE-4140-A27E-489843B4DFB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE79FAA5-AFBE-4140-A27E-489843B4DFB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE79FAA5-AFBE-4140-A27E-489843B4DFB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE79FAA5-AFBE-4140-A27E-489843B4DFB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

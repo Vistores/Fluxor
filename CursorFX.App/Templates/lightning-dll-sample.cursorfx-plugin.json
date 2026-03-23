@@ -1,0 +1,46 @@
+{
+  "Id": "lightning-dll-sample",
+  "Name": "Lightning DLL Sample",
+  "Description": "Profile that uses an external DLL to render a custom lightning field around the cursor while still exposing grouped settings in the UI.",
+  "IconGlyph": "⚡",
+  "AccentColor": "#8BC8FF",
+  "RuntimeKind": 1,
+  "AssemblyFileName": "CursorFX.PluginTemplate.dll",
+  "EntryTypeName": "CursorFX.PluginTemplate.LightningStormPlugin",
+  "Kind": 0,
+  "Trigger": 0,
+  "Parameters": [
+    { "Key": "trailEnabled", "DisplayName": "Enable Trail", "Section": 0, "SectionName": "Trail", "Type": 2, "DefaultBoolean": true, "DefaultColor": "#FFFFFF" },
+    { "Key": "trailLength", "DisplayName": "Trail Length", "Section": 0, "SectionName": "Trail", "Type": 0, "Min": 8, "Max": 80, "Step": 1, "DefaultNumber": 24, "DefaultColor": "#FFFFFF" },
+    { "Key": "trailThickness", "DisplayName": "Trail Thickness", "Section": 0, "SectionName": "Trail", "Type": 0, "Min": 1, "Max": 12, "Step": 0.5, "DefaultNumber": 2.4, "DefaultColor": "#FFFFFF" },
+    { "Key": "trailFade", "DisplayName": "Trail Fade", "Section": 0, "SectionName": "Trail", "Type": 0, "Min": 0.05, "Max": 1.5, "Step": 0.01, "DefaultNumber": 0.22, "DefaultColor": "#FFFFFF" },
+    { "Key": "trailColor", "DisplayName": "Trail Color", "Section": 0, "SectionName": "Trail", "Type": 1, "DefaultColor": "#60A5FA" },
+
+    { "Key": "glowEnabled", "DisplayName": "Enable Glow", "Section": 1, "SectionName": "Glow", "Type": 2, "DefaultBoolean": true, "DefaultColor": "#FFFFFF" },
+    { "Key": "glowSize", "DisplayName": "Glow Size", "Section": 1, "SectionName": "Glow", "Type": 0, "Min": 4, "Max": 48, "Step": 1, "DefaultNumber": 10, "DefaultColor": "#FFFFFF" },
+    { "Key": "glowOpacity", "DisplayName": "Glow Opacity", "Section": 1, "SectionName": "Glow", "Type": 0, "Min": 0.05, "Max": 1, "Step": 0.01, "DefaultNumber": 0.45, "DefaultColor": "#FFFFFF" },
+    { "Key": "glowColor", "DisplayName": "Glow Color", "Section": 1, "SectionName": "Glow", "Type": 1, "DefaultColor": "#E0F2FE" },
+
+    { "Key": "rippleEnabled", "DisplayName": "Enable Ripple", "Section": 2, "SectionName": "Ripple", "Type": 2, "DefaultBoolean": true, "DefaultColor": "#FFFFFF" },
+    { "Key": "rippleRadius", "DisplayName": "Impact Size", "Section": 2, "SectionName": "Ripple", "Type": 0, "Min": 12, "Max": 220, "Step": 1, "DefaultNumber": 72, "DefaultColor": "#FFFFFF" },
+    { "Key": "rippleLifetime", "DisplayName": "Impact Lifetime", "Section": 2, "SectionName": "Ripple", "Type": 0, "Min": 0.05, "Max": 1.5, "Step": 0.01, "DefaultNumber": 0.24, "DefaultColor": "#FFFFFF" },
+    { "Key": "rippleOpacity", "DisplayName": "Impact Opacity", "Section": 2, "SectionName": "Ripple", "Type": 0, "Min": 0.05, "Max": 1, "Step": 0.01, "DefaultNumber": 0.9, "DefaultColor": "#FFFFFF" },
+    { "Key": "rippleThickness", "DisplayName": "Impact Thickness", "Section": 2, "SectionName": "Ripple", "Type": 0, "Min": 1, "Max": 16, "Step": 0.5, "DefaultNumber": 4.5, "DefaultColor": "#FFFFFF" },
+    { "Key": "rippleColor", "DisplayName": "Impact Color", "Section": 2, "SectionName": "Ripple", "Type": 1, "DefaultColor": "#22D3EE" },
+
+    { "Key": "shaderEnabled", "DisplayName": "Enable Built-In Shader", "Section": 3, "SectionName": "Built-In Shader", "Type": 2, "DefaultBoolean": false, "DefaultColor": "#FFFFFF" },
+
+    { "Key": "customShaderEnabled", "DisplayName": "Enable Lightning Field", "Section": 3, "SectionName": "Lightning Field", "Type": 2, "DefaultBoolean": true, "DefaultColor": "#FFFFFF" },
+    { "Key": "customPrimaryColor", "DisplayName": "Primary Lightning", "Section": 3, "SectionName": "Lightning Field", "Type": 1, "DefaultColor": "#38BDF8" },
+    { "Key": "customAccentColor", "DisplayName": "Accent Spark", "Section": 3, "SectionName": "Lightning Field", "Type": 1, "DefaultColor": "#FFFFFF" },
+    { "Key": "customOpacity", "DisplayName": "Field Opacity", "Section": 3, "SectionName": "Lightning Field", "Type": 0, "Min": 0.05, "Max": 1.0, "Step": 0.01, "DefaultNumber": 0.82, "DefaultColor": "#FFFFFF" },
+    { "Key": "coreRadius", "DisplayName": "Core Radius", "Section": 3, "SectionName": "Lightning Field", "Type": 0, "Min": 4, "Max": 80, "Step": 1, "DefaultNumber": 22, "DefaultColor": "#FFFFFF" },
+    { "Key": "arcLength", "DisplayName": "Arc Length", "Section": 3, "SectionName": "Lightning Field", "Type": 0, "Min": 4, "Max": 120, "Step": 1, "DefaultNumber": 36, "DefaultColor": "#FFFFFF" },
+    { "Key": "arcCount", "DisplayName": "Arc Count", "Section": 3, "SectionName": "Lightning Field", "Type": 0, "Min": 1, "Max": 12, "Step": 1, "DefaultNumber": 5, "DefaultColor": "#FFFFFF" },
+    { "Key": "arcThickness", "DisplayName": "Arc Thickness", "Section": 3, "SectionName": "Lightning Field", "Type": 0, "Min": 0.5, "Max": 8, "Step": 0.1, "DefaultNumber": 2.2, "DefaultColor": "#FFFFFF" },
+    { "Key": "animationSpeed", "DisplayName": "Animation Speed", "Section": 3, "SectionName": "Lightning Field", "Type": 0, "Min": 0.1, "Max": 8, "Step": 0.1, "DefaultNumber": 2.8, "DefaultColor": "#FFFFFF" },
+    { "Key": "jitter", "DisplayName": "Bolt Jitter", "Section": 3, "SectionName": "Lightning Field", "Type": 0, "Min": 0.5, "Max": 24, "Step": 0.5, "DefaultNumber": 9, "DefaultColor": "#FFFFFF" },
+    { "Key": "impactRadius", "DisplayName": "Impact Radius", "Section": 3, "SectionName": "Impact Field", "Type": 0, "Min": 8, "Max": 180, "Step": 1, "DefaultNumber": 84, "DefaultColor": "#FFFFFF" },
+    { "Key": "boltLifetime", "DisplayName": "Impact Lifetime", "Section": 3, "SectionName": "Impact Field", "Type": 0, "Min": 0.05, "Max": 1.5, "Step": 0.01, "DefaultNumber": 0.32, "DefaultColor": "#FFFFFF" }
+  ]
+}

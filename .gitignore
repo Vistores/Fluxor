@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+_verify_build/
+_verify_build_fluxor/
+_verify_build_fluxor_uifix/
+_verify_plugin_build/
+_tmp_inferno_check/
+build.log
+pathwalk.log

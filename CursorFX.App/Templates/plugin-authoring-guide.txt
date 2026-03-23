@@ -1,0 +1,331 @@
+CursorFX Plugin Authoring Guide
+===============================
+
+1. Core idea
+-------------
+CursorFX uses two files for a custom plugin:
+
+- C# source or compiled DLL
+- JSON manifest (.cursorfx-plugin.json)
+
+The C# side contains the rendering logic.
+The JSON side describes how CursorFX should expose settings in the UI and how it should locate the plugin runtime.
+
+
+2. Responsibility split
+-----------------------
+
+C# plugin:
+- Implements ICursorEffectPlugin
+- Reads parameter values by key
+- Updates internal animation state
+- Renders using DrawingContext
+- Handles mouse move and click events
+
+JSON manifest:
+- Defines plugin identity
+- Points to the DLL and entry class
+- Declares visible UI parameters
+- Supplies default values, limits and section grouping
+
+
+2.1 Required C# namespaces
+--------------------------
+
+At the top of the plugin file you must include:
+
+using CursorFX.Core.Interfaces;
+
+Usually you also need:
+- using System;
+- using System.Collections.Generic;
+- using System.Windows;
+- using System.Windows.Media;
+
+If you do not include CursorFX.Core.Interfaces, the source importer will fail with:
+- CS0246: ICursorEffectPlugin could not be found
+
+Alternative:
+- instead of a using statement, you may write the full interface name directly:
+  CursorFX.Core.Interfaces.ICursorEffectPlugin
+
+
+3. Runtime link between JSON and C#
+-----------------------------------
+
+Three things must match:
+
+1. AssemblyFileName
+   Example:
+   "AssemblyFileName": "CursorFX.PluginTemplate.dll"
+
+2. EntryTypeName
+   This is the full type name:
+   "EntryTypeName": "CursorFX.PluginTemplate.LightningStormPlugin"
+
+3. Parameter keys
+   If C# reads:
+   GetBool(parameters, "trailEnabled", true)
+   then JSON must contain:
+   "Key": "trailEnabled"
+
+
+4. Required JSON structure
+--------------------------
+
+Top-level fields:
+- Id
+- Name
+- Description
+- IconGlyph
+- AccentColor
+- RuntimeKind
+- AssemblyFileName
+- EntryTypeName
+- Kind
+- Trigger
+- Parameters
+
+Recommended example:
+
+{
+  "Id": "my-lightning-plugin",
+  "Name": "My Lightning Plugin",
+  "Description": "Custom electric cursor effect.",
+  "IconGlyph": "⚡",
+  "AccentColor": "#8BC8FF",
+  "RuntimeKind": 1,
+  "AssemblyFileName": "MyPlugin.dll",
+  "EntryTypeName": "MyCompany.CursorPlugins.MyLightningPlugin",
+  "Kind": 0,
+  "Trigger": 0,
+  "Parameters": [ ... ]
+}
+
+
+5. Parameter structure
+----------------------
+
+Each parameter entry should include:
+- Key
+- DisplayName
+- Section
+- SectionName
+- Type
+- Min
+- Max
+- Step
+- DefaultNumber
+- DefaultColor
+- DefaultBoolean
+
+Type values:
+- 0 = Number
+- 1 = Color
+- 2 = Toggle
+
+Section values:
+- 0 = Trail
+- 1 = Glow
+- 2 = Ripple
+- 3 = Shader
+
+
+6. Mapping rules from C# to JSON
+--------------------------------
+
+If the C# code uses:
+- GetDouble(parameters, "arcCount", 5)
+then JSON should define:
+- "Key": "arcCount"
+- "Type": 0
+- Min/Max/Step values that make sense for the shader
+
+If the C# code uses:
+- GetColor(parameters, "primaryColor", fallback)
+then JSON should define:
+- "Key": "primaryColor"
+- "Type": 1
+- "DefaultColor": "#RRGGBB" or "#AARRGGBB"
+
+If the C# code uses:
+- GetBool(parameters, "trailEnabled", true)
+then JSON should define:
+- "Key": "trailEnabled"
+- "Type": 2
+- "DefaultBoolean": true
+
+
+7. Recommended C# plugin structure
+----------------------------------
+
+Recommended file layout:
+
+- fields for current configuration
+- fields for runtime state
+- cached Pen/Brush/Geometry resources
+- constructor
+- ApplyParameters(...)
+- Update(...)
+- Render(...)
+- OnMouseMove(...)
+- OnMouseClick(...)
+- Dispose()
+
+Minimal skeleton:
+
+using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Media;
+using CursorFX.Core.Interfaces;
+
+namespace MyCompany.CursorPlugins
+{
+    public sealed class MyPlugin : ICursorEffectPlugin, IDisposable
+    {
+        public string DisplayName => "My Plugin";
+
+        public void ApplyParameters(IDictionary<string, object> parameters)
+        {
+        }
+
+        public void Update(double deltaTime)
+        {
+        }
+
+        public void Render(DrawingContext drawingContext)
+        {
+        }
+
+        public void OnMouseMove(Point position)
+        {
+        }
+
+        public void OnMouseClick(Point position)
+        {
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+}
+
+Recommended flow:
+
+ApplyParameters:
+- read values from dictionary
+- clamp them
+- rebuild cached brushes and pens
+
+Update:
+- update animation state only
+- avoid creating new lists and random objects every frame
+
+Render:
+- draw only
+- reuse preallocated arrays and cached resources whenever possible
+
+
+8. Performance recommendations
+------------------------------
+
+- Use ring buffers for trail points
+- Use preallocated arrays for particles, impacts and temporary states
+- Clamp deltaTime
+- Avoid allocating new Random every frame
+- Avoid rebuilding brushes and pens inside Render
+- Rebuild cached visual resources only when parameters change
+- Avoid freezing objects that you plan to modify again
+- Limit maximum points and maximum spawned elements
+- Fail gracefully when a parameter is missing
+
+
+9. Stability recommendations
+----------------------------
+
+- Every parameter read in C# must have a safe fallback
+- Never assume a key exists
+- Clamp all numeric inputs
+- Keep Dispose lightweight
+- Do not throw on invalid user input when a fallback is possible
+- Treat imported JSON as untrusted
+- Keep plugin code isolated: one plugin should not depend on another plugin DLL
+
+
+10. Visual design recommendations
+---------------------------------
+
+Trail is not the same as a ribbon.
+
+For better cursor FX:
+- think in silhouette first
+- use one primary motion spine
+- add 1 to 3 secondary shape variations
+- let the tail taper out naturally
+- keep glow near the cursor head or the hottest region
+- avoid dotted segments unless the effect explicitly needs them
+- avoid perfectly uniform width across the full trail
+
+Examples:
+- lightning: jagged spine + short side arcs
+- fire: tapered body + torn tongues + hot core near the cursor
+- water: broad fluid mass + caustic highlights + soft breakup
+
+
+11. Import workflow for users
+-----------------------------
+
+Option A: import C# + JSON together
+- Open CursorFX
+- Click Import Plugin
+- Choose the .cs file
+- Choose the matching .cursorfx-plugin.json file
+- Confirm import
+
+Option B: import only C#
+- CursorFX builds the source file
+- CursorFX generates a basic manifest
+- Then you refine the generated JSON manually
+
+Option C: import only JSON
+- Use this only if the referenced DLL already exists in the plugin folder
+
+
+12. Recommended testing checklist
+---------------------------------
+
+Before sharing a plugin, verify:
+- plugin appears in the profile list
+- profile switch does not keep values from other plugins
+- all sliders update live
+- color parameters update live
+- plugin survives rapid cursor movement
+- plugin survives repeated clicks
+- plugin does not crash when disabled and re-enabled
+- plugin stops rendering when fullscreen hides the cursor
+- plugin does not visibly lag behind on multi-monitor setups
+
+
+13. Common mistakes
+-------------------
+
+- wrong AssemblyFileName
+- wrong EntryTypeName
+- mismatched parameter keys
+- invalid numeric range in JSON
+- freezing mutable geometry and reopening it later
+- rebuilding heavy resources every frame
+- one DLL shared by many experimental plugins that overwrite each other
+
+
+14. Best practice for maintainability
+-------------------------------------
+
+- Keep one effect runtime per DLL or per well-scoped plugin library
+- Group settings into clear sections
+- Prefer 8 to 15 meaningful controls over 40 weak controls
+- Name keys in plain English and keep them stable
+- Version your plugin files if the structure changes
+- Keep JSON readable and hand-editable

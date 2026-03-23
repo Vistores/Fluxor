@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\CursorFX.Core\CursorFX.Core.csproj" />
+    <ProjectReference Include="..\CursorFX.Rendering\CursorFX.Rendering.csproj" />
+    <ProjectReference Include="..\CursorFX.Effects\CursorFX.Effects.csproj" />
+    <ProjectReference Include="..\CursorFX.Platform\CursorFX.Platform.csproj" />
+    <Resource Include="Assets\FluxorIco.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>Assets\FluxorIco.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+</Project>
