@@ -45,7 +45,7 @@ public sealed class CursorFxEngine : IDisposable
         _mouseTracker.Start();
         _clickMonitor.Start();
         _windowStateMonitor.Start();
-        if (!_effectsSuspended || !_pauseWhenCursorHidden)
+        if (!_renderLoop.IsRunning)
         {
             _renderLoop.Start();
         }
@@ -81,6 +81,11 @@ public sealed class CursorFxEngine : IDisposable
 
     private void OnMouseClicked(object? sender, Point position)
     {
+        if (_effectsSuspended && _pauseWhenCursorHidden)
+        {
+            return;
+        }
+
         if (_lastOverlayCursorPosition == default)
         {
             _lastOverlayCursorPosition = _overlayWindow.ScreenToOverlay(position);
@@ -96,8 +101,14 @@ public sealed class CursorFxEngine : IDisposable
 
     private void OnEffectsSuspendedChanged(object? sender, bool areEffectsSuspended)
     {
+        var wasSuspended = _effectsSuspended;
         _effectsSuspended = areEffectsSuspended;
         UpdateRenderLoopState();
+        if (wasSuspended && !_effectsSuspended)
+        {
+            ResumeEffectsAtCurrentCursor();
+        }
+
         UpdateOverlayVisibility();
     }
 
@@ -114,7 +125,7 @@ public sealed class CursorFxEngine : IDisposable
 
     private void UpdateOverlayVisibility()
     {
-        var shouldHide = _windowStateMonitor.IsFullscreen || (_pauseWhenCursorHidden && _effectsSuspended);
+        var shouldHide = _pauseWhenCursorHidden && _effectsSuspended;
         _overlayWindow.Visibility = shouldHide
             ? Visibility.Hidden
             : Visibility.Visible;
@@ -122,20 +133,17 @@ public sealed class CursorFxEngine : IDisposable
 
     private void UpdateRenderLoopState()
     {
-        var shouldRun = !_pauseWhenCursorHidden || !_effectsSuspended;
-        if (shouldRun)
+        if (!_renderLoop.IsRunning)
         {
-            if (!_renderLoop.IsRunning)
-            {
-                _renderLoop.Start();
-            }
-
-            return;
+            _renderLoop.Start();
         }
+    }
 
-        if (_renderLoop.IsRunning)
-        {
-            _renderLoop.Stop();
-        }
+    private void ResumeEffectsAtCurrentCursor()
+    {
+        _renderLoop.ResetClock();
+        _lastOverlayCursorPosition = _overlayWindow.ScreenToOverlay(_mouseTracker.CurrentPosition);
+        _effectManager.OnMouseMove(_lastOverlayCursorPosition);
+        _overlayWindow.InvalidateSurface();
     }
 }

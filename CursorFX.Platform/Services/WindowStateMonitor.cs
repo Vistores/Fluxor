@@ -10,11 +10,15 @@ public sealed class WindowStateMonitor : IWindowStateMonitor
 {
     private const double CenterLockThresholdPixels = 24.0;
     private const int CenterLockTicksBeforeSuspend = 3;
+    private const int SuspendTicksBeforeApply = 2;
+    private const int ResumeTicksBeforeApply = 2;
 
     private readonly DispatcherTimer _timer;
     private bool _isFullscreen;
     private bool _areEffectsSuspended;
     private int _centerLockedTicks;
+    private bool? _pendingSuspendState;
+    private int _pendingSuspendTicks;
 
     public WindowStateMonitor()
     {
@@ -71,9 +75,27 @@ public sealed class WindowStateMonitor : IWindowStateMonitor
         var shouldSuspendEffects = !isCursorVisible || isCursorCenterLocked;
         if (shouldSuspendEffects == _areEffectsSuspended)
         {
+            _pendingSuspendState = null;
+            _pendingSuspendTicks = 0;
             return;
         }
 
+        if (_pendingSuspendState != shouldSuspendEffects)
+        {
+            _pendingSuspendState = shouldSuspendEffects;
+            _pendingSuspendTicks = 1;
+            return;
+        }
+
+        _pendingSuspendTicks++;
+        var threshold = shouldSuspendEffects ? SuspendTicksBeforeApply : ResumeTicksBeforeApply;
+        if (_pendingSuspendTicks < threshold)
+        {
+            return;
+        }
+
+        _pendingSuspendState = null;
+        _pendingSuspendTicks = 0;
         _areEffectsSuspended = shouldSuspendEffects;
         EffectsSuspendedChanged?.Invoke(this, _areEffectsSuspended);
     }

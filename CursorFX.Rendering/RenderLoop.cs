@@ -28,8 +28,13 @@ public sealed class RenderLoop : IDisposable
 
     public void Start()
     {
-        _frameClock.Restart();
+        _frameClock.Reset();
         _timer.Start();
+    }
+
+    public void ResetClock()
+    {
+        _frameClock.Reset();
     }
 
     public void Stop()
