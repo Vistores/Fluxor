@@ -14,6 +14,7 @@ public sealed class CursorFxEngine : IDisposable
     private readonly RenderLoop _renderLoop;
     private bool _pauseWhenCursorHidden = true;
     private bool _effectsSuspended;
+    private Point _lastOverlayCursorPosition;
 
     public CursorFxEngine(
         OverlayWindow overlayWindow,
@@ -39,7 +40,8 @@ public sealed class CursorFxEngine : IDisposable
 
     public void Start()
     {
-        _effectManager.OnMouseMove(_overlayWindow.ScreenToOverlay(_mouseTracker.CurrentPosition));
+        _lastOverlayCursorPosition = _overlayWindow.ScreenToOverlay(_mouseTracker.CurrentPosition);
+        _effectManager.OnMouseMove(_lastOverlayCursorPosition);
         _mouseTracker.Start();
         _clickMonitor.Start();
         _windowStateMonitor.Start();
@@ -73,12 +75,18 @@ public sealed class CursorFxEngine : IDisposable
 
     private void OnMouseMoved(object? sender, Point position)
     {
-        _effectManager.OnMouseMove(_overlayWindow.ScreenToOverlay(position));
+        _lastOverlayCursorPosition = _overlayWindow.ScreenToOverlay(position);
+        _effectManager.OnMouseMove(_lastOverlayCursorPosition);
     }
 
     private void OnMouseClicked(object? sender, Point position)
     {
-        _effectManager.OnMouseClick(_overlayWindow.ScreenToOverlay(position));
+        if (_lastOverlayCursorPosition == default)
+        {
+            _lastOverlayCursorPosition = _overlayWindow.ScreenToOverlay(position);
+        }
+
+        _effectManager.OnMouseClick(_lastOverlayCursorPosition);
     }
 
     private void OnFullscreenChanged(object? sender, bool isFullscreen)
