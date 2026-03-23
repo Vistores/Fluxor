@@ -214,7 +214,10 @@ public sealed class TemplateEffect : IEffect
         }
 
         var density = Math.Max(6, (int)Math.Round(GetNumber("particles", 18)));
-        var spawnRate = Math.Max(12.0, GetNumber("spawnRate", density * 2.2));
+        var symbolSpacing = Math.Max(4.0, GetNumber("symbolSpacing", 14));
+        var speed = Math.Max(12.0, GetNumber("matrixSpeed", 64));
+        var computedSpawnRate = Math.Max(8.0, (density * speed) / Math.Max(10.0, symbolSpacing * 1.8));
+        var spawnRate = Math.Max(6.0, GetNumber("spawnRate", computedSpawnRate));
         _matrixSpawnAccumulator += dt * spawnRate;
         var spawnCount = Math.Min(8, (int)_matrixSpawnAccumulator);
         _matrixSpawnAccumulator -= spawnCount;
@@ -325,7 +328,9 @@ public sealed class TemplateEffect : IEffect
             drawingContext.Pop();
         }
 
+        drawingContext.DrawEllipse(CreateRadialBrush(accentColor, opacity * 0.22, 0.0, 1.0), null, emitter, size * 0.72, size * 0.72);
         drawingContext.DrawEllipse(CreateSolidBrush(primaryColor, opacity * 0.25), null, emitter, size * 0.48, size * 0.48);
+        drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.14), null, emitter, size * 0.24, size * 0.24);
         RenderClickShockwaves(drawingContext, accentColor, size * 1.2, opacity * 0.85, 1.8);
     }
 
@@ -340,6 +345,7 @@ public sealed class TemplateEffect : IEffect
         var emitter = GetEmitterPosition();
 
         var swirlCount = Math.Max(10, detail + 2);
+        drawingContext.DrawEllipse(CreateRadialBrush(primaryColor, opacity * 0.18, 0.0, 1.0), null, emitter, size * 0.55, size * 0.55);
         for (var index = 0; index < swirlCount; index++)
         {
             var progress = index / (double)swirlCount;
@@ -408,6 +414,7 @@ public sealed class TemplateEffect : IEffect
         var emitter = GetEmitterPosition();
 
         drawingContext.DrawEllipse(CreateRadialBrush(primaryColor, opacity * 0.33, 0.0, 1.0), null, emitter, size, size * 0.75);
+        drawingContext.DrawEllipse(CreateRadialBrush(accentColor, opacity * 0.16, 0.0, 1.0), null, emitter, size * 0.62, size * 0.52);
 
         for (var index = 0; index < detail; index++)
         {
@@ -458,6 +465,7 @@ public sealed class TemplateEffect : IEffect
 
         drawingContext.DrawEllipse(CreateRadialBrush(primaryColor, opacity * 0.48, 0.0, 1.0), null, emitter, size * 0.8, size * 0.8);
         drawingContext.DrawEllipse(null, CreatePen(accentColor, 2.2, opacity * 0.82), emitter, size, size);
+        drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.16), null, emitter, size * 0.28, size * 0.28);
 
         for (var index = 0; index < detail; index++)
         {
@@ -541,6 +549,7 @@ public sealed class TemplateEffect : IEffect
         var driftStrength = GetNumber("driftStrength", 2.2);
         var randomness = GetNumber("randomness", 0.6);
         var phase = _timeSeconds + (_matrixParticles.Count * 0.37);
+        var spawnRadius = GetNumber("spawnRadius", Math.Max(2, spread * 0.16));
         Point position;
         Vector velocity;
 
@@ -548,17 +557,18 @@ public sealed class TemplateEffect : IEffect
         {
             var idleRadius = GetNumber("idleScatterRadius", Math.Max(8, spread * 0.55));
             var idleSpeed = GetNumber("idleScatterSpeed", Math.Max(18, speed * 0.42));
-            var angle = phase * (1.7 + (randomness * 0.08));
+            var angle = HashToUnit(phase * 1.713, _matrixParticles.Count) * Math.PI * 2.0;
+            var radialFactor = Math.Sqrt(HashToUnit(phase * 0.913, _matrixParticles.Count + 13));
             var radial = new Vector(Math.Cos(angle), Math.Sin(angle));
             var orbit = new Vector(-radial.Y, radial.X);
-            position = emitter + (radial * (idleRadius * 0.15));
-            velocity = (radial * idleSpeed) + (orbit * (driftStrength * 2.0));
+            position = emitter + (radial * (idleRadius * radialFactor * 0.35));
+            velocity = (radial * idleSpeed) + (orbit * (driftStrength * (0.8 + radialFactor)));
         }
         else
         {
-            var lateral = (((_matrixParticles.Count % 7) / 6.0) - 0.5) * spread;
+            var lateral = HashToSigned(phase * 0.77, _matrixParticles.Count) * spread;
             var wobble = Math.Sin(phase * 2.1) * driftStrength;
-            position = emitter + (normal * (lateral + wobble));
+            position = emitter + (normal * (lateral + wobble)) + (direction * (HashToUnit(phase * 1.11, _matrixParticles.Count + 5) * spawnRadius));
             velocity = (direction * speed) + (normal * (Math.Cos(phase * 1.7) * driftStrength * 8.0));
         }
 
@@ -772,6 +782,17 @@ public sealed class TemplateEffect : IEffect
     private static Color WithAlpha(Color color, double opacity)
     {
         return Color.FromArgb((byte)(Math.Clamp(opacity, 0, 1) * 255), color.R, color.G, color.B);
+    }
+
+    private static double HashToUnit(double seed, int salt)
+    {
+        var value = Math.Sin((seed * 12.9898) + (salt * 78.233)) * 43758.5453;
+        return value - Math.Floor(value);
+    }
+
+    private static double HashToSigned(double seed, int salt)
+    {
+        return (HashToUnit(seed, salt) * 2.0) - 1.0;
     }
 
     private struct ClickPulse(Point position)
