@@ -68,7 +68,7 @@ public sealed class WindowStateMonitor : IWindowStateMonitor
 
         var isCursorVisible = IsCursorVisible();
         var isCursorCenterLocked = isFullscreen && IsCursorCenterLocked(foregroundWindow);
-        var shouldSuspendEffects = isFullscreen && (!isCursorVisible || isCursorCenterLocked);
+        var shouldSuspendEffects = !isCursorVisible || isCursorCenterLocked;
         if (shouldSuspendEffects == _areEffectsSuspended)
         {
             return;
