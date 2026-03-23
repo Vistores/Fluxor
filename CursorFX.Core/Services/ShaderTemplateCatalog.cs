@@ -316,6 +316,10 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             waveFrequency: 2.2,
             noiseAmount: 0.0,
             ribbonSoftness: 0.68,
+            sourceLag: 9,
+            idleRadius: 1.8,
+            idleSpeed: 1.1,
+            randomness: 0.8,
             extraParameters:
             [
                 Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 12),
@@ -331,6 +335,11 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             waveFrequency: 2.8,
             noiseAmount: 4.5,
             ribbonSoftness: 0.6,
+            sourceLag: 11,
+            idleRadius: 2.0,
+            idleSpeed: 1.5,
+            gravityY: 1.0,
+            randomness: 1.4,
             extraParameters:
             [
                 Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 13),
@@ -339,7 +348,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             ]);
 
     private static ShaderTemplateDefinition BuildMatrixCascadeSuite() =>
-        BuildSuite("matrix-cascade", "Matrix Cascade", "Instead of a classic trail, green glyph particles cascade behind the cursor with inertial drift.", "X", "#22C55E", TemplateEffectKind.MatrixCascade,
+        BuildSuite("matrix-cascade", "Matrix Cascade", "Filled matrix-style glyph trail that flows behind the cursor as a soft continuous cascade.", "X", "#22C55E", TemplateEffectKind.MatrixCascade,
             "#166534", "#14532D", "#BBF7D0", "#22C55E", "#BBF7D0", 20, 4, 0.3, 18, 0.12, 76, 0.66, 0.5, 1.8, 58, 0.72, 1.8, 10,
             trailEnabled: false,
             trailMode: TrailRenderMode.SmoothLine,
@@ -347,11 +356,23 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             waveFrequency: 1.2,
             noiseAmount: 0,
             ribbonSoftness: 0.45,
+            sourceLag: 11,
+            idleRadius: 0.8,
+            idleSpeed: 0.85,
+            gravityY: 0,
+            randomness: 0.6,
             extraParameters:
             [
-                Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 10),
+                Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 14),
                 Number("clickLifetime", "Glyph Burst Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.72),
-                Number("particles", "Glyph Density", PluginParameterSection.Shader, "Shader", 6, 30, 1, 18)
+                Number("particles", "Glyph Density", PluginParameterSection.Shader, "Shader", 6, 30, 1, 18),
+                Number("matrixSpeed", "Particle Speed", PluginParameterSection.Shader, "Shader", 12, 180, 1, 68),
+                Number("matrixSpread", "Trail Spread", PluginParameterSection.Shader, "Shader", 6, 80, 1, 26),
+                Number("matrixGlyphSize", "Glyph Size", PluginParameterSection.Shader, "Shader", 8, 28, 1, 12),
+                Number("matrixLifetime", "Particle Lifetime", PluginParameterSection.Shader, "Shader", 0.2, 2.4, 0.05, 1.05),
+                Number("matrixDamping", "Particle Damping", PluginParameterSection.Shader, "Shader", 0.2, 8, 0.1, 1.6),
+                Number("spawnRate", "Spawn Rate", PluginParameterSection.Shader, "Shader", 8, 80, 1, 34),
+                Number("driftStrength", "Drift Strength", PluginParameterSection.Shader, "Shader", 0, 12, 0.25, 1.2)
             ]);
 
     private static ShaderTemplateDefinition BuildSuite(
@@ -385,7 +406,13 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         double waveAmplitude = 0,
         double waveFrequency = 1.2,
         double noiseAmount = 0,
-        double ribbonSoftness = 0.45)
+        double ribbonSoftness = 0.45,
+        double sourceLag = 10,
+        double idleRadius = 0.8,
+        double idleSpeed = 1.1,
+        double gravityX = 0,
+        double gravityY = 0,
+        double randomness = 0.3)
     {
         var parameters = new List<TemplateParameterDefinition>
         {
@@ -418,7 +445,13 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             Number("size", "Shader Size", PluginParameterSection.Shader, "Shader", 12, 220, 1, shaderSize),
             Number("opacity", "Shader Opacity", PluginParameterSection.Shader, "Shader", 0.05, 1, 0.01, shaderOpacity),
             Number("motion", kind == TemplateEffectKind.OrbitTrail ? "Orbit Speed" : kind == TemplateEffectKind.ClickBurst ? "Burst Lifetime" : "Motion", PluginParameterSection.Shader, "Shader", 0.1, 8, 0.1, shaderMotion),
-            Number("detail", ResolveDetailLabel(kind), PluginParameterSection.Shader, "Shader", 1, 16, 0.5, shaderDetail)
+            Number("detail", ResolveDetailLabel(kind), PluginParameterSection.Shader, "Shader", 1, 16, 0.5, shaderDetail),
+            Number("sourceLag", "Emitter Follow", PluginParameterSection.Shader, "Shader", 2, 32, 1, sourceLag),
+            Number("idleRadius", "Idle Radius", PluginParameterSection.Shader, "Shader", 0, 24, 0.5, idleRadius),
+            Number("idleSpeed", "Idle Speed", PluginParameterSection.Shader, "Shader", 0.1, 6, 0.1, idleSpeed),
+            Number("gravityX", "Gravity X", PluginParameterSection.Shader, "Shader", -20, 20, 0.5, gravityX),
+            Number("gravityY", "Gravity Y", PluginParameterSection.Shader, "Shader", -20, 20, 0.5, gravityY),
+            Number("randomness", "Randomness", PluginParameterSection.Shader, "Shader", 0, 16, 0.25, randomness)
         };
 
         if (extraParameters is not null)
