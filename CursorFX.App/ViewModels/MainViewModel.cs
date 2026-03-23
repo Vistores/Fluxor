@@ -319,6 +319,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _settings.Trail.Thickness = GetNumber(values, "trailThickness", 12);
         _settings.Trail.FadeSeconds = GetNumber(values, "trailFade", 0.55);
         _settings.Trail.Color = GetColor(values, "trailColor", "#22D3EE");
+        _settings.Trail.RenderMode = (TrailRenderMode)Math.Clamp((int)Math.Round(GetNumber(values, "trailMode", 0)), 0, 2);
+        _settings.Trail.WaveAmplitude = GetNumber(values, "waveAmplitude", 0);
+        _settings.Trail.WaveFrequency = GetNumber(values, "waveFrequency", 1.2);
+        _settings.Trail.NoiseAmount = GetNumber(values, "noiseAmount", 0);
+        _settings.Trail.RibbonSoftness = GetNumber(values, "ribbonSoftness", 0.45);
 
         _settings.Glow.IsEnabled = GetBool(values, "glowEnabled", true);
         _settings.Glow.Size = GetNumber(values, "glowSize", 32);
@@ -703,7 +708,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private static bool IsBuiltInPlugin(string pluginId)
     {
-        return pluginId is "neon-suite" or "minimal-suite" or "gaming-suite";
+        return pluginId is
+            "neon-suite" or
+            "minimal-suite" or
+            "gaming-suite" or
+            "prism-bloom" or
+            "arc-sparkle" or
+            "comet-ribbon" or
+            "nebula-drift" or
+            "frost-halo" or
+            "solar-flare" or
+            "mystic-runes" or
+            "ribbon-wave" or
+            "torn-current" or
+            "matrix-cascade";
     }
 
     private void TryDeletePluginAssembly(ShaderTemplateDefinition plugin)

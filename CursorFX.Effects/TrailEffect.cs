@@ -8,16 +8,19 @@ namespace CursorFX.Effects;
 public sealed class TrailEffect : IEffect
 {
     private readonly List<TrailNode> _nodes = [];
-    private readonly List<Point> _renderPoints = [];
+    private readonly List<Point> _leftEdge = [];
+    private readonly List<Point> _rightEdge = [];
     private TrailSettings _settings;
     private double _masterOpacity = 1.0;
     private Point _lastInputPosition;
     private bool _hasInputPosition;
     private Color _baseColor;
+    private double _timeSeconds;
 
     public TrailEffect(TrailSettings settings)
     {
         _settings = Clone(settings);
+        _baseColor = ParseColor(_settings.Color);
         IsEnabled = settings.IsEnabled;
     }
 
@@ -28,6 +31,8 @@ public sealed class TrailEffect : IEffect
     public void Update(TimeSpan deltaTime)
     {
         var elapsed = deltaTime.TotalSeconds;
+        _timeSeconds += elapsed;
+
         for (var index = _nodes.Count - 1; index >= 0; index--)
         {
             var node = _nodes[index];
@@ -49,46 +54,17 @@ public sealed class TrailEffect : IEffect
             return;
         }
 
-        _renderPoints.Clear();
-        foreach (var node in _nodes)
+        switch (_settings.RenderMode)
         {
-            _renderPoints.Add(node.Position);
-        }
-
-        for (var index = 1; index < _renderPoints.Count; index++)
-        {
-            var previous = _nodes[index - 1];
-            var current = _nodes[index];
-            var lifeRatio = 1d - ((previous.AgeSeconds + current.AgeSeconds) * 0.5 / _settings.FadeSeconds);
-            if (lifeRatio <= 0)
-            {
-                continue;
-            }
-
-            var thickness = Math.Max(1, _settings.Thickness * lifeRatio);
-            var alpha = (byte)(Math.Clamp(lifeRatio * _masterOpacity, 0, 1) * 255);
-            var penBrush = new SolidColorBrush(Color.FromArgb(alpha, _baseColor.R, _baseColor.G, _baseColor.B));
-            penBrush.Freeze();
-            var pen = new Pen(penBrush, thickness)
-            {
-                StartLineCap = PenLineCap.Round,
-                EndLineCap = PenLineCap.Round,
-                LineJoin = PenLineJoin.Round
-            };
-            pen.Freeze();
-
-            var start = previous.Position;
-            var end = current.Position;
-            var control = new Point((start.X + end.X) * 0.5, (start.Y + end.Y) * 0.5);
-            var geometry = new StreamGeometry();
-            using (var context = geometry.Open())
-            {
-                context.BeginFigure(start, false, false);
-                context.QuadraticBezierTo(control, end, true, true);
-            }
-
-            geometry.Freeze();
-            drawingContext.DrawGeometry(null, pen, geometry);
+            case TrailRenderMode.WaveRibbon:
+                RenderRibbon(drawingContext, addNoise: false);
+                break;
+            case TrailRenderMode.TornRibbon:
+                RenderRibbon(drawingContext, addNoise: true);
+                break;
+            default:
+                RenderSmoothLine(drawingContext);
+                break;
         }
     }
 
@@ -112,12 +88,12 @@ public sealed class TrailEffect : IEffect
 
         var previous = _nodes[^1].Position;
         var distance = (position - previous).Length;
-        if (distance < 1.5)
+        if (distance < 1.2)
         {
             return;
         }
 
-        var steps = Math.Max(1, (int)(distance / 8));
+        var steps = Math.Max(1, (int)(distance / 6));
         for (var step = 1; step <= steps; step++)
         {
             var t = step / (double)steps;
@@ -154,6 +130,123 @@ public sealed class TrailEffect : IEffect
         }
     }
 
+    private void RenderSmoothLine(DrawingContext drawingContext)
+    {
+        for (var index = 1; index < _nodes.Count; index++)
+        {
+            var previous = _nodes[index - 1];
+            var current = _nodes[index];
+            var lifeRatio = 1d - ((previous.AgeSeconds + current.AgeSeconds) * 0.5 / _settings.FadeSeconds);
+            if (lifeRatio <= 0)
+            {
+                continue;
+            }
+
+            var thickness = Math.Max(1, _settings.Thickness * lifeRatio);
+            var alpha = Math.Clamp(lifeRatio * _masterOpacity, 0, 1);
+            var pen = CreatePen(_baseColor, thickness, alpha);
+
+            var start = previous.Position;
+            var end = current.Position;
+            var control = new Point((start.X + end.X) * 0.5, (start.Y + end.Y) * 0.5);
+            var geometry = new StreamGeometry();
+            using var context = geometry.Open();
+            context.BeginFigure(start, false, false);
+            context.QuadraticBezierTo(control, end, true, true);
+            geometry.Freeze();
+            drawingContext.DrawGeometry(null, pen, geometry);
+        }
+    }
+
+    private void RenderRibbon(DrawingContext drawingContext, bool addNoise)
+    {
+        if (_nodes.Count < 3)
+        {
+            RenderSmoothLine(drawingContext);
+            return;
+        }
+
+        _leftEdge.Clear();
+        _rightEdge.Clear();
+
+        var pointCount = _nodes.Count;
+        for (var index = 0; index < pointCount; index++)
+        {
+            var node = _nodes[index];
+            var ageRatio = Math.Clamp(node.AgeSeconds / Math.Max(0.001, _settings.FadeSeconds), 0, 1);
+            var strength = 1.0 - ageRatio;
+            if (strength <= 0.01)
+            {
+                continue;
+            }
+
+            var progress = pointCount <= 1 ? 0.0 : index / (double)(pointCount - 1);
+            var tangent = GetTangent(index);
+            if (tangent.LengthSquared < 0.0001)
+            {
+                continue;
+            }
+
+            tangent.Normalize();
+            var normal = new Vector(-tangent.Y, tangent.X);
+            var baseWidth = Math.Max(1.6, _settings.Thickness * strength);
+            var widthScale = 0.78 + (_settings.RibbonSoftness * 0.65);
+            var width = baseWidth * widthScale;
+
+            var phase = (_timeSeconds * (2.0 + _settings.WaveFrequency)) + (progress * Math.PI * 2.0 * Math.Max(0.35, _settings.WaveFrequency));
+            var envelope = Math.Sin(progress * Math.PI);
+            var wave = Math.Sin(phase) * _settings.WaveAmplitude * envelope * strength;
+
+            var noise = 0.0;
+            if (addNoise && _settings.NoiseAmount > 0.01)
+            {
+                var jitterPhase = (progress * 17.0) + (_timeSeconds * 3.3);
+                noise = (Math.Sin(jitterPhase) + (Math.Cos(jitterPhase * 1.73) * 0.65)) * _settings.NoiseAmount * strength;
+            }
+
+            var center = node.Position + (normal * (wave * 0.32));
+            var leftOffset = width + wave + noise;
+            var rightOffset = width - wave - (noise * 0.75);
+
+            _leftEdge.Add(center + (normal * leftOffset));
+            _rightEdge.Add(center - (normal * rightOffset));
+        }
+
+        if (_leftEdge.Count < 2 || _rightEdge.Count < 2)
+        {
+            RenderSmoothLine(drawingContext);
+            return;
+        }
+
+        var ribbonGeometry = new StreamGeometry();
+        using (var context = ribbonGeometry.Open())
+        {
+            context.BeginFigure(_leftEdge[0], true, true);
+            for (var index = 1; index < _leftEdge.Count; index++)
+            {
+                context.LineTo(_leftEdge[index], true, false);
+            }
+
+            for (var index = _rightEdge.Count - 1; index >= 0; index--)
+            {
+                context.LineTo(_rightEdge[index], true, false);
+            }
+        }
+        ribbonGeometry.Freeze();
+
+        var edgeOpacity = Math.Clamp(_masterOpacity * 0.85, 0, 1);
+        var fillOpacity = Math.Clamp(_masterOpacity * 0.26, 0, 1);
+        drawingContext.DrawGeometry(CreateFillBrush(_baseColor, fillOpacity), null, ribbonGeometry);
+        drawingContext.DrawGeometry(null, CreatePen(_baseColor, Math.Max(1.1, _settings.Thickness * 0.16), edgeOpacity), ribbonGeometry);
+    }
+
+    private Vector GetTangent(int index)
+    {
+        var previousIndex = Math.Max(0, index - 1);
+        var nextIndex = Math.Min(_nodes.Count - 1, index + 1);
+        return _nodes[nextIndex].Position - _nodes[previousIndex].Position;
+    }
+
     private static TrailSettings Clone(TrailSettings settings)
     {
         return new TrailSettings
@@ -162,8 +255,34 @@ public sealed class TrailEffect : IEffect
             MaxPoints = settings.MaxPoints,
             Thickness = settings.Thickness,
             FadeSeconds = settings.FadeSeconds,
-            Color = settings.Color
+            Color = settings.Color,
+            RenderMode = settings.RenderMode,
+            WaveAmplitude = settings.WaveAmplitude,
+            WaveFrequency = settings.WaveFrequency,
+            NoiseAmount = settings.NoiseAmount,
+            RibbonSoftness = settings.RibbonSoftness
         };
+    }
+
+    private static Pen CreatePen(Color color, double thickness, double opacity)
+    {
+        var brush = new SolidColorBrush(Color.FromArgb((byte)(Math.Clamp(opacity, 0, 1) * 255), color.R, color.G, color.B));
+        brush.Freeze();
+        var pen = new Pen(brush, thickness)
+        {
+            StartLineCap = PenLineCap.Round,
+            EndLineCap = PenLineCap.Round,
+            LineJoin = PenLineJoin.Round
+        };
+        pen.Freeze();
+        return pen;
+    }
+
+    private static Brush CreateFillBrush(Color color, double opacity)
+    {
+        var brush = new SolidColorBrush(Color.FromArgb((byte)(Math.Clamp(opacity, 0, 1) * 255), color.R, color.G, color.B));
+        brush.Freeze();
+        return brush;
     }
 
     private static Color ParseColor(string value)

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
 using CursorFX.Core.Interfaces;
@@ -7,12 +8,15 @@ namespace CursorFX.Effects;
 
 public sealed class TemplateEffect : IEffect
 {
+    private const int MaxClickPulses = 14;
+
     private readonly List<ClickPulse> _clickPulses = [];
     private ShaderTemplateDefinition? _template;
     private Dictionary<string, TemplateParameterValue> _parameterValues = new(StringComparer.OrdinalIgnoreCase);
     private double _masterOpacity = 1.0;
     private Point _cursorPosition;
     private Point _smoothedCursorPosition;
+    private Vector _cursorVelocity;
     private double _timeSeconds;
 
     public string Name => "Template Shader";
@@ -21,18 +25,32 @@ public sealed class TemplateEffect : IEffect
 
     public void Update(TimeSpan deltaTime)
     {
-        _timeSeconds += deltaTime.TotalSeconds;
+        if (!IsEnabled)
+        {
+            return;
+        }
 
-        var followBlend = Math.Clamp(deltaTime.TotalSeconds * 18d, 0d, 1d);
+        var dt = Math.Clamp(deltaTime.TotalSeconds, 0.0, 0.05);
+        _timeSeconds += dt;
+
+        var inertia = Math.Max(2.0, GetNumber("inertia", 18));
+        var previous = _smoothedCursorPosition;
+        var followBlend = Math.Clamp(dt * inertia, 0d, 1d);
         _smoothedCursorPosition = new Point(
             _smoothedCursorPosition.X + ((_cursorPosition.X - _smoothedCursorPosition.X) * followBlend),
             _smoothedCursorPosition.Y + ((_cursorPosition.Y - _smoothedCursorPosition.Y) * followBlend));
 
+        if (dt > 0.0001)
+        {
+            _cursorVelocity = (_smoothedCursorPosition - previous) / dt;
+        }
+
+        var clickLifetime = GetClickLifetime();
         for (var index = _clickPulses.Count - 1; index >= 0; index--)
         {
             var pulse = _clickPulses[index];
-            pulse.Age += deltaTime.TotalSeconds;
-            if (pulse.Age >= GetBurstLifetime())
+            pulse.Age += dt;
+            if (pulse.Age >= clickLifetime)
             {
                 _clickPulses.RemoveAt(index);
                 continue;
@@ -60,6 +78,30 @@ public sealed class TemplateEffect : IEffect
             case TemplateEffectKind.OrbitTrail:
                 RenderOrbitTrail(drawingContext);
                 break;
+            case TemplateEffectKind.PrismBloom:
+                RenderPrismBloom(drawingContext);
+                break;
+            case TemplateEffectKind.ArcSparkle:
+                RenderArcSparkle(drawingContext);
+                break;
+            case TemplateEffectKind.CometRibbon:
+                RenderCometRibbon(drawingContext);
+                break;
+            case TemplateEffectKind.NebulaDust:
+                RenderNebulaDust(drawingContext);
+                break;
+            case TemplateEffectKind.FrostHalo:
+                RenderFrostHalo(drawingContext);
+                break;
+            case TemplateEffectKind.SolarFlare:
+                RenderSolarFlare(drawingContext);
+                break;
+            case TemplateEffectKind.MysticRunes:
+                RenderMysticRunes(drawingContext);
+                break;
+            case TemplateEffectKind.MatrixCascade:
+                RenderMatrixCascade(drawingContext);
+                break;
         }
     }
 
@@ -74,9 +116,14 @@ public sealed class TemplateEffect : IEffect
 
     public void OnMouseClick(Point position)
     {
-        if (!IsEnabled || _template?.Trigger != TemplateTrigger.MouseClick)
+        if (!IsEnabled)
         {
             return;
+        }
+
+        if (_clickPulses.Count >= MaxClickPulses)
+        {
+            _clickPulses.RemoveAt(0);
         }
 
         _clickPulses.Add(new ClickPulse(position));
@@ -104,25 +151,16 @@ public sealed class TemplateEffect : IEffect
         var accentColor = GetColor("accentColor", "#A5F3FC");
         var radius = size * pulse;
 
-        var fillBrush = new RadialGradientBrush
-        {
-            GradientOrigin = new Point(0.5, 0.5),
-            Center = new Point(0.5, 0.5),
-            RadiusX = 0.5,
-            RadiusY = 0.5
-        };
-        fillBrush.GradientStops.Add(new GradientStop(WithAlpha(primaryColor, opacity), 0));
-        fillBrush.GradientStops.Add(new GradientStop(WithAlpha(primaryColor, 0), 1));
-        fillBrush.Freeze();
-
+        var fillBrush = CreateRadialBrush(primaryColor, opacity, 0.0, 1.0);
         var ringPen = CreatePen(accentColor, GetNumber("detail", 3), opacity * 0.9);
         drawingContext.DrawEllipse(fillBrush, null, _smoothedCursorPosition, radius, radius);
         drawingContext.DrawEllipse(null, ringPen, _smoothedCursorPosition, radius * 0.75, radius * 0.75);
+        RenderClickShockwaves(drawingContext, accentColor, size * 1.45, opacity * 0.8, 2.2);
     }
 
     private void RenderClickBurst(DrawingContext drawingContext)
     {
-        var lifetime = GetBurstLifetime();
+        var lifetime = GetClickLifetime();
         var maxRadius = GetNumber("size", 120);
         var opacity = GetNumber("opacity", 0.9) * _masterOpacity;
         var thickness = GetNumber("detail", 4);
@@ -136,19 +174,17 @@ public sealed class TemplateEffect : IEffect
             var radius = Math.Max(4, maxRadius * eased);
             var alpha = (1 - progress) * opacity;
 
-            drawingContext.DrawEllipse(
-                null,
-                CreatePen(primaryColor, thickness, alpha),
-                pulse.Position,
-                radius,
-                radius);
+            drawingContext.DrawEllipse(null, CreatePen(primaryColor, thickness, alpha), pulse.Position, radius, radius);
+            drawingContext.DrawEllipse(null, CreatePen(accentColor, Math.Max(1, thickness * 0.45), alpha * 0.8), pulse.Position, radius * 0.55, radius * 0.55);
 
-            drawingContext.DrawEllipse(
-                null,
-                CreatePen(accentColor, Math.Max(1, thickness * 0.45), alpha * 0.8),
-                pulse.Position,
-                radius * 0.55,
-                radius * 0.55);
+            var rayCount = Math.Max(6, (int)Math.Round(GetNumber("particles", 10)));
+            for (var index = 0; index < rayCount; index++)
+            {
+                var angle = ((Math.PI * 2.0) / rayCount) * index + (_timeSeconds * 0.7);
+                var start = pulse.Position + new Vector(Math.Cos(angle), Math.Sin(angle)) * (radius * 0.35);
+                var end = pulse.Position + new Vector(Math.Cos(angle), Math.Sin(angle)) * (radius * 0.9);
+                drawingContext.DrawLine(CreatePen(accentColor, Math.Max(1.1, thickness * 0.28), alpha * 0.65), start, end);
+            }
         }
     }
 
@@ -173,16 +209,342 @@ public sealed class TemplateEffect : IEffect
 
         if (showRing)
         {
-            drawingContext.DrawEllipse(
-                null,
-                CreatePen(primaryColor, 1.5, opacity * 0.4),
-                _smoothedCursorPosition,
-                radius,
-                radius);
+            drawingContext.DrawEllipse(null, CreatePen(primaryColor, 1.5, opacity * 0.4), _smoothedCursorPosition, radius, radius);
         }
 
         drawingContext.DrawEllipse(CreateSolidBrush(primaryColor, opacity), null, pointA, dotSize, dotSize);
         drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity), null, pointB, dotSize * 0.8, dotSize * 0.8);
+        RenderClickSparkDots(drawingContext, accentColor, dotSize * 0.85, opacity * 0.8);
+    }
+
+    private void RenderPrismBloom(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 62);
+        var opacity = GetNumber("opacity", 0.46) * _masterOpacity;
+        var detail = Math.Max(4, (int)Math.Round(GetNumber("detail", 6)));
+        var motion = GetNumber("motion", 1.25);
+        var primaryColor = GetColor("primaryColor", "#67E8F9");
+        var accentColor = GetColor("accentColor", "#C084FC");
+
+        for (var layer = 0; layer < detail; layer++)
+        {
+            var phase = (_timeSeconds * motion) + (layer * 0.35);
+            var width = size * (0.65 + (layer * 0.08));
+            var height = width * (0.45 + (Math.Sin(phase) * 0.06));
+            var rotation = 360.0 * ((phase / (Math.PI * 2.0)) % 1.0) + (layer * (180.0 / detail));
+            drawingContext.PushOpacity(opacity * (0.28 + (layer * 0.08)));
+            drawingContext.PushTransform(new RotateTransform(rotation, _smoothedCursorPosition.X, _smoothedCursorPosition.Y));
+            drawingContext.DrawEllipse(null, CreatePen(layer % 2 == 0 ? primaryColor : accentColor, 1.6 + (layer * 0.35), opacity), _smoothedCursorPosition, width, height);
+            drawingContext.Pop();
+            drawingContext.Pop();
+        }
+
+        drawingContext.DrawEllipse(CreateSolidBrush(primaryColor, opacity * 0.25), null, _smoothedCursorPosition, size * 0.48, size * 0.48);
+        RenderClickShockwaves(drawingContext, accentColor, size * 1.2, opacity * 0.85, 1.8);
+    }
+
+    private void RenderArcSparkle(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 46);
+        var opacity = GetNumber("opacity", 0.55) * _masterOpacity;
+        var detail = Math.Max(6, (int)Math.Round(GetNumber("detail", 9)));
+        var motion = GetNumber("motion", 2.1);
+        var primaryColor = GetColor("primaryColor", "#A78BFA");
+        var accentColor = GetColor("accentColor", "#FDE68A");
+
+        var swirlCount = Math.Max(10, detail + 2);
+        for (var index = 0; index < swirlCount; index++)
+        {
+            var progress = index / (double)swirlCount;
+            var angle = (_timeSeconds * motion * 2.4) + (progress * Math.PI * 2.0);
+            var radius = size * (0.35 + progress * 0.85);
+            var point = _smoothedCursorPosition + new Vector(Math.Cos(angle), Math.Sin(angle)) * radius;
+            var sparkSize = 1.8 + ((1.0 - progress) * detail * 0.22);
+            var brush = CreateSolidBrush(progress < 0.45 ? accentColor : primaryColor, opacity * (0.35 + ((1.0 - progress) * 0.45)));
+            drawingContext.DrawEllipse(brush, null, point, sparkSize, sparkSize);
+        }
+
+        RenderClickSparkDots(drawingContext, accentColor, 4 + (detail * 0.28), opacity);
+    }
+
+    private void RenderCometRibbon(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 64);
+        var opacity = GetNumber("opacity", 0.6) * _masterOpacity;
+        var detail = GetNumber("detail", 6);
+        var motion = GetNumber("motion", 1.3);
+        var primaryColor = GetColor("primaryColor", "#38BDF8");
+        var accentColor = GetColor("accentColor", "#E0F2FE");
+
+        var velocity = _cursorVelocity;
+        if (velocity.LengthSquared < 1)
+        {
+            velocity = new Vector(0, -1);
+        }
+        else
+        {
+            velocity.Normalize();
+        }
+
+        var normal = new Vector(-velocity.Y, velocity.X);
+        var tailLength = size * (1.5 + (motion * 0.32));
+        var tailEnd = _smoothedCursorPosition - (velocity * tailLength);
+        var spread = 8 + (detail * 1.4);
+
+        var geometry = new StreamGeometry();
+        using (var context = geometry.Open())
+        {
+            var nose = _smoothedCursorPosition + (velocity * (size * 0.28));
+            var leftMid = _smoothedCursorPosition - (velocity * (tailLength * 0.28)) + (normal * spread);
+            var rightMid = _smoothedCursorPosition - (velocity * (tailLength * 0.18)) - (normal * spread * 0.78);
+            context.BeginFigure(nose, true, true);
+            context.QuadraticBezierTo(leftMid, tailEnd + (normal * (spread * 0.22)), true, false);
+            context.QuadraticBezierTo(rightMid, nose, true, false);
+        }
+        geometry.Freeze();
+
+        drawingContext.DrawGeometry(CreateSolidBrush(primaryColor, opacity * 0.24), null, geometry);
+        drawingContext.DrawGeometry(null, CreatePen(primaryColor, 2.0 + (detail * 0.25), opacity * 0.75), geometry);
+        drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.9), null, _smoothedCursorPosition, size * 0.18, size * 0.18);
+        RenderClickShockwaves(drawingContext, accentColor, size, opacity * 0.7, 1.35);
+    }
+
+    private void RenderNebulaDust(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 72);
+        var opacity = GetNumber("opacity", 0.44) * _masterOpacity;
+        var detail = Math.Max(8, (int)Math.Round(GetNumber("detail", 10)));
+        var motion = GetNumber("motion", 1.15);
+        var primaryColor = GetColor("primaryColor", "#7DD3FC");
+        var accentColor = GetColor("accentColor", "#C084FC");
+
+        drawingContext.DrawEllipse(CreateRadialBrush(primaryColor, opacity * 0.33, 0.0, 1.0), null, _smoothedCursorPosition, size, size * 0.75);
+
+        for (var index = 0; index < detail; index++)
+        {
+            var phase = (_timeSeconds * motion) + (index * 0.73);
+            var radius = size * (0.25 + ((index % 5) * 0.13));
+            var offset = new Vector(Math.Cos(phase * 0.9), Math.Sin(phase * 1.1)) * radius;
+            var point = _smoothedCursorPosition + offset;
+            var alpha = opacity * (0.24 + (0.12 * Math.Abs(Math.Sin(phase * 1.8))));
+            var dotSize = 2.0 + ((index % 4) * 1.1);
+            drawingContext.DrawEllipse(CreateSolidBrush(index % 2 == 0 ? primaryColor : accentColor, alpha), null, point, dotSize, dotSize);
+        }
+
+        RenderClickSparkDots(drawingContext, accentColor, 5, opacity * 0.9);
+    }
+
+    private void RenderFrostHalo(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 58);
+        var opacity = GetNumber("opacity", 0.4) * _masterOpacity;
+        var detail = Math.Max(5, (int)Math.Round(GetNumber("detail", 7)));
+        var motion = GetNumber("motion", 1.55);
+        var primaryColor = GetColor("primaryColor", "#BFDBFE");
+        var accentColor = GetColor("accentColor", "#E0F2FE");
+
+        drawingContext.DrawEllipse(null, CreatePen(primaryColor, 1.6, opacity * 0.7), _smoothedCursorPosition, size, size);
+        drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.12), null, _smoothedCursorPosition, size * 0.55, size * 0.55);
+
+        for (var index = 0; index < detail; index++)
+        {
+            var angle = (_timeSeconds * motion) + (index * ((Math.PI * 2.0) / detail));
+            var point = _smoothedCursorPosition + new Vector(Math.Cos(angle), Math.Sin(angle)) * size;
+            DrawSnowflake(drawingContext, point, 4 + (detail * 0.18), accentColor, opacity * 0.85);
+        }
+
+        RenderClickSnowBursts(drawingContext, primaryColor, accentColor, opacity);
+    }
+
+    private void RenderSolarFlare(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 60);
+        var opacity = GetNumber("opacity", 0.58) * _masterOpacity;
+        var detail = Math.Max(6, (int)Math.Round(GetNumber("detail", 8)));
+        var motion = GetNumber("motion", 1.6);
+        var primaryColor = GetColor("primaryColor", "#F59E0B");
+        var accentColor = GetColor("accentColor", "#FDE68A");
+
+        drawingContext.DrawEllipse(CreateRadialBrush(primaryColor, opacity * 0.48, 0.0, 1.0), null, _smoothedCursorPosition, size * 0.8, size * 0.8);
+        drawingContext.DrawEllipse(null, CreatePen(accentColor, 2.2, opacity * 0.82), _smoothedCursorPosition, size, size);
+
+        for (var index = 0; index < detail; index++)
+        {
+            var angle = (_timeSeconds * motion * 0.7) + (index * ((Math.PI * 2.0) / detail));
+            var inner = _smoothedCursorPosition + new Vector(Math.Cos(angle), Math.Sin(angle)) * (size * 0.82);
+            var outer = _smoothedCursorPosition + new Vector(Math.Cos(angle), Math.Sin(angle)) * (size * 1.32);
+            drawingContext.DrawLine(CreatePen(primaryColor, 1.5 + ((index % 3) * 0.55), opacity * 0.75), inner, outer);
+        }
+
+        RenderClickShockwaves(drawingContext, accentColor, size * 1.55, opacity, 2.4);
+    }
+
+    private void RenderMysticRunes(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 64);
+        var opacity = GetNumber("opacity", 0.48) * _masterOpacity;
+        var detail = Math.Max(6, (int)Math.Round(GetNumber("detail", 8)));
+        var motion = GetNumber("motion", 0.95);
+        var primaryColor = GetColor("primaryColor", "#34D399");
+        var accentColor = GetColor("accentColor", "#A7F3D0");
+
+        var rings = 2 + (detail / 4);
+        for (var ring = 0; ring < rings; ring++)
+        {
+            var ringRadius = size * (0.55 + (ring * 0.32));
+            var count = 5 + ring + (detail / 3);
+            var rotation = (_timeSeconds * motion * (ring % 2 == 0 ? 1 : -1));
+
+            for (var index = 0; index < count; index++)
+            {
+                var angle = rotation + (index * ((Math.PI * 2.0) / count));
+                var point = _smoothedCursorPosition + new Vector(Math.Cos(angle), Math.Sin(angle)) * ringRadius;
+                DrawRuneMark(drawingContext, point, angle, 5 + ring, index % 2 == 0 ? primaryColor : accentColor, opacity * (0.5 + (ring * 0.08)));
+            }
+        }
+
+        drawingContext.DrawEllipse(null, CreatePen(primaryColor, 1.4, opacity * 0.55), _smoothedCursorPosition, size * 0.7, size * 0.7);
+        RenderClickShockwaves(drawingContext, accentColor, size * 1.2, opacity * 0.85, 1.5);
+    }
+
+    private void RenderMatrixCascade(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 54);
+        var opacity = GetNumber("opacity", 0.7) * _masterOpacity;
+        var detail = Math.Max(6, (int)Math.Round(GetNumber("detail", 10)));
+        var motion = GetNumber("motion", 1.8);
+        var primaryColor = GetColor("primaryColor", "#22C55E");
+        var accentColor = GetColor("accentColor", "#BBF7D0");
+
+        var velocity = _cursorVelocity;
+        if (velocity.LengthSquared < 4)
+        {
+            velocity = new Vector(0, -1);
+        }
+        else
+        {
+            velocity.Normalize();
+        }
+
+        var tailDirection = -velocity;
+        var normal = new Vector(-tailDirection.Y, tailDirection.X);
+        var streamCount = Math.Max(5, detail / 2);
+        var glyphCount = Math.Max(10, detail + 4);
+        var glyphSize = Math.Max(11, size * 0.22);
+
+        for (var stream = 0; stream < streamCount; stream++)
+        {
+            var lateral = ((stream / (double)Math.Max(1, streamCount - 1)) - 0.5) * size * 0.85;
+            for (var glyphIndex = 0; glyphIndex < glyphCount; glyphIndex++)
+            {
+                var progress = glyphIndex / (double)Math.Max(1, glyphCount - 1);
+                var headLag = (_timeSeconds * motion * 42.0) % Math.Max(12.0, size * 0.28);
+                var distance = (progress * size * 2.8) + headLag;
+                var wave = Math.Sin((_timeSeconds * motion * 2.2) + (progress * 7.0) + stream) * (size * 0.08);
+                var point = _smoothedCursorPosition + (tailDirection * distance) + (normal * (lateral + wave));
+                var alpha = opacity * (1.0 - progress) * (0.55 + (0.45 * Math.Abs(Math.Sin(_timeSeconds * 6.5 + stream + glyphIndex))));
+                var glyph = GetMatrixGlyph(stream, glyphIndex);
+                DrawGlyph(
+                    drawingContext,
+                    glyph,
+                    point,
+                    glyphSize * (1.0 - (progress * 0.45)),
+                    glyphIndex % 5 == 0 ? accentColor : primaryColor,
+                    alpha);
+            }
+        }
+
+        drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.4), null, _smoothedCursorPosition, size * 0.16, size * 0.16);
+        drawingContext.DrawEllipse(null, CreatePen(primaryColor, 1.2, opacity * 0.8), _smoothedCursorPosition, size * 0.28, size * 0.28);
+        RenderClickSparkDots(drawingContext, accentColor, 4.5, opacity * 0.85);
+    }
+
+    private void RenderClickShockwaves(DrawingContext drawingContext, Color color, double size, double opacity, double thickness)
+    {
+        var lifetime = GetClickLifetime();
+        foreach (var pulse in _clickPulses)
+        {
+            var progress = Math.Clamp(pulse.Age / lifetime, 0, 1);
+            var eased = 1 - Math.Pow(1 - progress, 2);
+            var radius = Math.Max(6, size * eased);
+            var alpha = (1 - progress) * opacity;
+            drawingContext.DrawEllipse(null, CreatePen(color, thickness, alpha), pulse.Position, radius, radius);
+        }
+    }
+
+    private void RenderClickSparkDots(DrawingContext drawingContext, Color color, double size, double opacity)
+    {
+        var lifetime = GetClickLifetime();
+        var count = Math.Max(8, (int)Math.Round(GetNumber("particles", 10)));
+        foreach (var pulse in _clickPulses)
+        {
+            var progress = Math.Clamp(pulse.Age / lifetime, 0, 1);
+            var radius = GetNumber("size", 52) * (0.35 + progress * 0.95);
+            var alpha = (1 - progress) * opacity;
+            for (var index = 0; index < count; index++)
+            {
+                var angle = (index * ((Math.PI * 2.0) / count)) + (pulse.Seed * 0.9);
+                var point = pulse.Position + new Vector(Math.Cos(angle), Math.Sin(angle)) * radius;
+                drawingContext.DrawEllipse(CreateSolidBrush(color, alpha * (0.45 + ((index % 3) * 0.1))), null, point, size * 0.42, size * 0.42);
+            }
+        }
+    }
+
+    private void RenderClickSnowBursts(DrawingContext drawingContext, Color primaryColor, Color accentColor, double opacity)
+    {
+        var lifetime = GetClickLifetime();
+        foreach (var pulse in _clickPulses)
+        {
+            var progress = Math.Clamp(pulse.Age / lifetime, 0, 1);
+            var radius = GetNumber("size", 58) * (0.25 + progress * 0.9);
+            var alpha = (1 - progress) * opacity;
+            for (var index = 0; index < 6; index++)
+            {
+                var angle = (Math.PI / 3.0) * index;
+                var point = pulse.Position + new Vector(Math.Cos(angle), Math.Sin(angle)) * radius;
+                DrawSnowflake(drawingContext, point, 4.5, index % 2 == 0 ? primaryColor : accentColor, alpha);
+            }
+        }
+    }
+
+    private static void DrawSnowflake(DrawingContext drawingContext, Point center, double size, Color color, double opacity)
+    {
+        var pen = CreatePen(color, 1.1, opacity);
+        for (var index = 0; index < 3; index++)
+        {
+            var angle = index * (Math.PI / 3.0);
+            var direction = new Vector(Math.Cos(angle), Math.Sin(angle));
+            drawingContext.DrawLine(pen, center - (direction * size), center + (direction * size));
+        }
+    }
+
+    private static void DrawRuneMark(DrawingContext drawingContext, Point center, double angle, double size, Color color, double opacity)
+    {
+        var pen = CreatePen(color, 1.0, opacity);
+        drawingContext.PushTransform(new RotateTransform(angle * 180.0 / Math.PI, center.X, center.Y));
+        drawingContext.DrawLine(pen, new Point(center.X, center.Y - size), new Point(center.X, center.Y + size));
+        drawingContext.DrawLine(pen, new Point(center.X - (size * 0.6), center.Y), new Point(center.X + (size * 0.6), center.Y));
+        drawingContext.Pop();
+    }
+
+    private static void DrawGlyph(DrawingContext drawingContext, string glyph, Point point, double fontSize, Color color, double opacity)
+    {
+        var formattedText = new FormattedText(
+            glyph,
+            CultureInfo.InvariantCulture,
+            FlowDirection.LeftToRight,
+            new Typeface("Consolas"),
+            fontSize,
+            CreateSolidBrush(color, opacity),
+            1.0);
+        drawingContext.DrawText(formattedText, new Point(point.X - (formattedText.Width * 0.5), point.Y - (formattedText.Height * 0.5)));
+    }
+
+    private static string GetMatrixGlyph(int stream, int glyphIndex)
+    {
+        const string glyphs = "01ZXCVBNMASDFGHJKLQWERTYUIOP";
+        var index = Math.Abs((stream * 7) + (glyphIndex * 11)) % glyphs.Length;
+        return glyphs[index].ToString();
     }
 
     private double GetNumber(string key, double defaultValue)
@@ -196,9 +558,9 @@ public sealed class TemplateEffect : IEffect
             ?? defaultValue;
     }
 
-    private double GetBurstLifetime()
+    private double GetClickLifetime()
     {
-        return GetNumber("motion", 0.85);
+        return Math.Max(0.2, GetNumber("clickLifetime", GetNumber("motion", 0.85)));
     }
 
     private bool GetToggle(string key, bool defaultValue)
@@ -241,6 +603,21 @@ public sealed class TemplateEffect : IEffect
         return brush;
     }
 
+    private static RadialGradientBrush CreateRadialBrush(Color color, double opacity, double innerOffset, double outerOffset)
+    {
+        var brush = new RadialGradientBrush
+        {
+            GradientOrigin = new Point(0.5, 0.5),
+            Center = new Point(0.5, 0.5),
+            RadiusX = 0.5,
+            RadiusY = 0.5
+        };
+        brush.GradientStops.Add(new GradientStop(WithAlpha(color, opacity), innerOffset));
+        brush.GradientStops.Add(new GradientStop(WithAlpha(color, 0), outerOffset));
+        brush.Freeze();
+        return brush;
+    }
+
     private static Color WithAlpha(Color color, double opacity)
     {
         return Color.FromArgb((byte)(Math.Clamp(opacity, 0, 1) * 255), color.R, color.G, color.B);
@@ -249,6 +626,8 @@ public sealed class TemplateEffect : IEffect
     private struct ClickPulse(Point position)
     {
         public Point Position { get; } = position;
+
+        public double Seed { get; } = (position.X * 0.013) + (position.Y * 0.009);
 
         public double Age { get; set; }
     }

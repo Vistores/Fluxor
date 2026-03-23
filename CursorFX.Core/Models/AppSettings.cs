@@ -86,6 +86,23 @@ public sealed class TrailSettings
     public double FadeSeconds { get; set; } = 0.55;
 
     public string Color { get; set; } = "#22D3EE";
+
+    public TrailRenderMode RenderMode { get; set; } = TrailRenderMode.SmoothLine;
+
+    public double WaveAmplitude { get; set; } = 0;
+
+    public double WaveFrequency { get; set; } = 1.2;
+
+    public double NoiseAmount { get; set; } = 0;
+
+    public double RibbonSoftness { get; set; } = 0.45;
+}
+
+public enum TrailRenderMode
+{
+    SmoothLine,
+    WaveRibbon,
+    TornRibbon
 }
 
 public sealed class GlowSettings

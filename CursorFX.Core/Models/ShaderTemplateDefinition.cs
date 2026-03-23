@@ -75,7 +75,15 @@ public enum TemplateEffectKind
 {
     CursorAura,
     ClickBurst,
-    OrbitTrail
+    OrbitTrail,
+    PrismBloom,
+    ArcSparkle,
+    CometRibbon,
+    NebulaDust,
+    FrostHalo,
+    SolarFlare,
+    MysticRunes,
+    MatrixCascade
 }
 
 public enum TemplateRuntimeKind

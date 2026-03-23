@@ -302,7 +302,7 @@
                     <TextBlock FontSize="24" FontWeight="SemiBold" Text="Profiles" />
                     <TextBlock Margin="0,8,0,0"
                                Foreground="{StaticResource MutedTextBrush}"
-                               Text="Base suites stay available. Keep only one lightning DLL profile if you want a custom effect." />
+                               Text="10 built-in starter profiles are available, plus any custom DLL plugins you import." />
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1"

@@ -28,6 +28,16 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         SeedTemplate("neon-suite.cursorfx-plugin.json", BuildNeonSuite(), overwrite: true);
         SeedTemplate("minimal-suite.cursorfx-plugin.json", BuildMinimalSuite(), overwrite: true);
         SeedTemplate("gaming-suite.cursorfx-plugin.json", BuildGamingSuite(), overwrite: true);
+        SeedTemplate("prism-bloom.cursorfx-plugin.json", BuildPrismBloomSuite(), overwrite: true);
+        SeedTemplate("arc-sparkle.cursorfx-plugin.json", BuildArcSparkleSuite(), overwrite: true);
+        SeedTemplate("comet-ribbon.cursorfx-plugin.json", BuildCometRibbonSuite(), overwrite: true);
+        SeedTemplate("nebula-drift.cursorfx-plugin.json", BuildNebulaDriftSuite(), overwrite: true);
+        SeedTemplate("frost-halo.cursorfx-plugin.json", BuildFrostHaloSuite(), overwrite: true);
+        SeedTemplate("solar-flare.cursorfx-plugin.json", BuildSolarFlareSuite(), overwrite: true);
+        SeedTemplate("mystic-runes.cursorfx-plugin.json", BuildMysticRunesSuite(), overwrite: true);
+        SeedTemplate("ribbon-wave.cursorfx-plugin.json", BuildRibbonWaveSuite(), overwrite: true);
+        SeedTemplate("torn-current.cursorfx-plugin.json", BuildTornCurrentSuite(), overwrite: true);
+        SeedTemplate("matrix-cascade.cursorfx-plugin.json", BuildMatrixCascadeSuite(), overwrite: true);
     }
 
     public IReadOnlyList<ShaderTemplateDefinition> LoadTemplates()
@@ -113,22 +123,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         if (string.IsNullOrWhiteSpace(requestedIconPath))
         {
             TryDeleteOldIcon(previousIconPath);
-            return new ShaderTemplateDefinition
-            {
-                Id = template.Id,
-                Name = template.Name,
-                Description = template.Description,
-                IconGlyph = template.IconGlyph,
-                IconPath = string.Empty,
-                ResolvedIconPath = string.Empty,
-                AccentColor = template.AccentColor,
-                RuntimeKind = template.RuntimeKind,
-                AssemblyFileName = template.AssemblyFileName,
-                EntryTypeName = template.EntryTypeName,
-                Kind = template.Kind,
-                Trigger = template.Trigger,
-                Parameters = template.Parameters
-            };
+            return CloneTemplate(template, string.Empty, string.Empty);
         }
 
         var sourceDirectory = Path.GetDirectoryName(sourceFilePath) ?? string.Empty;
@@ -139,22 +134,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         if (!File.Exists(iconSourcePath))
         {
             TryDeleteOldIcon(previousIconPath);
-            return new ShaderTemplateDefinition
-            {
-                Id = template.Id,
-                Name = template.Name,
-                Description = template.Description,
-                IconGlyph = template.IconGlyph,
-                IconPath = string.Empty,
-                ResolvedIconPath = string.Empty,
-                AccentColor = template.AccentColor,
-                RuntimeKind = template.RuntimeKind,
-                AssemblyFileName = template.AssemblyFileName,
-                EntryTypeName = template.EntryTypeName,
-                Kind = template.Kind,
-                Trigger = template.Trigger,
-                Parameters = template.Parameters
-            };
+            return CloneTemplate(template, string.Empty, string.Empty);
         }
 
         var targetFileName = $"{template.Id}-{DateTime.UtcNow:yyyyMMddHHmmssfff}{Path.GetExtension(iconSourcePath)}";
@@ -162,22 +142,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         File.Copy(iconSourcePath, targetPath, overwrite: true);
         TryDeleteOldIcon(previousIconPath, targetPath);
 
-        return new ShaderTemplateDefinition
-        {
-            Id = template.Id,
-            Name = template.Name,
-            Description = template.Description,
-            IconGlyph = template.IconGlyph,
-            IconPath = targetFileName,
-            ResolvedIconPath = targetPath,
-            AccentColor = template.AccentColor,
-            RuntimeKind = template.RuntimeKind,
-            AssemblyFileName = template.AssemblyFileName,
-            EntryTypeName = template.EntryTypeName,
-            Kind = template.Kind,
-            Trigger = template.Trigger,
-            Parameters = template.Parameters
-        };
+        return CloneTemplate(template, targetFileName, targetPath);
     }
 
     private static void TryDeleteOldIcon(string previousIconPath, string? replacementPath = null)
@@ -200,6 +165,26 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         catch
         {
         }
+    }
+
+    private static ShaderTemplateDefinition CloneTemplate(ShaderTemplateDefinition template, string iconPath, string resolvedIconPath)
+    {
+        return new ShaderTemplateDefinition
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Description = template.Description,
+            IconGlyph = template.IconGlyph,
+            IconPath = iconPath,
+            ResolvedIconPath = resolvedIconPath,
+            AccentColor = template.AccentColor,
+            RuntimeKind = template.RuntimeKind,
+            AssemblyFileName = template.AssemblyFileName,
+            EntryTypeName = template.EntryTypeName,
+            Kind = template.Kind,
+            Trigger = template.Trigger,
+            Parameters = template.Parameters
+        };
     }
 
     private string ResolveIconPath(string iconPath)
@@ -273,91 +258,108 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         }
     }
 
-    private static ShaderTemplateDefinition BuildNeonSuite()
-    {
-        return BuildSuite(
-            "neon-suite",
-            "Neon Suite",
-            "Balanced neon cursor profile with trail, glow, ripple and shader aura.",
-            TemplateEffectKind.CursorAura,
-            trailColor: "#22D3EE",
-            glowColor: "#67E8F9",
-            rippleColor: "#A5F3FC",
-            shaderPrimary: "#22D3EE",
-            shaderAccent: "#F97316",
-            trailLength: 32,
-            trailThickness: 12,
-            trailFade: 0.55,
-            glowSize: 32,
-            glowOpacity: 0.42,
-            rippleRadius: 86,
-            rippleLifetime: 0.7,
-            rippleOpacity: 0.75,
-            rippleThickness: 3,
-            shaderSize: 54,
-            shaderOpacity: 0.42,
-            shaderMotion: 1.4,
-            shaderDetail: 3);
-    }
+    private static ShaderTemplateDefinition BuildNeonSuite() =>
+        BuildSuite("neon-suite", "Neon Suite", "Balanced neon cursor profile with trail, glow, ripple and shader aura.", "N", "#54D0C8", TemplateEffectKind.CursorAura,
+            "#22D3EE", "#67E8F9", "#A5F3FC", "#22D3EE", "#F97316", 32, 12, 0.55, 32, 0.42, 86, 0.7, 0.75, 3, 54, 0.42, 1.4, 3,
+            [Toggle("showRing", "Show Orbit Ring", PluginParameterSection.Shader, "Shader", true), Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 18), Number("clickLifetime", "Click Accent Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.8), Number("particles", "Accent Particles", PluginParameterSection.Shader, "Shader", 4, 24, 1, 8)]);
 
-    private static ShaderTemplateDefinition BuildMinimalSuite()
-    {
-        return BuildSuite(
-            "minimal-suite",
-            "Minimal Suite",
-            "Soft lightweight profile with subtle built-in effects.",
-            TemplateEffectKind.CursorAura,
-            trailColor: "#CBD5E1",
-            glowColor: "#E2E8F0",
-            rippleColor: "#CBD5E1",
-            shaderPrimary: "#E2E8F0",
-            shaderAccent: "#94A3B8",
-            trailLength: 18,
-            trailThickness: 6,
-            trailFade: 0.32,
-            glowSize: 18,
-            glowOpacity: 0.18,
-            rippleRadius: 54,
-            rippleLifetime: 0.45,
-            rippleOpacity: 0.35,
-            rippleThickness: 2,
-            shaderSize: 26,
-            shaderOpacity: 0.18,
-            shaderMotion: 0.9,
-            shaderDetail: 2);
-    }
+    private static ShaderTemplateDefinition BuildMinimalSuite() =>
+        BuildSuite("minimal-suite", "Minimal Suite", "Soft lightweight profile with subtle built-in effects.", "M", "#AAB8C8", TemplateEffectKind.CursorAura,
+            "#CBD5E1", "#E2E8F0", "#CBD5E1", "#E2E8F0", "#94A3B8", 18, 6, 0.32, 18, 0.18, 54, 0.45, 0.35, 2, 26, 0.18, 0.9, 2,
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 20), Number("clickLifetime", "Click Accent Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.5), Number("particles", "Accent Particles", PluginParameterSection.Shader, "Shader", 4, 24, 1, 6)]);
 
-    private static ShaderTemplateDefinition BuildGamingSuite()
-    {
-        return BuildSuite(
-            "gaming-suite",
-            "Gaming Suite",
-            "Aggressive preset with stronger trail and click feedback.",
-            TemplateEffectKind.ClickBurst,
-            trailColor: "#38BDF8",
-            glowColor: "#818CF8",
-            rippleColor: "#C4B5FD",
-            shaderPrimary: "#C4B5FD",
-            shaderAccent: "#F43F5E",
-            trailLength: 48,
-            trailThickness: 18,
-            trailFade: 0.75,
-            glowSize: 42,
-            glowOpacity: 0.55,
-            rippleRadius: 112,
-            rippleLifetime: 0.9,
-            rippleOpacity: 0.9,
-            rippleThickness: 4,
-            shaderSize: 120,
-            shaderOpacity: 0.9,
-            shaderMotion: 0.9,
-            shaderDetail: 4);
-    }
+    private static ShaderTemplateDefinition BuildGamingSuite() =>
+        BuildSuite("gaming-suite", "Gaming Suite", "Aggressive preset with stronger trail and click feedback.", "G", "#F59E0B", TemplateEffectKind.ClickBurst,
+            "#38BDF8", "#818CF8", "#C4B5FD", "#C4B5FD", "#F43F5E", 48, 18, 0.75, 42, 0.55, 112, 0.9, 0.9, 4, 120, 0.9, 0.9, 4,
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 17), Number("clickLifetime", "Click Accent Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.9), Number("particles", "Burst Rays", PluginParameterSection.Shader, "Shader", 6, 28, 1, 12)]);
+
+    private static ShaderTemplateDefinition BuildPrismBloomSuite() =>
+        BuildSuite("prism-bloom", "Prism Bloom", "Layered iridescent bloom with petal rings and soft click echoes.", "P", "#7C3AED", TemplateEffectKind.PrismBloom,
+            "#A78BFA", "#C4B5FD", "#DDD6FE", "#67E8F9", "#F472B6", 28, 10, 0.42, 30, 0.26, 74, 0.66, 0.62, 2.6, 64, 0.48, 1.25, 6,
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 16), Number("clickLifetime", "Click Echo Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.76), Number("particles", "Bloom Layers", PluginParameterSection.Shader, "Shader", 4, 16, 1, 6)]);
+
+    private static ShaderTemplateDefinition BuildArcSparkleSuite() =>
+        BuildSuite("arc-sparkle", "Arc Sparkle", "Magic spark halo with orbiting points and bright click bursts.", "A", "#A78BFA", TemplateEffectKind.ArcSparkle,
+            "#F59E0B", "#FDE68A", "#FDE68A", "#A78BFA", "#FDE68A", 26, 8, 0.34, 26, 0.22, 68, 0.58, 0.68, 2.4, 46, 0.55, 2.1, 9,
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 19), Number("clickLifetime", "Spark Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.64), Number("particles", "Spark Count", PluginParameterSection.Shader, "Shader", 8, 30, 1, 14)]);
+
+    private static ShaderTemplateDefinition BuildCometRibbonSuite() =>
+        BuildSuite("comet-ribbon", "Comet Ribbon", "Inertial comet head with a directional ribbon and clean impact ring.", "C", "#38BDF8", TemplateEffectKind.CometRibbon,
+            "#38BDF8", "#7DD3FC", "#E0F2FE", "#38BDF8", "#E0F2FE", 44, 14, 0.78, 30, 0.3, 96, 0.72, 0.74, 3.2, 64, 0.6, 1.3, 6,
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 12), Number("clickLifetime", "Impact Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.8), Number("particles", "Tail Accents", PluginParameterSection.Shader, "Shader", 4, 20, 1, 8)]);
+
+    private static ShaderTemplateDefinition BuildNebulaDriftSuite() =>
+        BuildSuite("nebula-drift", "Nebula Drift", "Soft cosmic dust cloud with drifting particles and plush click blooms.", "D", "#C084FC", TemplateEffectKind.NebulaDust,
+            "#7DD3FC", "#C084FC", "#E9D5FF", "#7DD3FC", "#C084FC", 30, 11, 0.58, 38, 0.32, 90, 0.8, 0.65, 2.6, 72, 0.44, 1.15, 10,
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 15), Number("clickLifetime", "Bloom Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.88), Number("particles", "Dust Count", PluginParameterSection.Shader, "Shader", 8, 30, 1, 16)]);
+
+    private static ShaderTemplateDefinition BuildFrostHaloSuite() =>
+        BuildSuite("frost-halo", "Frost Halo", "Crystalline halo with orbiting snowflakes and icy tap accents.", "F", "#BFDBFE", TemplateEffectKind.FrostHalo,
+            "#BFDBFE", "#E0F2FE", "#DBEAFE", "#BFDBFE", "#E0F2FE", 24, 8, 0.36, 28, 0.26, 72, 0.72, 0.54, 2.2, 58, 0.4, 1.55, 7,
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 18), Number("clickLifetime", "Snow Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.82), Number("particles", "Snowflake Count", PluginParameterSection.Shader, "Shader", 4, 18, 1, 8)]);
+
+    private static ShaderTemplateDefinition BuildSolarFlareSuite() =>
+        BuildSuite("solar-flare", "Solar Flare", "Hot solar corona with flare spokes and bright expanding taps.", "S", "#F59E0B", TemplateEffectKind.SolarFlare,
+            "#F59E0B", "#FDE68A", "#FED7AA", "#F59E0B", "#FDE68A", 34, 13, 0.62, 36, 0.38, 104, 0.8, 0.78, 3.4, 60, 0.58, 1.6, 8,
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 14), Number("clickLifetime", "Flare Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.86), Number("particles", "Flare Rays", PluginParameterSection.Shader, "Shader", 6, 24, 1, 10)]);
+
+    private static ShaderTemplateDefinition BuildMysticRunesSuite() =>
+        BuildSuite("mystic-runes", "Mystic Runes", "Rotating rune circles with ceremonial taps and enchanted glow.", "R", "#34D399", TemplateEffectKind.MysticRunes,
+            "#34D399", "#A7F3D0", "#D1FAE5", "#34D399", "#A7F3D0", 28, 10, 0.48, 30, 0.28, 78, 0.72, 0.62, 2.8, 64, 0.48, 0.95, 8,
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 17), Number("clickLifetime", "Rune Echo Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.78), Number("particles", "Rune Marks", PluginParameterSection.Shader, "Shader", 6, 24, 1, 12)]);
+
+    private static ShaderTemplateDefinition BuildRibbonWaveSuite() =>
+        BuildSuite("ribbon-wave", "Ribbon Wave", "Smooth ribbon trail with shader-cut waves gliding across the full cursor path.", "W", "#4FD1C5", TemplateEffectKind.CometRibbon,
+            "#4FD1C5", "#8BDAE8", "#D8FBFF", "#67E8F9", "#A5F3FC", 56, 18, 0.92, 28, 0.22, 84, 0.6, 0.55, 2.2, 52, 0.34, 1.3, 6,
+            trailMode: TrailRenderMode.WaveRibbon,
+            waveAmplitude: 9.5,
+            waveFrequency: 2.2,
+            noiseAmount: 0.0,
+            ribbonSoftness: 0.68,
+            extraParameters:
+            [
+                Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 12),
+                Number("clickLifetime", "Impact Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.72),
+                Number("particles", "Tail Accents", PluginParameterSection.Shader, "Shader", 4, 20, 1, 7)
+            ]);
+
+    private static ShaderTemplateDefinition BuildTornCurrentSuite() =>
+        BuildSuite("torn-current", "Torn Current", "Ragged heat-like trail where the ribbon is sliced by waves and soft noise.", "T", "#FB923C", TemplateEffectKind.SolarFlare,
+            "#FB923C", "#FDBA74", "#FED7AA", "#F97316", "#FDE68A", 54, 16, 0.86, 26, 0.18, 92, 0.7, 0.62, 2.4, 56, 0.38, 1.55, 7,
+            trailMode: TrailRenderMode.TornRibbon,
+            waveAmplitude: 8.0,
+            waveFrequency: 2.8,
+            noiseAmount: 4.5,
+            ribbonSoftness: 0.6,
+            extraParameters:
+            [
+                Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 13),
+                Number("clickLifetime", "Flare Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.8),
+                Number("particles", "Flare Rays", PluginParameterSection.Shader, "Shader", 6, 24, 1, 9)
+            ]);
+
+    private static ShaderTemplateDefinition BuildMatrixCascadeSuite() =>
+        BuildSuite("matrix-cascade", "Matrix Cascade", "Instead of a classic trail, green glyph particles cascade behind the cursor with inertial drift.", "X", "#22C55E", TemplateEffectKind.MatrixCascade,
+            "#166534", "#14532D", "#BBF7D0", "#22C55E", "#BBF7D0", 20, 4, 0.3, 18, 0.12, 76, 0.66, 0.5, 1.8, 58, 0.72, 1.8, 10,
+            trailEnabled: false,
+            trailMode: TrailRenderMode.SmoothLine,
+            waveAmplitude: 0,
+            waveFrequency: 1.2,
+            noiseAmount: 0,
+            ribbonSoftness: 0.45,
+            extraParameters:
+            [
+                Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 10),
+                Number("clickLifetime", "Glyph Burst Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.72),
+                Number("particles", "Glyph Density", PluginParameterSection.Shader, "Shader", 6, 30, 1, 18)
+            ]);
 
     private static ShaderTemplateDefinition BuildSuite(
         string id,
         string name,
         string description,
+        string iconGlyph,
+        string accentColor,
         TemplateEffectKind kind,
         string trailColor,
         string glowColor,
@@ -376,58 +378,116 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         double shaderSize,
         double shaderOpacity,
         double shaderMotion,
-        double shaderDetail)
+        double shaderDetail,
+        IReadOnlyList<TemplateParameterDefinition>? extraParameters = null,
+        bool trailEnabled = true,
+        TrailRenderMode trailMode = TrailRenderMode.SmoothLine,
+        double waveAmplitude = 0,
+        double waveFrequency = 1.2,
+        double noiseAmount = 0,
+        double ribbonSoftness = 0.45)
     {
+        var parameters = new List<TemplateParameterDefinition>
+        {
+            Toggle("trailEnabled", "Enable Trail", PluginParameterSection.Trail, "Trail", trailEnabled),
+            Number("trailLength", "Trail Length", PluginParameterSection.Trail, "Trail", 8, 96, 1, trailLength),
+            Number("trailThickness", "Trail Thickness", PluginParameterSection.Trail, "Trail", 2, 28, 0.5, trailThickness),
+            Number("trailFade", "Trail Fade", PluginParameterSection.Trail, "Trail", 0.15, 2.4, 0.05, trailFade),
+            Color("trailColor", "Trail Color", PluginParameterSection.Trail, "Trail", trailColor),
+            Number("trailMode", "Trail Style", PluginParameterSection.Trail, "Trail", 0, 2, 1, (double)trailMode),
+            Number("waveAmplitude", "Wave Amplitude", PluginParameterSection.Trail, "Trail", 0, 18, 0.5, waveAmplitude),
+            Number("waveFrequency", "Wave Frequency", PluginParameterSection.Trail, "Trail", 0.5, 6, 0.1, waveFrequency),
+            Number("noiseAmount", "Noise Amount", PluginParameterSection.Trail, "Trail", 0, 12, 0.25, noiseAmount),
+            Number("ribbonSoftness", "Ribbon Width Bias", PluginParameterSection.Trail, "Trail", 0.1, 1, 0.05, ribbonSoftness),
+
+            Toggle("glowEnabled", "Enable Glow", PluginParameterSection.Glow, "Glow", true),
+            Number("glowSize", "Glow Size", PluginParameterSection.Glow, "Glow", 12, 120, 1, glowSize),
+            Number("glowOpacity", "Glow Opacity", PluginParameterSection.Glow, "Glow", 0.05, 1, 0.01, glowOpacity),
+            Color("glowColor", "Glow Color", PluginParameterSection.Glow, "Glow", glowColor),
+
+            Toggle("rippleEnabled", "Enable Ripple", PluginParameterSection.Ripple, "Ripple", true),
+            Number("rippleRadius", "Ripple Radius", PluginParameterSection.Ripple, "Ripple", 24, 220, 1, rippleRadius),
+            Number("rippleLifetime", "Ripple Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, rippleLifetime),
+            Number("rippleOpacity", "Ripple Opacity", PluginParameterSection.Ripple, "Ripple", 0.05, 1, 0.01, rippleOpacity),
+            Number("rippleThickness", "Ripple Thickness", PluginParameterSection.Ripple, "Ripple", 1, 12, 0.5, rippleThickness),
+            Color("rippleColor", "Ripple Color", PluginParameterSection.Ripple, "Ripple", rippleColor),
+
+            Toggle("shaderEnabled", "Enable Shader Layer", PluginParameterSection.Shader, "Shader", true),
+            Color("primaryColor", "Primary Color", PluginParameterSection.Shader, "Shader", shaderPrimary),
+            Color("accentColor", "Accent Color", PluginParameterSection.Shader, "Shader", shaderAccent),
+            Number("size", "Shader Size", PluginParameterSection.Shader, "Shader", 12, 220, 1, shaderSize),
+            Number("opacity", "Shader Opacity", PluginParameterSection.Shader, "Shader", 0.05, 1, 0.01, shaderOpacity),
+            Number("motion", kind == TemplateEffectKind.OrbitTrail ? "Orbit Speed" : kind == TemplateEffectKind.ClickBurst ? "Burst Lifetime" : "Motion", PluginParameterSection.Shader, "Shader", 0.1, 8, 0.1, shaderMotion),
+            Number("detail", ResolveDetailLabel(kind), PluginParameterSection.Shader, "Shader", 1, 16, 0.5, shaderDetail)
+        };
+
+        if (extraParameters is not null)
+        {
+            parameters.AddRange(extraParameters);
+        }
+
         return new ShaderTemplateDefinition
         {
             Id = id,
             Name = name,
             Description = description,
-            IconGlyph = id switch
-            {
-                "neon-suite" => "✦",
-                "minimal-suite" => "◌",
-                "gaming-suite" => "▣",
-                _ => "✦"
-            },
-            AccentColor = id switch
-            {
-                "neon-suite" => "#54D0C8",
-                "minimal-suite" => "#AAB8C8",
-                "gaming-suite" => "#F59E0B",
-                _ => "#54D0C8"
-            },
+            IconGlyph = iconGlyph,
+            AccentColor = accentColor,
             RuntimeKind = TemplateRuntimeKind.BuiltInTemplate,
             Kind = kind,
-            Trigger = kind == TemplateEffectKind.ClickBurst ? TemplateTrigger.MouseClick : TemplateTrigger.FollowCursor,
-            Parameters =
-            [
-                new TemplateParameterDefinition { Key = "trailEnabled", DisplayName = "Enable Trail", Section = PluginParameterSection.Trail, SectionName = "Trail", Type = TemplateParameterType.Toggle, DefaultBoolean = true },
-                new TemplateParameterDefinition { Key = "trailLength", DisplayName = "Trail Length", Section = PluginParameterSection.Trail, SectionName = "Trail", Type = TemplateParameterType.Number, Min = 8, Max = 96, Step = 1, DefaultNumber = trailLength },
-                new TemplateParameterDefinition { Key = "trailThickness", DisplayName = "Trail Thickness", Section = PluginParameterSection.Trail, SectionName = "Trail", Type = TemplateParameterType.Number, Min = 2, Max = 28, Step = 0.5, DefaultNumber = trailThickness },
-                new TemplateParameterDefinition { Key = "trailFade", DisplayName = "Trail Fade", Section = PluginParameterSection.Trail, SectionName = "Trail", Type = TemplateParameterType.Number, Min = 0.15, Max = 2.4, Step = 0.05, DefaultNumber = trailFade },
-                new TemplateParameterDefinition { Key = "trailColor", DisplayName = "Trail Color", Section = PluginParameterSection.Trail, SectionName = "Trail", Type = TemplateParameterType.Color, DefaultColor = trailColor },
-
-                new TemplateParameterDefinition { Key = "glowEnabled", DisplayName = "Enable Glow", Section = PluginParameterSection.Glow, SectionName = "Glow", Type = TemplateParameterType.Toggle, DefaultBoolean = true },
-                new TemplateParameterDefinition { Key = "glowSize", DisplayName = "Glow Size", Section = PluginParameterSection.Glow, SectionName = "Glow", Type = TemplateParameterType.Number, Min = 12, Max = 120, Step = 1, DefaultNumber = glowSize },
-                new TemplateParameterDefinition { Key = "glowOpacity", DisplayName = "Glow Opacity", Section = PluginParameterSection.Glow, SectionName = "Glow", Type = TemplateParameterType.Number, Min = 0.05, Max = 1, Step = 0.01, DefaultNumber = glowOpacity },
-                new TemplateParameterDefinition { Key = "glowColor", DisplayName = "Glow Color", Section = PluginParameterSection.Glow, SectionName = "Glow", Type = TemplateParameterType.Color, DefaultColor = glowColor },
-
-                new TemplateParameterDefinition { Key = "rippleEnabled", DisplayName = "Enable Ripple", Section = PluginParameterSection.Ripple, SectionName = "Ripple", Type = TemplateParameterType.Toggle, DefaultBoolean = true },
-                new TemplateParameterDefinition { Key = "rippleRadius", DisplayName = "Ripple Radius", Section = PluginParameterSection.Ripple, SectionName = "Ripple", Type = TemplateParameterType.Number, Min = 24, Max = 220, Step = 1, DefaultNumber = rippleRadius },
-                new TemplateParameterDefinition { Key = "rippleLifetime", DisplayName = "Ripple Lifetime", Section = PluginParameterSection.Ripple, SectionName = "Ripple", Type = TemplateParameterType.Number, Min = 0.2, Max = 2.5, Step = 0.05, DefaultNumber = rippleLifetime },
-                new TemplateParameterDefinition { Key = "rippleOpacity", DisplayName = "Ripple Opacity", Section = PluginParameterSection.Ripple, SectionName = "Ripple", Type = TemplateParameterType.Number, Min = 0.05, Max = 1, Step = 0.01, DefaultNumber = rippleOpacity },
-                new TemplateParameterDefinition { Key = "rippleThickness", DisplayName = "Ripple Thickness", Section = PluginParameterSection.Ripple, SectionName = "Ripple", Type = TemplateParameterType.Number, Min = 1, Max = 12, Step = 0.5, DefaultNumber = rippleThickness },
-                new TemplateParameterDefinition { Key = "rippleColor", DisplayName = "Ripple Color", Section = PluginParameterSection.Ripple, SectionName = "Ripple", Type = TemplateParameterType.Color, DefaultColor = rippleColor },
-
-                new TemplateParameterDefinition { Key = "shaderEnabled", DisplayName = "Enable Shader Layer", Section = PluginParameterSection.Shader, SectionName = "Shader", Type = TemplateParameterType.Toggle, DefaultBoolean = true },
-                new TemplateParameterDefinition { Key = "primaryColor", DisplayName = "Primary Color", Section = PluginParameterSection.Shader, SectionName = "Shader", Type = TemplateParameterType.Color, DefaultColor = shaderPrimary },
-                new TemplateParameterDefinition { Key = "accentColor", DisplayName = "Accent Color", Section = PluginParameterSection.Shader, SectionName = "Shader", Type = TemplateParameterType.Color, DefaultColor = shaderAccent },
-                new TemplateParameterDefinition { Key = "size", DisplayName = "Shader Size", Section = PluginParameterSection.Shader, SectionName = "Shader", Type = TemplateParameterType.Number, Min = 12, Max = 220, Step = 1, DefaultNumber = shaderSize },
-                new TemplateParameterDefinition { Key = "opacity", DisplayName = "Shader Opacity", Section = PluginParameterSection.Shader, SectionName = "Shader", Type = TemplateParameterType.Number, Min = 0.05, Max = 1, Step = 0.01, DefaultNumber = shaderOpacity },
-                new TemplateParameterDefinition { Key = "motion", DisplayName = kind == TemplateEffectKind.OrbitTrail ? "Orbit Speed" : kind == TemplateEffectKind.ClickBurst ? "Burst Lifetime" : "Pulse Speed", Section = PluginParameterSection.Shader, SectionName = "Shader", Type = TemplateParameterType.Number, Min = 0.1, Max = 8, Step = 0.1, DefaultNumber = shaderMotion },
-                new TemplateParameterDefinition { Key = "detail", DisplayName = kind == TemplateEffectKind.OrbitTrail ? "Dot Size" : "Ring Thickness", Section = PluginParameterSection.Shader, SectionName = "Shader", Type = TemplateParameterType.Number, Min = 1, Max = 16, Step = 0.5, DefaultNumber = shaderDetail }
-            ]
+            Trigger = TemplateTrigger.FollowCursor,
+            Parameters = parameters
         };
     }
+
+    private static string ResolveDetailLabel(TemplateEffectKind kind) => kind switch
+    {
+        TemplateEffectKind.OrbitTrail => "Dot Size",
+        TemplateEffectKind.PrismBloom => "Bloom Layers",
+        TemplateEffectKind.ArcSparkle => "Spark Density",
+        TemplateEffectKind.CometRibbon => "Tail Width",
+        TemplateEffectKind.NebulaDust => "Dust Density",
+        TemplateEffectKind.FrostHalo => "Shard Count",
+        TemplateEffectKind.SolarFlare => "Flare Count",
+        TemplateEffectKind.MysticRunes => "Rune Density",
+        TemplateEffectKind.MatrixCascade => "Glyph Streams",
+        TemplateEffectKind.ClickBurst => "Burst Thickness",
+        _ => "Ring Thickness"
+    };
+
+    private static TemplateParameterDefinition Number(string key, string displayName, PluginParameterSection section, string sectionName, double min, double max, double step, double defaultNumber) =>
+        new()
+        {
+            Key = key,
+            DisplayName = displayName,
+            Section = section,
+            SectionName = sectionName,
+            Type = TemplateParameterType.Number,
+            Min = min,
+            Max = max,
+            Step = step,
+            DefaultNumber = defaultNumber
+        };
+
+    private static TemplateParameterDefinition Color(string key, string displayName, PluginParameterSection section, string sectionName, string defaultColor) =>
+        new()
+        {
+            Key = key,
+            DisplayName = displayName,
+            Section = section,
+            SectionName = sectionName,
+            Type = TemplateParameterType.Color,
+            DefaultColor = defaultColor
+        };
+
+    private static TemplateParameterDefinition Toggle(string key, string displayName, PluginParameterSection section, string sectionName, bool defaultBoolean) =>
+        new()
+        {
+            Key = key,
+            DisplayName = displayName,
+            Section = section,
+            SectionName = sectionName,
+            Type = TemplateParameterType.Toggle,
+            DefaultBoolean = defaultBoolean
+        };
 }
