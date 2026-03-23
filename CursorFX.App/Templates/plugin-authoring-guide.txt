@@ -1,15 +1,15 @@
-CursorFX Plugin Authoring Guide
+Fluxor Plugin Authoring Guide
 ===============================
 
 1. Core idea
 -------------
-CursorFX uses two files for a custom plugin:
+Fluxor uses two files for a custom plugin:
 
 - C# source or compiled DLL
 - JSON manifest (.cursorfx-plugin.json)
 
 The C# side contains the rendering logic.
-The JSON side describes how CursorFX should expose settings in the UI and how it should locate the plugin runtime.
+The JSON side describes how Fluxor should expose settings in the UI and how it should locate the plugin runtime.
 
 
 2. Responsibility split
@@ -278,15 +278,15 @@ Examples:
 -----------------------------
 
 Option A: import C# + JSON together
-- Open CursorFX
+- Open Fluxor
 - Click Import Plugin
 - Choose the .cs file
 - Choose the matching .cursorfx-plugin.json file
 - Confirm import
 
 Option B: import only C#
-- CursorFX builds the source file
-- CursorFX generates a basic manifest
+- Fluxor builds the source file
+- Fluxor generates a basic manifest
 - Then you refine the generated JSON manually
 
 Option C: import only JSON
