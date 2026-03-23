@@ -22,6 +22,9 @@ public static class NativeMethods
     public const uint CursorShowing = 0x00000001;
     public const int VkLbutton = 0x01;
     public const int VkRbutton = 0x02;
+    public const uint SwpNoZorder = 0x0004;
+    public const uint SwpNoActivate = 0x0010;
+    public static readonly IntPtr HwndTopmost = new(-1);
 
     [DllImport("user32.dll")]
     public static extern bool GetCursorPos(out POINT lpPoint);
@@ -58,6 +61,16 @@ public static class NativeMethods
 
     [DllImport("user32.dll")]
     public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SetWindowPos(
+        IntPtr hWnd,
+        IntPtr hWndInsertAfter,
+        int X,
+        int Y,
+        int cx,
+        int cy,
+        uint uFlags);
 
     [DllImport("user32.dll")]
     public static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);

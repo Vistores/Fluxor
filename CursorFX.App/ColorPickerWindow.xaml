@@ -14,10 +14,10 @@
         <Border DockPanel.Dock="Bottom"
                 Margin="0,16,0,0"
                 Padding="0,12,0,0"
-                BorderBrush="#1E293B"
+                BorderBrush="{StaticResource SurfaceBorderBrush}"
                 BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel" Click="OnCancelClick" />
+                <Button Content="Cancel" Style="{StaticResource SecondaryButtonStyle}" Click="OnCancelClick" />
                 <Button Content="OK" Click="OnAcceptClick" />
             </StackPanel>
         </Border>
@@ -28,7 +28,7 @@
                 <Border Margin="0,16,0,16"
                         Height="64"
                         CornerRadius="12"
-                        BorderBrush="#334155"
+                        BorderBrush="{StaticResource SurfaceBorderBrush}"
                         BorderThickness="1"
                         Background="{Binding PreviewBrush}" />
 

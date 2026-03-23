@@ -16,8 +16,8 @@
         <DataTemplate DataType="{x:Type vm:ShaderTemplateParameterViewModel}">
             <Border Margin="0,0,0,12"
                     Padding="16"
-                    Background="#0B1623"
-                    BorderBrush="#234360"
+                    Background="{StaticResource SurfaceInsetBrush}"
+                    BorderBrush="{StaticResource SurfaceBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="16">
                 <StackPanel>
@@ -47,7 +47,7 @@
                                     Height="22"
                                     CornerRadius="11"
                                     Background="{Binding ColorValue}"
-                                    BorderBrush="#F8FAFC"
+                                    BorderBrush="{StaticResource AccentStrongBrush}"
                                     BorderThickness="1" />
                             <TextBlock Margin="10,0,0,0"
                                        VerticalAlignment="Center"
@@ -56,6 +56,7 @@
                         </StackPanel>
                         <Button DockPanel.Dock="Right"
                                 Content="Choose"
+                                Style="{StaticResource SecondaryButtonStyle}"
                                 Command="{Binding PickColorCommand}" />
                     </DockPanel>
 
@@ -83,7 +84,7 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Border Width="42"
+                        <Border Width="42"
                         Height="42"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Top"
@@ -96,7 +97,7 @@
                                    VerticalAlignment="Center"
                                    FontSize="20"
                                    FontWeight="Bold"
-                                   Foreground="#08131F"
+                                   Foreground="#07131F"
                                    Text="{Binding IconGlyph}">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
@@ -120,8 +121,8 @@
                         <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding Name}" />
                         <Border Margin="10,0,0,0"
                                 Padding="8,3"
-                                Background="#143148"
-                                BorderBrush="#295D72"
+                                Background="{StaticResource SurfaceRaisedBrush}"
+                                BorderBrush="{StaticResource SurfaceBorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="999">
                             <TextBlock FontSize="11"
@@ -145,7 +146,7 @@
             <ColumnDefinition Width="1.05*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0"
+                <Border Grid.Column="0"
                 Margin="0,0,18,0"
                 Padding="22"
                 Background="{StaticResource CardBackgroundBrush}"
@@ -159,8 +160,8 @@
                 </Grid.RowDefinitions>
 
                 <Border Padding="22"
-                        Background="#102337"
-                        BorderBrush="#295B76"
+                        Background="{StaticResource SurfaceRaisedBrush}"
+                        BorderBrush="{StaticResource SurfaceBorderBrush}"
                         BorderThickness="1"
                         CornerRadius="22">
                     <Grid>
@@ -178,7 +179,7 @@
                                        Text="Choose a style, tune it live, and keep cursor effects stable without visual overload." />
                         </StackPanel>
                         <WrapPanel Grid.Column="1" VerticalAlignment="Top">
-                            <Button Content="Application Settings" Command="{Binding OpenSettingsCommand}" />
+                            <Button Content="Application Settings" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding OpenSettingsCommand}" />
                             <Button Content="Import Plugin" Command="{Binding ImportTemplateCommand}" />
                         </WrapPanel>
                     </Grid>
@@ -211,8 +212,8 @@
                                         <Border Width="58"
                                                 Height="58"
                                                 Margin="0,0,14,0"
-                                                Background="#132437"
-                                                BorderBrush="#32506E"
+                                                Background="{StaticResource SurfaceRaisedBrush}"
+                                                BorderBrush="{StaticResource SurfaceBorderBrush}"
                                                 BorderThickness="1"
                                                 CornerRadius="18"
                                                 ClipToBounds="True">
@@ -239,8 +240,8 @@
                                             </Grid>
                                         </Border>
                                         <StackPanel>
-                                            <Button Content="Choose Icon" Command="{Binding ChoosePluginIconCommand}" />
-                                            <Button Content="Clear Icon" Command="{Binding ClearPluginIconCommand}" />
+                                            <Button Content="Choose Icon" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ChoosePluginIconCommand}" />
+                                            <Button Content="Clear Icon" Style="{StaticResource GhostButtonStyle}" Command="{Binding ClearPluginIconCommand}" />
                                         </StackPanel>
                                     </StackPanel>
                                     <TextBlock Margin="0,16,0,0"
@@ -253,13 +254,11 @@
                                                Text="{Binding SelectedPluginDescription}" />
                                     <WrapPanel Margin="0,12,0,0">
                                         <Button Content="Save Settings" Command="{Binding SaveSettingsCommand}" />
-                                        <Button Content="Reset Profile" Command="{Binding ResetPluginSettingsCommand}" />
-                                        <Button Content="Open Plugin Folder" Command="{Binding OpenPluginFolderCommand}" />
+                                        <Button Content="Reset Profile" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ResetPluginSettingsCommand}" />
+                                        <Button Content="Open Plugin Folder" Style="{StaticResource SecondaryButtonStyle}" Command="{Binding OpenPluginFolderCommand}" />
                                         <Button Content="Delete Plugin"
                                                 Command="{Binding DeletePluginCommand}"
-                                                Background="{StaticResource DangerBrush}"
-                                                BorderBrush="#B91C1C"
-                                                Foreground="White" />
+                                                Style="{StaticResource DangerButtonStyle}" />
                                     </WrapPanel>
                                 </StackPanel>
                             </Grid>
@@ -275,6 +274,7 @@
                                 <Button Margin="0,14,0,0"
                                         HorizontalAlignment="Left"
                                         Content="Open Authoring Guide"
+                                        Style="{StaticResource SecondaryButtonStyle}"
                                         Command="{Binding OpenPluginAuthoringGuideCommand}" />
                             </StackPanel>
                         </Border>

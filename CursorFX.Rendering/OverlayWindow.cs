@@ -111,6 +111,17 @@ public sealed class OverlayWindow : IDisposable
             return screenPixels;
         }
 
+        if (_viewports.TryGetValue(layout.Id, out var viewport))
+        {
+            var local = viewport.PointFromScreenSafe(screenPixels);
+            if (local.HasValue)
+            {
+                return new Point(
+                    layout.LogicalBounds.Left + local.Value.X,
+                    layout.LogicalBounds.Top + local.Value.Y);
+            }
+        }
+
         return new Point(
             layout.LogicalBounds.Left + ((screenPixels.X - layout.PhysicalBounds.Left) * 96.0 / layout.DpiX),
             layout.LogicalBounds.Top + ((screenPixels.Y - layout.PhysicalBounds.Top) * 96.0 / layout.DpiY));
@@ -171,151 +182,32 @@ public sealed class OverlayWindow : IDisposable
                 monitorInfo.rcMonitor.Right - monitorInfo.rcMonitor.Left,
                 monitorInfo.rcMonitor.Bottom - monitorInfo.rcMonitor.Top);
 
+            var logical = new Rect(
+                physical.Left * 96.0 / dpiX,
+                physical.Top * 96.0 / dpiY,
+                physical.Width * 96.0 / dpiX,
+                physical.Height * 96.0 / dpiY);
+
             layouts.Add(new MonitorLayout(
                 $"monitor-{physical.Left}-{physical.Top}-{physical.Width}-{physical.Height}",
                 physical,
-                Rect.Empty,
+                logical,
                 dpiX,
                 dpiY,
                 (monitorInfo.dwFlags & NativeMethods.MonitorinfofPrimary) == NativeMethods.MonitorinfofPrimary));
             return true;
         }, IntPtr.Zero);
 
-        if (layouts.Count == 0)
-        {
-            return layouts;
-        }
-
-        var primarySource = layouts.FirstOrDefault(layout => layout.IsPrimary) ?? layouts[0];
-        var resolved = new List<MonitorLayout>
-        {
-            primarySource with
-            {
-                LogicalBounds = new Rect(
-                    0,
-                    0,
-                    primarySource.PhysicalBounds.Width * 96.0 / primarySource.DpiX,
-                    primarySource.PhysicalBounds.Height * 96.0 / primarySource.DpiY)
-            }
-        };
-
-        var pending = layouts.Where(layout => layout.Id != primarySource.Id).ToList();
-        while (pending.Count > 0)
-        {
-            var progress = false;
-            for (var i = pending.Count - 1; i >= 0; i--)
-            {
-                var placement = TryResolve(pending[i], resolved);
-                if (placement is null)
-                {
-                    continue;
-                }
-
-                resolved.Add(placement);
-                pending.RemoveAt(i);
-                progress = true;
-            }
-
-            if (progress)
-            {
-                continue;
-            }
-
-            foreach (var candidate in pending)
-            {
-                resolved.Add(candidate with
-                {
-                    LogicalBounds = new Rect(
-                        (candidate.PhysicalBounds.Left - primarySource.PhysicalBounds.Left) * 96.0 / candidate.DpiX,
-                        (candidate.PhysicalBounds.Top - primarySource.PhysicalBounds.Top) * 96.0 / candidate.DpiY,
-                        candidate.PhysicalBounds.Width * 96.0 / candidate.DpiX,
-                        candidate.PhysicalBounds.Height * 96.0 / candidate.DpiY)
-                });
-            }
-
-            break;
-        }
-
-        var minLeft = resolved.Min(layout => layout.LogicalBounds.Left);
-        var minTop = resolved.Min(layout => layout.LogicalBounds.Top);
-        return resolved.Select(layout => layout with
-        {
-            LogicalBounds = new Rect(
-                layout.LogicalBounds.Left - minLeft,
-                layout.LogicalBounds.Top - minTop,
-                layout.LogicalBounds.Width,
-                layout.LogicalBounds.Height)
-        }).ToList();
+        return layouts;
     }
-
-    private static MonitorLayout? TryResolve(MonitorLayout candidate, IReadOnlyList<MonitorLayout> resolved)
-    {
-        foreach (var anchor in resolved)
-        {
-            var logicalWidth = candidate.PhysicalBounds.Width * 96.0 / candidate.DpiX;
-            var logicalHeight = candidate.PhysicalBounds.Height * 96.0 / candidate.DpiY;
-
-            if (candidate.PhysicalBounds.Left == anchor.PhysicalBounds.Right && OverlapsVertically(candidate.PhysicalBounds, anchor.PhysicalBounds))
-            {
-                return candidate with
-                {
-                    LogicalBounds = new Rect(
-                        anchor.LogicalBounds.Right,
-                        anchor.LogicalBounds.Top + ((candidate.PhysicalBounds.Top - anchor.PhysicalBounds.Top) * 96.0 / candidate.DpiY),
-                        logicalWidth,
-                        logicalHeight)
-                };
-            }
-
-            if (candidate.PhysicalBounds.Right == anchor.PhysicalBounds.Left && OverlapsVertically(candidate.PhysicalBounds, anchor.PhysicalBounds))
-            {
-                return candidate with
-                {
-                    LogicalBounds = new Rect(
-                        anchor.LogicalBounds.Left - logicalWidth,
-                        anchor.LogicalBounds.Top + ((candidate.PhysicalBounds.Top - anchor.PhysicalBounds.Top) * 96.0 / candidate.DpiY),
-                        logicalWidth,
-                        logicalHeight)
-                };
-            }
-
-            if (candidate.PhysicalBounds.Top == anchor.PhysicalBounds.Bottom && OverlapsHorizontally(candidate.PhysicalBounds, anchor.PhysicalBounds))
-            {
-                return candidate with
-                {
-                    LogicalBounds = new Rect(
-                        anchor.LogicalBounds.Left + ((candidate.PhysicalBounds.Left - anchor.PhysicalBounds.Left) * 96.0 / candidate.DpiX),
-                        anchor.LogicalBounds.Bottom,
-                        logicalWidth,
-                        logicalHeight)
-                };
-            }
-
-            if (candidate.PhysicalBounds.Bottom == anchor.PhysicalBounds.Top && OverlapsHorizontally(candidate.PhysicalBounds, anchor.PhysicalBounds))
-            {
-                return candidate with
-                {
-                    LogicalBounds = new Rect(
-                        anchor.LogicalBounds.Left + ((candidate.PhysicalBounds.Left - anchor.PhysicalBounds.Left) * 96.0 / candidate.DpiX),
-                        anchor.LogicalBounds.Top - logicalHeight,
-                        logicalWidth,
-                        logicalHeight)
-                };
-            }
-        }
-
-        return null;
-    }
-
-    private static bool OverlapsVertically(Rect a, Rect b) => a.Top < b.Bottom && a.Bottom > b.Top;
-
-    private static bool OverlapsHorizontally(Rect a, Rect b) => a.Left < b.Right && a.Right > b.Left;
 
     private sealed record MonitorLayout(string Id, Rect PhysicalBounds, Rect LogicalBounds, double DpiX, double DpiY, bool IsPrimary);
 
     private sealed class OverlayViewportWindow : Window
     {
         private readonly RenderSurface _renderSurface;
+        private Rect _pendingPhysicalBounds;
+        private bool _sourceReady;
 
         public OverlayViewportWindow(EffectManager effectManager)
         {
@@ -340,11 +232,13 @@ public sealed class OverlayWindow : IDisposable
         public void UpdateLayout(MonitorLayout layout, Visibility visibility)
         {
             _renderSurface.RenderOffset = new Vector(layout.LogicalBounds.Left, layout.LogicalBounds.Top);
-            Left = layout.PhysicalBounds.Left * 96.0 / layout.DpiX;
-            Top = layout.PhysicalBounds.Top * 96.0 / layout.DpiY;
             Width = layout.PhysicalBounds.Width * 96.0 / layout.DpiX;
             Height = layout.PhysicalBounds.Height * 96.0 / layout.DpiY;
+            Left = layout.LogicalBounds.Left;
+            Top = layout.LogicalBounds.Top;
+            _pendingPhysicalBounds = layout.PhysicalBounds;
             Visibility = visibility;
+            ApplyPhysicalPlacement();
             EnsureTopmost();
             _renderSurface.InvalidateVisual();
         }
@@ -360,6 +254,16 @@ public sealed class OverlayWindow : IDisposable
             Topmost = true;
         }
 
+        public Point? PointFromScreenSafe(Point screenPixels)
+        {
+            if (!_sourceReady)
+            {
+                return null;
+            }
+
+            return PointFromScreen(screenPixels);
+        }
+
         private void OnSourceInitialized(object? sender, EventArgs e)
         {
             if (PresentationSource.FromVisual(this) is not HwndSource source)
@@ -367,6 +271,7 @@ public sealed class OverlayWindow : IDisposable
                 return;
             }
 
+            _sourceReady = true;
             var hwnd = source.Handle;
             var currentStyle = NativeMethods.GetWindowLongPtr(hwnd, NativeMethods.GwlExStyle);
             var newStyle = currentStyle.ToInt64() |
@@ -375,7 +280,25 @@ public sealed class OverlayWindow : IDisposable
                            NativeMethods.WsExNoActivate;
 
             NativeMethods.SetWindowLongPtr(hwnd, NativeMethods.GwlExStyle, new IntPtr(newStyle));
+            ApplyPhysicalPlacement();
             EnsureTopmost();
+        }
+
+        private void ApplyPhysicalPlacement()
+        {
+            if (!_sourceReady || PresentationSource.FromVisual(this) is not HwndSource source)
+            {
+                return;
+            }
+
+            NativeMethods.SetWindowPos(
+                source.Handle,
+                NativeMethods.HwndTopmost,
+                (int)Math.Round(_pendingPhysicalBounds.Left),
+                (int)Math.Round(_pendingPhysicalBounds.Top),
+                (int)Math.Round(_pendingPhysicalBounds.Width),
+                (int)Math.Round(_pendingPhysicalBounds.Height),
+                NativeMethods.SwpNoActivate);
         }
     }
 }

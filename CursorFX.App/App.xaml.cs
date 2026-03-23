@@ -1,5 +1,7 @@
 using System.Windows;
 using System.IO;
+using System.Threading;
+using System.Windows.Threading;
 using CursorFX.App.Services;
 using CursorFX.App.ViewModels;
 using CursorFX.Core.Interfaces;
@@ -13,6 +15,8 @@ namespace CursorFX.App;
 public partial class App : System.Windows.Application
 {
     private static readonly string AppIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "FluxorIco.ico");
+    private static readonly string SingleInstanceMutexName = "Fluxor.SingleInstance";
+    private Mutex? _singleInstanceMutex;
     private JsonSettingsStore? _settingsStore;
     private CursorFxEngine? _engine;
     private MainViewModel? _mainViewModel;
@@ -28,6 +32,14 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        _singleInstanceMutex = new Mutex(true, SingleInstanceMutexName, out var createdNew);
+        if (!createdNew)
+        {
+            System.Windows.MessageBox.Show("Fluxor is already running.", "Fluxor", MessageBoxButton.OK, MessageBoxImage.Information);
+            Shutdown();
+            return;
+        }
 
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
@@ -82,9 +94,8 @@ public partial class App : System.Windows.Application
 
         MainWindow = mainWindow;
         _trayIconService = new TrayIconService(ShowMainWindow, ExitApplication, AppIconPath);
-        _overlayWindow.Show();
-        _engine.Start();
         mainWindow.Show();
+        Dispatcher.BeginInvoke(new Action(StartRuntimeSafely), DispatcherPriority.Background);
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -97,7 +108,26 @@ public partial class App : System.Windows.Application
         _mouseTracker?.Dispose();
         _customPluginEffect?.Dispose();
         _overlayWindow?.Close();
+        _singleInstanceMutex?.ReleaseMutex();
+        _singleInstanceMutex?.Dispose();
         base.OnExit(e);
+    }
+
+    private void StartRuntimeSafely()
+    {
+        try
+        {
+            _overlayWindow?.Show();
+            _engine?.Start();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"Fluxor could not fully initialize cursor rendering.\n\n{ex.Message}",
+                "Fluxor Startup Warning",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
     }
 
     private void OnMainWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)

@@ -14,94 +14,94 @@
         <Border DockPanel.Dock="Bottom"
                 Margin="0,16,0,0"
                 Padding="0,12,0,0"
-                BorderBrush="#24415D"
+                BorderBrush="{StaticResource SurfaceBorderBrush}"
                 BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel" Click="OnCancelClick" />
+                <Button Content="Cancel" Style="{StaticResource SecondaryButtonStyle}" Click="OnCancelClick" />
                 <Button Content="Import Plugin" Click="OnImportClick" />
             </StackPanel>
         </Border>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel>
-            <TextBlock FontSize="24" FontWeight="SemiBold" Text="Import Plugin" />
-            <TextBlock Margin="0,10,0,18"
-                       Foreground="{StaticResource MutedTextBrush}"
-                       TextWrapping="Wrap"
-                       Text="Choose a C# source file and, optionally, a JSON manifest. If C# is selected CursorFX will compile it automatically. If only JSON is selected CursorFX will import the profile manifest." />
+            <StackPanel>
+                <TextBlock FontSize="24" FontWeight="SemiBold" Text="Import Plugin" />
+                <TextBlock Margin="0,10,0,18"
+                           Foreground="{StaticResource MutedTextBrush}"
+                           TextWrapping="Wrap"
+                           Text="Choose a C# source file and, optionally, a JSON manifest. If C# is selected Fluxor will compile it automatically. If only JSON is selected Fluxor will import the profile manifest." />
 
-            <Border Padding="16" Background="#0D1726" BorderBrush="#24415D" BorderThickness="1" CornerRadius="16">
-                <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="C# Source File" />
-                    <TextBox Margin="0,8,0,0" IsReadOnly="True" Text="{Binding SourcePath, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Content="Browse C# File" Click="OnBrowseSourceClick" HorizontalAlignment="Left" />
-                </StackPanel>
-            </Border>
-
-            <Border Margin="0,16,0,0" Padding="16" Background="#0D1726" BorderBrush="#24415D" BorderThickness="1" CornerRadius="16">
-                <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="JSON Manifest File" />
-                    <TextBox Margin="0,8,0,0" IsReadOnly="True" Text="{Binding ManifestPath, UpdateSourceTrigger=PropertyChanged}" />
-                    <Button Content="Browse JSON File" Click="OnBrowseManifestClick" HorizontalAlignment="Left" />
-                </StackPanel>
-            </Border>
-
-            <Border Margin="0,16,0,0" Padding="16" Background="#0D1726" BorderBrush="#24415D" BorderThickness="1" CornerRadius="16">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="84" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <Border Width="68"
-                            Height="68"
-                            VerticalAlignment="Top"
-                            Background="#132437"
-                            BorderBrush="#32506E"
-                            BorderThickness="1"
-                            CornerRadius="16"
-                            ClipToBounds="True">
-                        <Grid>
-                            <Image Source="{Binding IconPath}" Stretch="UniformToFill" />
-                            <TextBlock HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       Foreground="{StaticResource MutedTextBrush}"
-                                       Text="Icon">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IconPath}" Value="">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding IconPath}" Value="{x:Null}">
-                                                <Setter Property="Visibility" Value="Visible" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Grid>
-                    </Border>
-
-                    <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                        <TextBlock FontWeight="SemiBold" Text="Plugin Icon" />
-                        <TextBlock Margin="0,8,0,0"
-                                   Foreground="{StaticResource MutedTextBrush}"
-                                   TextWrapping="Wrap"
-                                   Text="Optional image for the plugin card. Fluxor will copy it to the plugin catalog and render it as a square icon." />
-                        <TextBlock Margin="0,8,0,0"
-                                   Foreground="{StaticResource AccentMutedBrush}"
-                                   TextWrapping="Wrap"
-                                   Text="{Binding IconFileName}" />
-                        <WrapPanel Margin="0,10,0,0">
-                            <Button Content="Choose Icon" Click="OnBrowseIconClick" />
-                            <Button Content="Clear Icon" Click="OnClearIconClick" />
-                        </WrapPanel>
+                <Border Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="16">
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="C# Source File" />
+                        <TextBox Margin="0,8,0,0" IsReadOnly="True" Text="{Binding SourcePath, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Content="Browse C# File" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseSourceClick" HorizontalAlignment="Left" />
                     </StackPanel>
-                </Grid>
-            </Border>
-        </StackPanel>
+                </Border>
+
+                <Border Margin="0,16,0,0" Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="16">
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="JSON Manifest File" />
+                        <TextBox Margin="0,8,0,0" IsReadOnly="True" Text="{Binding ManifestPath, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Content="Browse JSON File" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseManifestClick" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,16,0,0" Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="84" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Width="68"
+                                Height="68"
+                                VerticalAlignment="Top"
+                                Background="{StaticResource SurfaceRaisedBrush}"
+                                BorderBrush="{StaticResource SurfaceBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="16"
+                                ClipToBounds="True">
+                            <Grid>
+                                <Image Source="{Binding IconPath}" Stretch="UniformToFill" />
+                                <TextBlock HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           Text="Icon">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IconPath}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IconPath}" Value="{x:Null}">
+                                                    <Setter Property="Visibility" Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                            <TextBlock FontWeight="SemiBold" Text="Plugin Icon" />
+                            <TextBlock Margin="0,8,0,0"
+                                       Foreground="{StaticResource MutedTextBrush}"
+                                       TextWrapping="Wrap"
+                                       Text="Optional image for the plugin card. Fluxor will copy it to the plugin catalog and render it as a square icon." />
+                            <TextBlock Margin="0,8,0,0"
+                                       Foreground="{StaticResource AccentMutedBrush}"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding IconFileName}" />
+                            <WrapPanel Margin="0,10,0,0">
+                                <Button Content="Choose Icon" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseIconClick" />
+                                <Button Content="Clear Icon" Style="{StaticResource GhostButtonStyle}" Click="OnClearIconClick" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
         </ScrollViewer>
     </DockPanel>
 </Window>

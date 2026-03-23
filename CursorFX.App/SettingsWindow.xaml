@@ -32,7 +32,7 @@
                             <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Startup" />
                             <CheckBox Margin="0,14,0,0"
                                       IsChecked="{Binding LaunchOnStartup, RelativeSource={RelativeSource AncestorType=Window}}"
-                                      Content="Launch CursorFX when Windows starts" />
+                                      Content="Launch Fluxor when Windows starts" />
                         </StackPanel>
                     </Border>
 
@@ -41,7 +41,7 @@
                             <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Background Mode" />
                             <CheckBox Margin="0,14,0,0"
                                       IsChecked="{Binding RunInBackground, RelativeSource={RelativeSource AncestorType=Window}}"
-                                      Content="Keep CursorFX running in the tray when the main window is closed or minimized" />
+                                      Content="Keep Fluxor running in the tray when the main window is closed or minimized" />
                         </StackPanel>
                     </Border>
 
@@ -61,7 +61,7 @@
                     Margin="0,16,0,0"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right">
-            <Button MinWidth="96" Content="Cancel" IsCancel="True" />
+            <Button MinWidth="96" Content="Cancel" Style="{StaticResource SecondaryButtonStyle}" IsCancel="True" />
             <Button MinWidth="96" Content="Apply" IsDefault="True" Click="OnApplyClick" />
         </StackPanel>
     </Grid>
