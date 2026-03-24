@@ -54,17 +54,17 @@
 
         <Style TargetType="CheckBox">
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="Margin" Value="0,0,0,8" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
 
         <Style TargetType="Slider">
-            <Setter Property="Margin" Value="0,0,0,14" />
+            <Setter Property="Margin" Value="0,0,0,10" />
         </Style>
 
         <Style TargetType="TextBox">
-            <Setter Property="Margin" Value="0,0,0,12" />
-            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="Padding" Value="10,8" />
             <Setter Property="Background" Value="{StaticResource SurfaceInsetBrush}" />
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource SurfaceBorderBrush}" />
@@ -72,17 +72,18 @@
         </Style>
 
         <Style TargetType="ComboBox">
-            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="Margin" Value="0,0,0,10" />
         </Style>
 
         <Style x:Key="BaseButtonStyle" TargetType="Button">
-            <Setter Property="Padding" Value="16,10" />
-            <Setter Property="Margin" Value="0,8,10,0" />
+            <Setter Property="Padding" Value="13,8" />
+            <Setter Property="Margin" Value="0,6,8,0" />
             <Setter Property="Background" Value="{StaticResource AccentBrush}" />
             <Setter Property="Foreground" Value="#07131F" />
             <Setter Property="BorderBrush" Value="{StaticResource AccentBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
                 <Setter.Value>
@@ -91,7 +92,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="14"
+                                CornerRadius="12"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter Margin="{TemplateBinding Padding}"
                                               HorizontalAlignment="Center"
@@ -139,17 +140,17 @@
 
         <Style TargetType="ListBoxItem">
             <Setter Property="Padding" Value="0" />
-            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="Margin" Value="0,0,0,8" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
                         <Border x:Name="Root"
-                                Padding="16"
+                                Padding="12"
                                 Background="{StaticResource SurfaceBrush}"
                                 BorderBrush="{StaticResource SurfaceBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="16">
+                                CornerRadius="14">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -168,18 +169,64 @@
         </Style>
 
         <Style x:Key="PanelCardStyle" TargetType="Border">
-            <Setter Property="Padding" Value="18" />
+            <Setter Property="Padding" Value="14" />
             <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource SurfaceBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="CornerRadius" Value="16" />
             <Setter Property="Effect" Value="{StaticResource PanelShadowEffect}" />
         </Style>
 
         <Style x:Key="SectionTitleTextStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontSize" Value="15" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+        </Style>
+
+        <Style TargetType="Expander">
+            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+            <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+        </Style>
+
+        <Style TargetType="Expander" x:Key="CompactExpanderStyle">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <Border Background="{StaticResource SurfaceBrush}"
+                                BorderBrush="{StaticResource SurfaceBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="16">
+                            <DockPanel>
+                                <ToggleButton DockPanel.Dock="Top"
+                                              Background="Transparent"
+                                              BorderBrush="{x:Null}"
+                                              Foreground="{StaticResource PrimaryTextBrush}"
+                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                              Padding="14,12"
+                                              FontWeight="SemiBold">
+                                    <DockPanel LastChildFill="True">
+                                        <TextBlock Text="{TemplateBinding Header}"
+                                                   FontSize="15"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock DockPanel.Dock="Right"
+                                                   Foreground="{StaticResource MutedTextBrush}"
+                                                   Text="▾" />
+                                    </DockPanel>
+                                </ToggleButton>
+                                <ContentPresenter x:Name="ContentPresenter"
+                                                  Margin="14,0,14,14"
+                                                  Visibility="Collapsed" />
+                            </DockPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ContentPresenter" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Application.Resources>
 </Application>
