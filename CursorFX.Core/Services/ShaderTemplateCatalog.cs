@@ -399,7 +399,9 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
                 Number("particles", "Star Density", PluginParameterSection.Shader, "Shader", 6, 28, 1, 14),
                 Number("trailLifetime", "Healing Time", PluginParameterSection.Shader, "Shader", 0.3, 3.0, 0.05, 1.35),
                 Number("trailFreedom", "Trail Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.4, 0.05, 1.15),
-                Number("trailSpawnSpacing", "Trail Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 14)
+                Number("trailSpawnSpacing", "Trail Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 14),
+                Number("backdropSize", "Backdrop Size", PluginParameterSection.Shader, "Shader", 64, 280, 4, 164),
+                Number("sampleOpacity", "Backdrop Blend", PluginParameterSection.Shader, "Shader", 0.05, 0.95, 0.01, 0.48)
             ]);
 
     private static ShaderTemplateDefinition BuildGlitchFractureSuite() =>
@@ -417,7 +419,10 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
                 Number("particles", "Fracture Count", PluginParameterSection.Shader, "Shader", 4, 20, 1, 10),
                 Number("trailLifetime", "Persistence", PluginParameterSection.Shader, "Shader", 0.3, 3.0, 0.05, 1.0),
                 Number("trailFreedom", "Fragment Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.6, 0.05, 1.25),
-                Number("trailSpawnSpacing", "Fragment Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 12)
+                Number("trailSpawnSpacing", "Fragment Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 12),
+                Number("backdropSize", "Backdrop Size", PluginParameterSection.Shader, "Shader", 64, 280, 4, 152),
+                Number("sampleOpacity", "Backdrop Blend", PluginParameterSection.Shader, "Shader", 0.05, 0.95, 0.01, 0.52),
+                Number("distortion", "Band Distortion", PluginParameterSection.Shader, "Shader", 1, 28, 1, 10)
             ]);
 
     private static ShaderTemplateDefinition BuildVelvetFlameSuite() =>

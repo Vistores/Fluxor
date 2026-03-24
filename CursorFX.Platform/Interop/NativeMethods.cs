@@ -99,6 +99,9 @@ public static class NativeMethods
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
     public static extern IntPtr GetWindowLongPtr64(IntPtr hWnd, int nIndex);
 
+    [DllImport("gdi32.dll")]
+    public static extern bool DeleteObject(IntPtr hObject);
+
     public static IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
     {
         return IntPtr.Size == 8

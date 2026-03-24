@@ -27,6 +27,7 @@ public partial class App : System.Windows.Application
     private IShaderTemplateCatalog? _templateCatalog;
     private CustomPluginEffect? _customPluginEffect;
     private TrayIconService? _trayIconService;
+    private IScreenSampler? _screenSampler;
     private bool _forceExit;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -52,7 +53,8 @@ public partial class App : System.Windows.Application
         var trailEffect = new TrailEffect(settings.Trail);
         var glowEffect = new GlowEffect(settings.Glow);
         var clickRippleEffect = new ClickRippleEffect(settings.Ripple);
-        var templateEffect = new TemplateEffect();
+        _screenSampler = new GdiScreenSampler();
+        var templateEffect = new TemplateEffect(_screenSampler);
         _customPluginEffect = new CustomPluginEffect(new PluginRuntimeLoader(_templateCatalog.CatalogDirectory));
 
         effectManager.Register(trailEffect);
@@ -72,6 +74,7 @@ public partial class App : System.Windows.Application
             _mouseTracker,
             _clickMonitor,
             _windowStateMonitor,
+            _screenSampler,
             settings.General.TargetFps);
 
         _mainViewModel = new MainViewModel(
@@ -107,6 +110,7 @@ public partial class App : System.Windows.Application
         _clickMonitor?.Dispose();
         _mouseTracker?.Dispose();
         _customPluginEffect?.Dispose();
+        _screenSampler?.Dispose();
         _overlayWindow?.Close();
         _singleInstanceMutex?.ReleaseMutex();
         _singleInstanceMutex?.Dispose();

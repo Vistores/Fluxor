@@ -27,7 +27,7 @@ public sealed class ClickMonitor : IClickMonitor
         _pollTimer.Tick += OnPollTick;
     }
 
-    public event EventHandler<Point>? MouseClicked;
+    public event EventHandler<System.Windows.Point>? MouseClicked;
 
     public void Start()
     {
@@ -72,7 +72,7 @@ public sealed class ClickMonitor : IClickMonitor
             (wParam.ToInt32() == NativeMethods.WmLButtonDown || wParam.ToInt32() == NativeMethods.WmRButtonDown))
         {
             var mouseData = Marshal.PtrToStructure<NativeMethods.MSLLHOOKSTRUCT>(lParam);
-            EmitClick(new Point(mouseData.pt.X, mouseData.pt.Y));
+            EmitClick(new System.Windows.Point(mouseData.pt.X, mouseData.pt.Y));
         }
 
         return NativeMethods.CallNextHookEx(_hookHandle, nCode, wParam, lParam);
@@ -97,7 +97,7 @@ public sealed class ClickMonitor : IClickMonitor
         _rightButtonDown = currentRight;
     }
 
-    private void EmitClick(Point position)
+    private void EmitClick(System.Windows.Point position)
     {
         var now = Stopwatch.GetTimestamp();
         if (_lastEmissionTick != 0 &&
@@ -115,10 +115,10 @@ public sealed class ClickMonitor : IClickMonitor
         return (NativeMethods.GetAsyncKeyState(virtualKey) & 0x8000) != 0;
     }
 
-    private static Point GetCurrentCursorPosition()
+    private static System.Windows.Point GetCurrentCursorPosition()
     {
         return NativeMethods.GetCursorPos(out var point)
-            ? new Point(point.X, point.Y)
+            ? new System.Windows.Point(point.X, point.Y)
             : default;
     }
 }

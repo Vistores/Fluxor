@@ -8,7 +8,7 @@ namespace CursorFX.Platform.Services;
 public sealed class MouseTracker : IMouseTracker
 {
     private readonly DispatcherTimer _timer;
-    private Point _currentPosition;
+    private System.Windows.Point _currentPosition;
 
     public MouseTracker()
     {
@@ -20,9 +20,9 @@ public sealed class MouseTracker : IMouseTracker
         _currentPosition = GetCursorPosition();
     }
 
-    public event EventHandler<Point>? MouseMoved;
+    public event EventHandler<System.Windows.Point>? MouseMoved;
 
-    public Point CurrentPosition => _currentPosition;
+    public System.Windows.Point CurrentPosition => _currentPosition;
 
     public void Start()
     {
@@ -52,9 +52,9 @@ public sealed class MouseTracker : IMouseTracker
         MouseMoved?.Invoke(this, position);
     }
 
-    private static Point GetCursorPosition()
+    private static System.Windows.Point GetCursorPosition()
     {
         NativeMethods.GetCursorPos(out var point);
-        return new Point(point.X, point.Y);
+        return new System.Windows.Point(point.X, point.Y);
     }
 }

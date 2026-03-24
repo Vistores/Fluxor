@@ -15,7 +15,9 @@ public sealed class TemplateEffect : IEffect
     private readonly List<ClickPulse> _clickPulses = [];
     private readonly List<MatrixParticle> _matrixParticles = [];
     private readonly List<ResidualNode> _residualNodes = [];
+    private readonly IScreenSampler? _screenSampler;
     private ShaderTemplateDefinition? _template;
+    private ScreenSampleFrame? _lastBackdropSample;
     private Dictionary<string, TemplateParameterValue> _parameterValues = new(StringComparer.OrdinalIgnoreCase);
     private double _masterOpacity = 1.0;
     private Point _cursorPosition;
@@ -29,6 +31,11 @@ public sealed class TemplateEffect : IEffect
     public string Name => "Template Shader";
 
     public bool IsEnabled { get; set; }
+
+    public TemplateEffect(IScreenSampler? screenSampler = null)
+    {
+        _screenSampler = screenSampler;
+    }
 
     public void Update(TimeSpan deltaTime)
     {
@@ -73,6 +80,7 @@ public sealed class TemplateEffect : IEffect
         UpdateEmitter(dt);
         UpdateResidualNodes(dt);
         UpdateMatrixParticles(dt);
+        UpdateBackdropSample();
 
         var clickLifetime = GetClickLifetime();
         for (var index = _clickPulses.Count - 1; index >= 0; index--)
@@ -185,6 +193,7 @@ public sealed class TemplateEffect : IEffect
         _matrixParticles.Clear();
         _residualNodes.Clear();
         _matrixSpawnAccumulator = 0;
+        _lastBackdropSample = null;
     }
 
     private void UpdateEmitter(double dt)
@@ -649,6 +658,7 @@ public sealed class TemplateEffect : IEffect
         var motion = GetNumber("motion", 1.1);
         var primaryColor = GetColor("primaryColor", "#0B1020");
         var accentColor = GetColor("accentColor", "#A78BFA");
+        var sampleOpacity = GetNumber("sampleOpacity", 0.48);
         var nodeCount = Math.Max(1, _residualNodes.Count);
         foreach (var node in _residualNodes)
         {
@@ -689,7 +699,15 @@ public sealed class TemplateEffect : IEffect
             }
             rift.Freeze();
 
-            drawingContext.DrawGeometry(CreateSolidBrush(primaryColor, alpha * 0.72), CreatePen(accentColor, 1.0, alpha * 0.35), rift);
+            if (_lastBackdropSample is not null)
+            {
+                var rect = BuildSampleRect(node.Position, nodeSize * 1.32, nodeSize * 1.08);
+                drawingContext.PushClip(rift);
+                drawingContext.DrawRectangle(CreateImageBrush(_lastBackdropSample.Image, alpha * sampleOpacity), null, rect);
+                drawingContext.Pop();
+            }
+
+            drawingContext.DrawGeometry(CreateSolidBrush(primaryColor, alpha * 0.7), CreatePen(accentColor, 1.0, alpha * 0.35), rift);
 
             var starsPerNode = Math.Max(2, GetNumber("particles", 14) / Math.Max(1, nodeCount / 3));
             for (var index = 0; index < starsPerNode; index++)
@@ -713,6 +731,8 @@ public sealed class TemplateEffect : IEffect
         var motion = GetNumber("motion", 1.8);
         var primaryColor = GetColor("primaryColor", "#60A5FA");
         var accentColor = GetColor("accentColor", "#F472B6");
+        var sampleOpacity = GetNumber("sampleOpacity", 0.52);
+        var distortion = GetNumber("distortion", 10.0);
         foreach (var node in _residualNodes)
         {
             var progress = Math.Clamp(node.Age / node.Lifetime, 0, 1);
@@ -725,6 +745,22 @@ public sealed class TemplateEffect : IEffect
             }
             direction.Normalize();
             var normal = new Vector(-direction.Y, direction.X);
+            var sampleRect = BuildSampleRect(node.Position, sizeScale * 1.38, sizeScale * 0.92);
+
+            if (_lastBackdropSample is not null)
+            {
+                var bandCount = Math.Max(3, detail / 2);
+                for (var band = 0; band < bandCount; band++)
+                {
+                    var bandHeight = sampleRect.Height / bandCount;
+                    var bandRect = new Rect(sampleRect.X, sampleRect.Y + (band * bandHeight), sampleRect.Width, bandHeight + 1);
+                    var shift = HashToSigned(node.Seed + (_timeSeconds * motion), band + 41) * distortion;
+                    var yShift = HashToSigned(node.Seed * 0.7, band + 73) * 2.4;
+                    drawingContext.PushClip(new RectangleGeometry(bandRect, 1.5, 1.5));
+                    drawingContext.DrawRectangle(CreateImageBrush(_lastBackdropSample.Image, alpha * sampleOpacity, shift, yShift), null, sampleRect);
+                    drawingContext.Pop();
+                }
+            }
 
             for (var layer = 0; layer < 3; layer++)
             {
@@ -744,8 +780,8 @@ public sealed class TemplateEffect : IEffect
                 }
             }
 
-            drawingContext.DrawRectangle(CreateSolidBrush(primaryColor, alpha * 0.05), null, new Rect(node.Position.X - (sizeScale * 0.7), node.Position.Y - 3, sizeScale, 6));
-            drawingContext.DrawRectangle(CreateSolidBrush(accentColor, alpha * 0.04), null, new Rect(node.Position.X - (sizeScale * 0.3), node.Position.Y - 10, sizeScale * 0.8, 4));
+            drawingContext.DrawRectangle(CreateSolidBrush(primaryColor, alpha * 0.08), null, new Rect(node.Position.X - (sizeScale * 0.7), node.Position.Y - 3, sizeScale, 6));
+            drawingContext.DrawRectangle(CreateSolidBrush(accentColor, alpha * 0.06), null, new Rect(node.Position.X - (sizeScale * 0.3), node.Position.Y - 10, sizeScale * 0.8, 4));
         }
 
         RenderClickSparkDots(drawingContext, accentColor, 4.0, opacity * 0.9);
@@ -1015,6 +1051,23 @@ public sealed class TemplateEffect : IEffect
             TemplateEffectKind.SparkShower;
     }
 
+    private bool UsesBackdropSampling()
+    {
+        return _template?.Kind is TemplateEffectKind.CosmicRift or TemplateEffectKind.GlitchFracture;
+    }
+
+    private void UpdateBackdropSample()
+    {
+        if (!UsesBackdropSampling() || _screenSampler is null)
+        {
+            _lastBackdropSample = null;
+            return;
+        }
+
+        var sampleSize = Math.Clamp((int)Math.Round(GetNumber("backdropSize", Math.Max(96, GetNumber("size", 70) * 1.8))), 64, 320);
+        _lastBackdropSample = _screenSampler.GetSample(sampleSize, TimeSpan.FromMilliseconds(42));
+    }
+
     private Vector GetGravityVector()
     {
         return new Vector(
@@ -1091,6 +1144,25 @@ public sealed class TemplateEffect : IEffect
         brush.GradientStops.Add(new GradientStop(WithAlpha(color, 0), outerOffset));
         brush.Freeze();
         return brush;
+    }
+
+    private static ImageBrush CreateImageBrush(ImageSource imageSource, double opacity, double offsetX = 0, double offsetY = 0)
+    {
+        var brush = new ImageBrush(imageSource)
+        {
+            Stretch = Stretch.Fill,
+            Opacity = Math.Clamp(opacity, 0, 1),
+            Transform = Math.Abs(offsetX) > 0.001 || Math.Abs(offsetY) > 0.001
+                ? new TranslateTransform(offsetX, offsetY)
+                : Transform.Identity
+        };
+        brush.Freeze();
+        return brush;
+    }
+
+    private static Rect BuildSampleRect(Point center, double width, double height)
+    {
+        return new Rect(center.X - (width * 0.5), center.Y - (height * 0.5), width, height);
     }
 
     private static Color WithAlpha(Color color, double opacity)

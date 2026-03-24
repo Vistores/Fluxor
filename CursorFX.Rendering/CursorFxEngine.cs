@@ -11,6 +11,7 @@ public sealed class CursorFxEngine : IDisposable
     private readonly IMouseTracker _mouseTracker;
     private readonly IClickMonitor _clickMonitor;
     private readonly IWindowStateMonitor _windowStateMonitor;
+    private readonly IScreenSampler? _screenSampler;
     private readonly RenderLoop _renderLoop;
     private bool _pauseWhenCursorHidden = true;
     private bool _effectsSuspended;
@@ -22,6 +23,7 @@ public sealed class CursorFxEngine : IDisposable
         IMouseTracker mouseTracker,
         IClickMonitor clickMonitor,
         IWindowStateMonitor windowStateMonitor,
+        IScreenSampler? screenSampler,
         int targetFps)
     {
         _overlayWindow = overlayWindow;
@@ -29,6 +31,7 @@ public sealed class CursorFxEngine : IDisposable
         _mouseTracker = mouseTracker;
         _clickMonitor = clickMonitor;
         _windowStateMonitor = windowStateMonitor;
+        _screenSampler = screenSampler;
         _renderLoop = new RenderLoop(targetFps);
 
         _mouseTracker.MouseMoved += OnMouseMoved;
@@ -40,6 +43,7 @@ public sealed class CursorFxEngine : IDisposable
 
     public void Start()
     {
+        _screenSampler?.UpdateCursorPosition(_mouseTracker.CurrentPosition);
         _lastOverlayCursorPosition = _overlayWindow.ScreenToOverlay(_mouseTracker.CurrentPosition);
         _effectManager.OnMouseMove(_lastOverlayCursorPosition);
         _mouseTracker.Start();
@@ -75,6 +79,7 @@ public sealed class CursorFxEngine : IDisposable
 
     private void OnMouseMoved(object? sender, Point position)
     {
+        _screenSampler?.UpdateCursorPosition(position);
         _lastOverlayCursorPosition = _overlayWindow.ScreenToOverlay(position);
         _effectManager.OnMouseMove(_lastOverlayCursorPosition);
     }
@@ -103,6 +108,7 @@ public sealed class CursorFxEngine : IDisposable
     {
         var wasSuspended = _effectsSuspended;
         _effectsSuspended = areEffectsSuspended;
+        _screenSampler?.SetSuspended(areEffectsSuspended && _pauseWhenCursorHidden);
         UpdateRenderLoopState();
         if (wasSuspended && !_effectsSuspended)
         {
@@ -139,6 +145,8 @@ public sealed class CursorFxEngine : IDisposable
     private void ResumeEffectsAtCurrentCursor()
     {
         _renderLoop.ResetClock();
+        _screenSampler?.UpdateCursorPosition(_mouseTracker.CurrentPosition);
+        _screenSampler?.SetSuspended(false);
         _lastOverlayCursorPosition = _overlayWindow.ScreenToOverlay(_mouseTracker.CurrentPosition);
         _effectManager.OnMouseMove(_lastOverlayCursorPosition);
         _overlayWindow.InvalidateSurface();
