@@ -14,7 +14,7 @@ public sealed class OverlayWindow : IDisposable
     private readonly Dictionary<string, OverlayViewportWindow> _viewports = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyList<MonitorLayout> _monitorLayouts = Array.Empty<MonitorLayout>();
     private bool _isShown;
-    private Visibility _visibility = Visibility.Visible;
+    private bool _isDormant;
 
     public OverlayWindow(EffectManager effectManager)
     {
@@ -23,15 +23,15 @@ public sealed class OverlayWindow : IDisposable
         RefreshBounds();
     }
 
-    public Visibility Visibility
+    public bool IsDormant
     {
-        get => _visibility;
+        get => _isDormant;
         set
         {
-            _visibility = value;
+            _isDormant = value;
             foreach (var viewport in _viewports.Values)
             {
-                viewport.Visibility = value;
+                viewport.SetDormant(value);
             }
         }
     }
@@ -47,7 +47,7 @@ public sealed class OverlayWindow : IDisposable
                 viewport.Show();
             }
 
-            viewport.Visibility = _visibility;
+            viewport.SetDormant(_isDormant);
             viewport.EnsureTopmost();
         }
     }
@@ -99,7 +99,7 @@ public sealed class OverlayWindow : IDisposable
                 }
             }
 
-            viewport.UpdateLayout(layout, _visibility);
+            viewport.UpdateLayout(layout, _isDormant);
         }
     }
 
@@ -229,7 +229,7 @@ public sealed class OverlayWindow : IDisposable
             SourceInitialized += OnSourceInitialized;
         }
 
-        public void UpdateLayout(MonitorLayout layout, Visibility visibility)
+        public void UpdateLayout(MonitorLayout layout, bool isDormant)
         {
             _renderSurface.RenderOffset = new Vector(layout.LogicalBounds.Left, layout.LogicalBounds.Top);
             Width = layout.PhysicalBounds.Width * 96.0 / layout.DpiX;
@@ -237,9 +237,15 @@ public sealed class OverlayWindow : IDisposable
             Left = layout.LogicalBounds.Left;
             Top = layout.LogicalBounds.Top;
             _pendingPhysicalBounds = layout.PhysicalBounds;
-            Visibility = visibility;
+            _renderSurface.IsDormant = isDormant;
             ApplyPhysicalPlacement();
             EnsureTopmost();
+            _renderSurface.InvalidateVisual();
+        }
+
+        public void SetDormant(bool isDormant)
+        {
+            _renderSurface.IsDormant = isDormant;
             _renderSurface.InvalidateVisual();
         }
 

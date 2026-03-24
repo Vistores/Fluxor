@@ -20,6 +20,13 @@ public sealed class RenderSurface : FrameworkElement
             typeof(RenderSurface),
             new FrameworkPropertyMetadata(default(Vector), FrameworkPropertyMetadataOptions.AffectsRender));
 
+    public static readonly DependencyProperty IsDormantProperty =
+        DependencyProperty.Register(
+            nameof(IsDormant),
+            typeof(bool),
+            typeof(RenderSurface),
+            new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
+
     public EffectManager? EffectManager
     {
         get => (EffectManager?)GetValue(EffectManagerProperty);
@@ -32,10 +39,16 @@ public sealed class RenderSurface : FrameworkElement
         set => SetValue(RenderOffsetProperty, value);
     }
 
+    public bool IsDormant
+    {
+        get => (bool)GetValue(IsDormantProperty);
+        set => SetValue(IsDormantProperty, value);
+    }
+
     protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(drawingContext);
-        if (EffectManager is null)
+        if (EffectManager is null || IsDormant)
         {
             return;
         }

@@ -60,7 +60,7 @@ public sealed class CursorFxEngine : IDisposable
     {
         _pauseWhenCursorHidden = pauseWhenCursorHidden;
         UpdateRenderLoopState();
-        UpdateOverlayVisibility();
+        UpdateOverlayDormantState();
     }
 
     public void Dispose()
@@ -96,7 +96,7 @@ public sealed class CursorFxEngine : IDisposable
 
     private void OnFullscreenChanged(object? sender, bool isFullscreen)
     {
-        UpdateOverlayVisibility();
+        UpdateOverlayDormantState();
     }
 
     private void OnEffectsSuspendedChanged(object? sender, bool areEffectsSuspended)
@@ -109,7 +109,7 @@ public sealed class CursorFxEngine : IDisposable
             ResumeEffectsAtCurrentCursor();
         }
 
-        UpdateOverlayVisibility();
+        UpdateOverlayDormantState();
     }
 
     private void OnFrameRendering(object? sender, TimeSpan deltaTime)
@@ -123,12 +123,9 @@ public sealed class CursorFxEngine : IDisposable
         _overlayWindow.InvalidateSurface();
     }
 
-    private void UpdateOverlayVisibility()
+    private void UpdateOverlayDormantState()
     {
-        var shouldHide = _pauseWhenCursorHidden && _effectsSuspended;
-        _overlayWindow.Visibility = shouldHide
-            ? Visibility.Hidden
-            : Visibility.Visible;
+        _overlayWindow.IsDormant = _pauseWhenCursorHidden && _effectsSuspended;
     }
 
     private void UpdateRenderLoopState()
