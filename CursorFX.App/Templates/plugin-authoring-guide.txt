@@ -1,112 +1,134 @@
 Fluxor Plugin Authoring Guide
-===============================
+=============================
 
 1. Core idea
--------------
-Fluxor uses two files for a custom plugin:
+------------
+Fluxor now uses a DLL-only plugin flow.
 
-- C# source or compiled DLL
-- JSON manifest (.cursorfx-plugin.json)
+You ship one compiled plugin DLL.
+The DLL contains:
+- rendering logic
+- plugin identity
+- parameter schema for the UI
+- default values and section grouping
 
-The C# side contains the rendering logic.
-The JSON side describes how Fluxor should expose settings in the UI and how it should locate the plugin runtime.
-
-
-2. Responsibility split
------------------------
-
-C# plugin:
-- Implements ICursorEffectPlugin
-- Reads parameter values by key
-- Updates internal animation state
-- Renders using DrawingContext
-- Handles mouse move and click events
-
-JSON manifest:
-- Defines plugin identity
-- Points to the DLL and entry class
-- Declares visible UI parameters
-- Supplies default values, limits and section grouping
+Fluxor reads all of this directly from the plugin type.
+Separate JSON manifests are no longer required for import.
+The recommended workspace layout is one plugin project per folder inside the shared Plugins directory.
 
 
-2.1 Required C# namespaces
---------------------------
+2. What the plugin must implement
+---------------------------------
 
-At the top of the plugin file you must include:
+Your plugin class must:
+- implement ICursorEffectPlugin
+- have a public parameterless constructor
+- expose metadata and settings schema from code
+
+Minimal required namespace:
 
 using CursorFX.Core.Interfaces;
 
-Usually you also need:
+Common additional namespaces:
 - using System;
 - using System.Collections.Generic;
 - using System.Windows;
 - using System.Windows.Media;
-
-If you do not include CursorFX.Core.Interfaces, the source importer will fail with:
-- CS0246: ICursorEffectPlugin could not be found
-
-Alternative:
-- instead of a using statement, you may write the full interface name directly:
-  CursorFX.Core.Interfaces.ICursorEffectPlugin
+- using CursorFX.Core.Models;
 
 
-3. Runtime link between JSON and C#
------------------------------------
+3. Required runtime contract
+----------------------------
 
-Three things must match:
-
-1. AssemblyFileName
-   Example:
-   "AssemblyFileName": "CursorFX.PluginTemplate.dll"
-
-2. EntryTypeName
-   This is the full type name:
-   "EntryTypeName": "CursorFX.PluginTemplate.LightningStormPlugin"
-
-3. Parameter keys
-   If C# reads:
-   GetBool(parameters, "trailEnabled", true)
-   then JSON must contain:
-   "Key": "trailEnabled"
-
-
-4. Required JSON structure
---------------------------
-
-Top-level fields:
-- Id
-- Name
+Your class should expose:
+- DisplayName
+- PluginId
 - Description
 - IconGlyph
 - AccentColor
-- RuntimeKind
-- AssemblyFileName
-- EntryTypeName
 - Kind
 - Trigger
-- Parameters
+- GetParameters()
 
-Recommended example:
+And implement:
+- ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)
+- Update(TimeSpan deltaTime)
+- Render(DrawingContext drawingContext)
+- OnMouseMove(Point position)
+- OnMouseClick(Point position)
+- Dispose()
 
+
+4. Minimal skeleton
+-------------------
+
+using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Media;
+using CursorFX.Core.Interfaces;
+using CursorFX.Core.Models;
+
+namespace MyCompany.FluxorPlugins;
+
+public sealed class MyPlugin : ICursorEffectPlugin
 {
-  "Id": "my-lightning-plugin",
-  "Name": "My Lightning Plugin",
-  "Description": "Custom electric cursor effect.",
-  "IconGlyph": "⚡",
-  "AccentColor": "#8BC8FF",
-  "RuntimeKind": 1,
-  "AssemblyFileName": "MyPlugin.dll",
-  "EntryTypeName": "MyCompany.CursorPlugins.MyLightningPlugin",
-  "Kind": 0,
-  "Trigger": 0,
-  "Parameters": [ ... ]
+    public string DisplayName => "My Plugin";
+    public string PluginId => "my-plugin";
+    public string Description => "My custom effect.";
+    public string IconGlyph => "M";
+    public string AccentColor => "#4FD1C5";
+    public TemplateEffectKind Kind => TemplateEffectKind.CursorAura;
+    public TemplateTrigger Trigger => TemplateTrigger.FollowCursor;
+
+    public IReadOnlyList<TemplateParameterDefinition> GetParameters() =>
+    [
+        new TemplateParameterDefinition
+        {
+            Key = "opacity",
+            DisplayName = "Opacity",
+            Section = PluginParameterSection.Shader,
+            SectionName = "Shader",
+            Type = TemplateParameterType.Number,
+            Min = 0.05,
+            Max = 1.0,
+            Step = 0.01,
+            DefaultNumber = 0.8
+        }
+    ];
+
+    public void ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)
+    {
+    }
+
+    public void Update(TimeSpan deltaTime)
+    {
+    }
+
+    public void Render(DrawingContext drawingContext)
+    {
+    }
+
+    public void OnMouseMove(Point position)
+    {
+    }
+
+    public void OnMouseClick(Point position)
+    {
+    }
+
+    public void Dispose()
+    {
+    }
 }
 
 
-5. Parameter structure
-----------------------
+5. How Fluxor builds the settings UI
+------------------------------------
 
-Each parameter entry should include:
+Fluxor uses GetParameters() to build the settings panel.
+
+Each parameter must define:
 - Key
 - DisplayName
 - Section
@@ -115,56 +137,48 @@ Each parameter entry should include:
 - Min
 - Max
 - Step
-- DefaultNumber
-- DefaultColor
-- DefaultBoolean
+- DefaultNumber or DefaultColor or DefaultBoolean
 
 Type values:
-- 0 = Number
-- 1 = Color
-- 2 = Toggle
+- Number
+- Color
+- Toggle
 
-Section values:
-- 0 = Trail
-- 1 = Glow
-- 2 = Ripple
-- 3 = Shader
-
-
-6. Mapping rules from C# to JSON
---------------------------------
-
-If the C# code uses:
-- GetDouble(parameters, "arcCount", 5)
-then JSON should define:
-- "Key": "arcCount"
-- "Type": 0
-- Min/Max/Step values that make sense for the shader
-
-If the C# code uses:
-- GetColor(parameters, "primaryColor", fallback)
-then JSON should define:
-- "Key": "primaryColor"
-- "Type": 1
-- "DefaultColor": "#RRGGBB" or "#AARRGGBB"
-
-If the C# code uses:
-- GetBool(parameters, "trailEnabled", true)
-then JSON should define:
-- "Key": "trailEnabled"
-- "Type": 2
-- "DefaultBoolean": true
+Sections:
+- Trail
+- Glow
+- Ripple
+- Shader
 
 
-7. Recommended C# plugin structure
+6. Mapping rules inside the plugin
 ----------------------------------
 
-Recommended file layout:
+If your plugin reads:
+- opacity
+- primaryColor
+- enabled
 
-- fields for current configuration
-- fields for runtime state
-- cached Pen/Brush/Geometry resources
-- constructor
+then these exact keys must exist in GetParameters().
+
+Example:
+- GetNumber("opacity", 0.8) -> Number parameter with Key = "opacity"
+- GetColor("primaryColor", "#7DD3FC") -> Color parameter with Key = "primaryColor"
+- GetToggle("enabled", true) -> Toggle parameter with Key = "enabled"
+
+Key names must stay stable.
+Changing them later will reset user settings for that plugin.
+
+
+7. Recommended plugin structure
+-------------------------------
+
+Use this layout:
+- configuration fields
+- runtime state
+- cached visual resources
+- metadata properties
+- GetParameters()
 - ApplyParameters(...)
 - Update(...)
 - Render(...)
@@ -172,160 +186,170 @@ Recommended file layout:
 - OnMouseClick(...)
 - Dispose()
 
-Minimal skeleton:
-
-using System;
-using System.Collections.Generic;
-using System.Windows;
-using System.Windows.Media;
-using CursorFX.Core.Interfaces;
-
-namespace MyCompany.CursorPlugins
-{
-    public sealed class MyPlugin : ICursorEffectPlugin, IDisposable
-    {
-        public string DisplayName => "My Plugin";
-
-        public void ApplyParameters(IDictionary<string, object> parameters)
-        {
-        }
-
-        public void Update(double deltaTime)
-        {
-        }
-
-        public void Render(DrawingContext drawingContext)
-        {
-        }
-
-        public void OnMouseMove(Point position)
-        {
-        }
-
-        public void OnMouseClick(Point position)
-        {
-        }
-
-        public void Dispose()
-        {
-        }
-    }
-}
-
-Recommended flow:
-
-ApplyParameters:
-- read values from dictionary
-- clamp them
-- rebuild cached brushes and pens
-
-Update:
-- update animation state only
-- avoid creating new lists and random objects every frame
-
-Render:
-- draw only
-- reuse preallocated arrays and cached resources whenever possible
+Best practice:
+- read and clamp values in ApplyParameters
+- rebuild cached resources only when values change
+- keep Update for animation only
+- keep Render focused on drawing only
 
 
 8. Performance recommendations
 ------------------------------
 
-- Use ring buffers for trail points
-- Use preallocated arrays for particles, impacts and temporary states
+- Use fixed-size buffers for trails and particles
+- Reuse lists and arrays where possible
+- Avoid creating Random every frame
+- Avoid rebuilding Pen and Brush objects inside Render
 - Clamp deltaTime
-- Avoid allocating new Random every frame
-- Avoid rebuilding brushes and pens inside Render
-- Rebuild cached visual resources only when parameters change
-- Avoid freezing objects that you plan to modify again
-- Limit maximum points and maximum spawned elements
-- Fail gracefully when a parameter is missing
+- Cap maximum spawned elements
+- Prefer one well-shaped shader/ribbon over many weak particles
+- Keep external screen sampling optional and minimal
+
+For plugin DLLs specifically:
+- keep per-frame allocations low
+- avoid creating large geometries for tiny details
+- avoid reflection or file IO during render/update
+- cache parsed colors and derived values after ApplyParameters
 
 
 9. Stability recommendations
 ----------------------------
 
-- Every parameter read in C# must have a safe fallback
-- Never assume a key exists
-- Clamp all numeric inputs
+- Always provide safe defaults
+- Never assume a parameter exists
+- Clamp all numeric values
 - Keep Dispose lightweight
-- Do not throw on invalid user input when a fallback is possible
-- Treat imported JSON as untrusted
-- Keep plugin code isolated: one plugin should not depend on another plugin DLL
+- Fail gracefully if a parameter is missing
+- Keep one plugin self-contained
+- Do not depend on another plugin DLL being loaded first
 
 
 10. Visual design recommendations
 ---------------------------------
 
-Trail is not the same as a ribbon.
-
-For better cursor FX:
-- think in silhouette first
-- use one primary motion spine
-- add 1 to 3 secondary shape variations
-- let the tail taper out naturally
-- keep glow near the cursor head or the hottest region
-- avoid dotted segments unless the effect explicitly needs them
-- avoid perfectly uniform width across the full trail
+Cursor effect design works best when:
+- cursor is the source, not the whole effect
+- the effect can live briefly after the cursor moves on
+- one strong silhouette leads the look
+- secondary details support the silhouette instead of replacing it
 
 Examples:
-- lightning: jagged spine + short side arcs
-- fire: tapered body + torn tongues + hot core near the cursor
-- water: broad fluid mass + caustic highlights + soft breakup
+- electric: smooth emitter + branching arcs + calm idle corona
+- fireflies: few readable lights + short curved micro-trails
+- void: dark ribbon mass + subtle inner glow + slow healing tail
+- aurora: one connected soft band + inner light core
 
 
-11. Import workflow for users
------------------------------
+11. Import workflow
+-------------------
 
-Option A: import C# + JSON together
-- Open Fluxor
-- Click Import Plugin
-- Choose the .cs file
-- Choose the matching .cursorfx-plugin.json file
-- Confirm import
+1. Build the plugin DLL inside its own folder under Plugins
+2. In Fluxor click Import Plugin
+3. Choose the DLL
+4. Optionally choose an icon image
+5. Confirm import
 
-Option B: import only C#
-- Fluxor builds the source file
-- Fluxor generates a basic manifest
-- Then you refine the generated JSON manually
-
-Option C: import only JSON
-- Use this only if the referenced DLL already exists in the plugin folder
+Fluxor will:
+- load the plugin type
+- read metadata from the DLL
+- build the profile automatically
+- copy the DLL and its companion runtime files into the plugin catalog
 
 
-12. Recommended testing checklist
+12. Where to create and store plugins
+-------------------------------------
+
+Recommended workspace:
+- `C:\Users\Gyrocopter_UA\Desktop\TestProj\Plugins`
+
+Recommended layout:
+- one folder per plugin
+- one `.csproj` per folder
+- one main plugin class per folder
+
+Examples already included:
+- `Plugins\Fluxor.PluginCursorFlameContour`
+- `Plugins\Fluxor.PluginVelvetVoid`
+- `Plugins\Fluxor.PluginFireflySwarm`
+
+Recommended user flow:
+1. Copy one of the sample folders
+2. Rename the folder and project
+3. Change:
+   - namespace
+   - class name
+   - DisplayName
+   - PluginId
+4. Build the project
+5. Import the DLL into Fluxor
+
+
+13. How to build the DLL
+------------------------
+
+From the project root:
+
+`dotnet build .\Plugins\MyPluginFolder\MyPluginProject.csproj -m:1 -v minimal`
+
+Example:
+
+`dotnet build .\Plugins\Fluxor.PluginVelvetVoid\Fluxor.PluginVelvetVoid.csproj -m:1 -v minimal`
+
+The built DLL will be here:
+
+`Plugins\MyPluginFolder\bin\Debug\net9.0-windows\MyPluginProject.dll`
+
+Fluxor imports this DLL file directly.
+
+
+14. How to install the plugin into Fluxor
+-----------------------------------------
+
+1. Open Fluxor
+2. Click `Import Plugin`
+3. The dialog opens in the shared `Plugins` folder by default
+4. Choose your built DLL
+5. If the DLL contains one plugin type, Fluxor selects it automatically
+6. If the DLL contains multiple plugin types, choose one in the `Plugin Type` field
+7. Optionally choose a custom card icon
+8. Confirm import
+
+Fluxor then copies the DLL into its runtime plugin catalog automatically.
+
+
+15. Recommended testing checklist
 ---------------------------------
 
 Before sharing a plugin, verify:
 - plugin appears in the profile list
-- profile switch does not keep values from other plugins
-- all sliders update live
-- color parameters update live
-- plugin survives rapid cursor movement
-- plugin survives repeated clicks
-- plugin does not crash when disabled and re-enabled
-- plugin stops rendering when fullscreen hides the cursor
-- plugin does not visibly lag behind on multi-monitor setups
+- parameters appear correctly in sections
+- sliders update live
+- colors update live
+- effect survives rapid cursor movement
+- effect survives repeated clicks
+- plugin does not freeze when hidden and shown again
+- plugin does not over-allocate on long sessions
 
 
-13. Common mistakes
+16. Common mistakes
 -------------------
 
-- wrong AssemblyFileName
-- wrong EntryTypeName
-- mismatched parameter keys
-- invalid numeric range in JSON
-- freezing mutable geometry and reopening it later
+- not implementing ICursorEffectPlugin
+- missing public parameterless constructor
+- GetParameters() returns empty list
+- key mismatch between parameter schema and code
 - rebuilding heavy resources every frame
-- one DLL shared by many experimental plugins that overwrite each other
+- creating too many particles for a soft effect
+- trying to express every effect as noise instead of one readable shape
 
 
-14. Best practice for maintainability
--------------------------------------
+17. Best practice for maintainability
+------------------------------------
 
-- Keep one effect runtime per DLL or per well-scoped plugin library
-- Group settings into clear sections
-- Prefer 8 to 15 meaningful controls over 40 weak controls
-- Name keys in plain English and keep them stable
-- Version your plugin files if the structure changes
-- Keep JSON readable and hand-editable
+- Keep one clear visual idea per plugin
+- Keep one plugin project per folder
+- Prefer 8 to 15 meaningful controls
+- Name keys in plain English
+- Keep PluginId stable
+- Keep metadata in code close to the rendering logic
+- Use DLL-only import as the canonical Fluxor plugin workflow

@@ -1,35 +1,43 @@
 using System.ComponentModel;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using CursorFX.App.Services;
 using Microsoft.Win32;
+using System.Diagnostics;
 
 namespace CursorFX.App;
 
 public partial class ImportPluginWindow : Window, INotifyPropertyChanged
 {
-    private string _sourcePath = string.Empty;
-    private string _manifestPath = string.Empty;
+    private string _assemblyPath = string.Empty;
     private string _iconPath = string.Empty;
+    private PluginAssemblyCandidate? _selectedPluginCandidate;
+    private readonly AssemblyPluginImporter _assemblyPluginImporter = new();
+    private readonly string _pluginWorkspacePath;
 
-    public ImportPluginWindow()
+    public ImportPluginWindow(string pluginWorkspacePath)
     {
+        _pluginWorkspacePath = pluginWorkspacePath;
         DataContext = this;
         InitializeComponent();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public string SourcePath
+    public string AssemblyPath
     {
-        get => _sourcePath;
-        set => SetProperty(ref _sourcePath, value);
-    }
+        get => _assemblyPath;
+        set
+        {
+            if (!SetProperty(ref _assemblyPath, value))
+            {
+                return;
+            }
 
-    public string ManifestPath
-    {
-        get => _manifestPath;
-        set => SetProperty(ref _manifestPath, value);
+            LoadPluginCandidates();
+        }
     }
 
     public string IconPath
@@ -50,31 +58,38 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
         ? "No icon selected."
         : Path.GetFileName(IconPath);
 
-    private void OnBrowseSourceClick(object sender, RoutedEventArgs e)
-    {
-        var dialog = new Microsoft.Win32.OpenFileDialog
-        {
-            Filter = "C# files (*.cs)|*.cs",
-            CheckFileExists = true
-        };
+    public ObservableCollection<PluginAssemblyCandidate> AvailablePlugins { get; } = [];
 
-        if (dialog.ShowDialog() == true)
+    public PluginAssemblyCandidate? SelectedPluginCandidate
+    {
+        get => _selectedPluginCandidate;
+        set
         {
-            SourcePath = dialog.FileName;
+            if (!SetProperty(ref _selectedPluginCandidate, value))
+            {
+                return;
+            }
+
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginSummary)));
         }
     }
 
-    private void OnBrowseManifestClick(object sender, RoutedEventArgs e)
+    public string SelectedPluginSummary => SelectedPluginCandidate is null
+        ? "No plugin type selected yet."
+        : $"{SelectedPluginCandidate.DisplayName} • {SelectedPluginCandidate.PluginId}{Environment.NewLine}{SelectedPluginCandidate.Description}";
+
+    private void OnBrowseAssemblyClick(object sender, RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "CursorFX plugins (*.cursorfx-plugin.json)|*.cursorfx-plugin.json|JSON files (*.json)|*.json",
-            CheckFileExists = true
+            Filter = "DLL files (*.dll)|*.dll",
+            CheckFileExists = true,
+            InitialDirectory = Directory.Exists(_pluginWorkspacePath) ? _pluginWorkspacePath : null
         };
 
         if (dialog.ShowDialog() == true)
         {
-            ManifestPath = dialog.FileName;
+            AssemblyPath = dialog.FileName;
         }
     }
 
@@ -97,11 +112,28 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
         IconPath = string.Empty;
     }
 
+    private void OnOpenWorkspaceClick(object sender, RoutedEventArgs e)
+    {
+        Directory.CreateDirectory(_pluginWorkspacePath);
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "explorer.exe",
+            Arguments = $"\"{_pluginWorkspacePath}\"",
+            UseShellExecute = true
+        });
+    }
+
     private void OnImportClick(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrWhiteSpace(SourcePath) && string.IsNullOrWhiteSpace(ManifestPath))
+        if (string.IsNullOrWhiteSpace(AssemblyPath))
         {
-            System.Windows.MessageBox.Show("Choose at least one file: C# source or JSON manifest.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show("Choose a DLL file.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (AvailablePlugins.Count > 1 && SelectedPluginCandidate is null)
+        {
+            System.Windows.MessageBox.Show("Choose a plugin type from the DLL.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -123,5 +155,36 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
         storage = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         return true;
+    }
+
+    private void LoadPluginCandidates()
+    {
+        AvailablePlugins.Clear();
+        SelectedPluginCandidate = null;
+
+        if (string.IsNullOrWhiteSpace(AssemblyPath) || !File.Exists(AssemblyPath))
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (var plugin in _assemblyPluginImporter.DiscoverPlugins(AssemblyPath))
+            {
+                AvailablePlugins.Add(plugin);
+            }
+
+            if (AvailablePlugins.Count == 1)
+            {
+                SelectedPluginCandidate = AvailablePlugins[0];
+            }
+        }
+        catch
+        {
+            AvailablePlugins.Clear();
+            SelectedPluginCandidate = null;
+        }
+
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginSummary)));
     }
 }

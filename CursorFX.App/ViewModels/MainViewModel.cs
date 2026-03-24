@@ -26,7 +26,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly CursorFxEngine _engine;
     private readonly ISettingsStore _settingsStore;
     private readonly IShaderTemplateCatalog _templateCatalog;
-    private readonly SourcePluginCompiler _sourcePluginCompiler;
+    private readonly AssemblyPluginImporter _assemblyPluginImporter;
+    private readonly PluginWorkspaceService _pluginWorkspaceService;
     private readonly StartupRegistrationService _startupRegistrationService;
     private readonly DispatcherTimer _autosaveTimer;
     private ShaderTemplateDefinition? _selectedPlugin;
@@ -52,7 +53,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _engine = engine;
         _settingsStore = settingsStore;
         _templateCatalog = templateCatalog;
-        _sourcePluginCompiler = new SourcePluginCompiler();
+        _assemblyPluginImporter = new AssemblyPluginImporter();
+        _pluginWorkspaceService = new PluginWorkspaceService();
+        _pluginWorkspaceService.EnsureWorkspace();
         _startupRegistrationService = new StartupRegistrationService();
 
         _autosaveTimer = new DispatcherTimer
@@ -354,7 +357,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void ImportPlugin()
     {
-        var importWindow = new ImportPluginWindow
+        var importWindow = new ImportPluginWindow(_pluginWorkspaceService.WorkspaceDirectory)
         {
             Owner = System.Windows.Application.Current?.MainWindow
         };
@@ -366,23 +369,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         try
         {
-            if (!string.IsNullOrWhiteSpace(importWindow.SourcePath))
-            {
-                var result = _sourcePluginCompiler.CompileAndInstall(
-                    importWindow.SourcePath,
-                    _templateCatalog.CatalogDirectory,
-                    string.IsNullOrWhiteSpace(importWindow.ManifestPath) ? null : importWindow.ManifestPath,
-                    string.IsNullOrWhiteSpace(importWindow.IconPath) ? null : importWindow.IconPath);
-                ReloadPlugins(result.Definition.Id);
-                AutosaveStatus = $"Plugin {result.Definition.Name} compiled and imported.";
-                return;
-            }
-
-            var imported = _templateCatalog.ImportTemplate(
-                importWindow.ManifestPath,
+            var importedAssemblyPlugin = _assemblyPluginImporter.Import(
+                importWindow.AssemblyPath,
+                importWindow.SelectedPluginCandidate?.EntryTypeName,
+                _templateCatalog.CatalogDirectory,
+                _templateCatalog,
                 string.IsNullOrWhiteSpace(importWindow.IconPath) ? null : importWindow.IconPath);
-            ReloadPlugins(imported.Id);
-            AutosaveStatus = $"Plugin {imported.Name} imported.";
+            ReloadPlugins(importedAssemblyPlugin.Id);
+            AutosaveStatus = $"Plugin {importedAssemblyPlugin.Name} imported from DLL.";
         }
         catch (Exception ex)
         {
@@ -722,10 +716,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             "ribbon-wave" or
             "torn-current" or
             "matrix-cascade" or
-            "cosmic-rift" or
-            "glitch-fracture" or
-            "velvet-flame" or
-            "spark-shower";
+            "velvet-flame";
     }
 
     private void TryDeletePluginAssembly(ShaderTemplateDefinition plugin)

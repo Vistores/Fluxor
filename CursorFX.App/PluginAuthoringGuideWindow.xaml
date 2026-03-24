@@ -33,7 +33,7 @@
                 <TextBlock Margin="0,10,0,0"
                            Foreground="{StaticResource MutedTextBrush}"
                            TextWrapping="Wrap"
-                           Text="How to structure C# + JSON plugin files, link them correctly, and avoid runtime or import failures." />
+                           Text="How to build DLL-only Fluxor plugins, expose parameter schema from code, and avoid runtime or import failures." />
             </StackPanel>
 
             <Border Grid.Row="1"

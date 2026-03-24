@@ -7,6 +7,13 @@ namespace CursorFX.Core.Services;
 
 public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
 {
+    private static readonly string[] RetiredBuiltInTemplateIds =
+    [
+        "cosmic-rift",
+        "glitch-fracture",
+        "spark-shower"
+    ];
+
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         WriteIndented = true
@@ -25,6 +32,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
     public void EnsureCatalog()
     {
         Directory.CreateDirectory(CatalogDirectory);
+        RemoveRetiredBuiltIns();
         SeedTemplate("neon-suite.cursorfx-plugin.json", BuildNeonSuite(), overwrite: true);
         SeedTemplate("minimal-suite.cursorfx-plugin.json", BuildMinimalSuite(), overwrite: true);
         SeedTemplate("gaming-suite.cursorfx-plugin.json", BuildGamingSuite(), overwrite: true);
@@ -38,10 +46,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         SeedTemplate("ribbon-wave.cursorfx-plugin.json", BuildRibbonWaveSuite(), overwrite: true);
         SeedTemplate("torn-current.cursorfx-plugin.json", BuildTornCurrentSuite(), overwrite: true);
         SeedTemplate("matrix-cascade.cursorfx-plugin.json", BuildMatrixCascadeSuite(), overwrite: true);
-        SeedTemplate("cosmic-rift.cursorfx-plugin.json", BuildCosmicRiftSuite(), overwrite: true);
-        SeedTemplate("glitch-fracture.cursorfx-plugin.json", BuildGlitchFractureSuite(), overwrite: true);
         SeedTemplate("velvet-flame.cursorfx-plugin.json", BuildVelvetFlameSuite(), overwrite: true);
-        SeedTemplate("spark-shower.cursorfx-plugin.json", BuildSparkShowerSuite(), overwrite: true);
     }
 
     public IReadOnlyList<ShaderTemplateDefinition> LoadTemplates()
@@ -116,6 +121,26 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         }
 
         File.WriteAllText(path, JsonSerializer.Serialize(template, SerializerOptions));
+    }
+
+    private void RemoveRetiredBuiltIns()
+    {
+        foreach (var id in RetiredBuiltInTemplateIds)
+        {
+            var path = Path.Combine(CatalogDirectory, $"{id}.cursorfx-plugin.json");
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            try
+            {
+                File.Delete(path);
+            }
+            catch
+            {
+            }
+        }
     }
 
     private ShaderTemplateDefinition PrepareImportedAssets(ShaderTemplateDefinition template, string sourceFilePath, string? iconOverridePath)
@@ -386,7 +411,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
 
     private static ShaderTemplateDefinition BuildCosmicRiftSuite() =>
         BuildSuite("cosmic-rift", "Cosmic Rift", "Soft space fracture with dark velvet cracks and drifting star dust around the cursor path.", "C", "#7C3AED", TemplateEffectKind.CosmicRift,
-            "#111827", "#8B5CF6", "#C4B5FD", "#0F172A", "#A78BFA", 34, 10, 0.62, 28, 0.18, 84, 0.82, 0.48, 2.2, 78, 0.52, 1.1, 8,
+            "#111827", "#8B5CF6", "#C4B5FD", "#16142D", "#A78BFA", 34, 10, 0.62, 28, 0.18, 84, 0.82, 0.48, 2.2, 92, 0.5, 0.82, 6,
             trailEnabled: false,
             sourceLag: 8,
             idleRadius: 1.4,
@@ -396,17 +421,17 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             [
                 Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 14),
                 Number("clickLifetime", "Rift Echo Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.95),
-                Number("particles", "Star Density", PluginParameterSection.Shader, "Shader", 6, 28, 1, 14),
-                Number("trailLifetime", "Healing Time", PluginParameterSection.Shader, "Shader", 0.3, 3.0, 0.05, 1.35),
-                Number("trailFreedom", "Trail Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.4, 0.05, 1.15),
-                Number("trailSpawnSpacing", "Trail Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 14),
-                Number("backdropSize", "Backdrop Size", PluginParameterSection.Shader, "Shader", 64, 280, 4, 164),
-                Number("sampleOpacity", "Backdrop Blend", PluginParameterSection.Shader, "Shader", 0.05, 0.95, 0.01, 0.48)
+                Number("particles", "Layer Amount", PluginParameterSection.Shader, "Shader", 2, 12, 1, 4),
+                Number("trailLifetime", "Healing Time", PluginParameterSection.Shader, "Shader", 0.3, 3.0, 0.05, 1.7),
+                Number("trailFreedom", "Trail Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.4, 0.05, 0.72),
+                Number("trailSpawnSpacing", "Trail Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 20),
+                Number("backdropSize", "Backdrop Size", PluginParameterSection.Shader, "Shader", 64, 280, 4, 172),
+                Number("sampleOpacity", "Backdrop Blend", PluginParameterSection.Shader, "Shader", 0.05, 0.95, 0.01, 0.18)
             ]);
 
     private static ShaderTemplateDefinition BuildGlitchFractureSuite() =>
         BuildSuite("glitch-fracture", "Glitch Fracture", "Broken digital slashes, RGB offsets and soft glitch bands trailing behind the cursor.", "G", "#60A5FA", TemplateEffectKind.GlitchFracture,
-            "#0EA5E9", "#F472B6", "#F9A8D4", "#60A5FA", "#F472B6", 30, 8, 0.48, 22, 0.12, 76, 0.58, 0.56, 2.6, 70, 0.5, 1.8, 8,
+            "#0EA5E9", "#F472B6", "#F9A8D4", "#60A5FA", "#F472B6", 30, 8, 0.48, 22, 0.12, 76, 0.58, 0.56, 2.6, 74, 0.42, 1.28, 6,
             trailEnabled: false,
             sourceLag: 10,
             idleRadius: 0.6,
@@ -416,18 +441,18 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             [
                 Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 12),
                 Number("clickLifetime", "Glitch Burst Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.68),
-                Number("particles", "Fracture Count", PluginParameterSection.Shader, "Shader", 4, 20, 1, 10),
-                Number("trailLifetime", "Persistence", PluginParameterSection.Shader, "Shader", 0.3, 3.0, 0.05, 1.0),
-                Number("trailFreedom", "Fragment Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.6, 0.05, 1.25),
-                Number("trailSpawnSpacing", "Fragment Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 12),
+                Number("particles", "Band Count", PluginParameterSection.Shader, "Shader", 3, 10, 1, 5),
+                Number("trailLifetime", "Persistence", PluginParameterSection.Shader, "Shader", 0.3, 3.0, 0.05, 1.28),
+                Number("trailFreedom", "Fragment Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.6, 0.05, 0.78),
+                Number("trailSpawnSpacing", "Fragment Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 18),
                 Number("backdropSize", "Backdrop Size", PluginParameterSection.Shader, "Shader", 64, 280, 4, 152),
-                Number("sampleOpacity", "Backdrop Blend", PluginParameterSection.Shader, "Shader", 0.05, 0.95, 0.01, 0.52),
-                Number("distortion", "Band Distortion", PluginParameterSection.Shader, "Shader", 1, 28, 1, 10)
+                Number("sampleOpacity", "Backdrop Blend", PluginParameterSection.Shader, "Shader", 0.05, 0.95, 0.01, 0.58),
+                Number("distortion", "Band Distortion", PluginParameterSection.Shader, "Shader", 1, 28, 1, 6)
             ]);
 
     private static ShaderTemplateDefinition BuildVelvetFlameSuite() =>
         BuildSuite("velvet-flame", "Velvet Flame", "Soft real-flame veil with smooth volume and no hard-cut ribbon edges.", "V", "#F97316", TemplateEffectKind.VelvetFlame,
-            "#F97316", "#FDBA74", "#FDE68A", "#F97316", "#FDE68A", 42, 14, 0.76, 32, 0.2, 88, 0.76, 0.62, 2.4, 74, 0.58, 1.45, 8,
+            "#F97316", "#FDBA74", "#FDE68A", "#F97316", "#FDE68A", 42, 14, 0.76, 32, 0.2, 88, 0.76, 0.62, 2.4, 82, 0.54, 1.35, 7,
             trailEnabled: false,
             sourceLag: 9,
             idleRadius: 1.0,
@@ -439,14 +464,14 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
                 Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 13),
                 Number("clickLifetime", "Flame Bloom Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.84),
                 Number("particles", "Flame Softness", PluginParameterSection.Shader, "Shader", 4, 18, 1, 9),
-                Number("trailLifetime", "Flame Lifetime", PluginParameterSection.Shader, "Shader", 0.3, 3.0, 0.05, 1.15),
-                Number("trailFreedom", "Flame Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.4, 0.05, 0.95),
-                Number("trailSpawnSpacing", "Flame Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 12)
+                Number("trailLifetime", "Flame Lifetime", PluginParameterSection.Shader, "Shader", 0.3, 3.0, 0.05, 1.25),
+                Number("trailFreedom", "Flame Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.4, 0.05, 0.8),
+                Number("trailSpawnSpacing", "Flame Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 16)
             ]);
 
     private static ShaderTemplateDefinition BuildSparkShowerSuite() =>
         BuildSuite("spark-shower", "Spark Shower", "Cursor emits clean warm sparks and soft bright dust instead of a heavy ribbon trail.", "S", "#F59E0B", TemplateEffectKind.SparkShower,
-            "#F59E0B", "#FDE68A", "#FCD34D", "#F59E0B", "#FDE68A", 20, 6, 0.32, 18, 0.14, 72, 0.56, 0.58, 2.4, 62, 0.62, 1.8, 12,
+            "#F59E0B", "#FDE68A", "#FCD34D", "#F59E0B", "#FDE68A", 20, 6, 0.32, 18, 0.14, 72, 0.56, 0.58, 2.4, 64, 0.56, 1.42, 7,
             trailEnabled: false,
             sourceLag: 11,
             idleRadius: 0.6,
@@ -457,10 +482,10 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             [
                 Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 4, 32, 1, 15),
                 Number("clickLifetime", "Spark Burst Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.62),
-                Number("particles", "Spark Count", PluginParameterSection.Shader, "Shader", 6, 28, 1, 16),
+                Number("particles", "Spark Count", PluginParameterSection.Shader, "Shader", 3, 18, 1, 6),
                 Number("trailLifetime", "Spark Lifetime", PluginParameterSection.Shader, "Shader", 0.3, 3.0, 0.05, 0.82),
-                Number("trailFreedom", "Spark Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.6, 0.05, 1.35),
-                Number("trailSpawnSpacing", "Spark Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 10)
+                Number("trailFreedom", "Spark Freedom", PluginParameterSection.Shader, "Shader", 0.2, 2.6, 0.05, 1.2),
+                Number("trailSpawnSpacing", "Spark Spacing", PluginParameterSection.Shader, "Shader", 4, 42, 1, 14)
             ]);
 
     private static ShaderTemplateDefinition BuildSuite(

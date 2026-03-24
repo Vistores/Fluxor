@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using CursorFX.Core.Interfaces;
 using CursorFX.Core.Models;
 
@@ -263,6 +264,9 @@ public sealed class TemplateEffect : IEffect
         var baseSpeed = GetNumber("trailDriftSpeed", Math.Max(8, GetNumber("motion", 1.0) * 10));
         var scale = Math.Max(0.3, GetNumber("trailScale", 1.0));
         var baseAgeSeed = _timeSeconds * 1.37;
+        var backdropFrame = _template?.Kind == TemplateEffectKind.GlitchFracture && _screenSampler is not null
+            ? _screenSampler.GetSample(Math.Clamp((int)Math.Round(GetNumber("backdropSize", 152)), 64, 280), TimeSpan.FromMilliseconds(24))
+            : null;
 
         for (var step = 0; step <= steps && _residualNodes.Count < MaxResidualNodes; step++)
         {
@@ -288,7 +292,9 @@ public sealed class TemplateEffect : IEffect
                 Age = 0,
                 Lifetime = lifetime * (0.8 + HashToUnit(baseAgeSeed, step + 43) * 0.5),
                 Seed = baseAgeSeed + step,
-                Scale = scale * (0.8 + HashToUnit(baseAgeSeed, step + 61) * 0.5)
+                Scale = scale * (0.8 + HashToUnit(baseAgeSeed, step + 61) * 0.5),
+                BackdropImage = backdropFrame?.Image,
+                BackdropBounds = backdropFrame?.ScreenBounds ?? Rect.Empty
             });
         }
 
@@ -654,70 +660,89 @@ public sealed class TemplateEffect : IEffect
     {
         var size = GetNumber("size", 78);
         var opacity = GetNumber("opacity", 0.52) * _masterOpacity;
-        var detail = Math.Max(4, (int)Math.Round(GetNumber("detail", 8)));
         var motion = GetNumber("motion", 1.1);
-        var primaryColor = GetColor("primaryColor", "#0B1020");
+        var primaryColor = GetColor("primaryColor", "#141228");
         var accentColor = GetColor("accentColor", "#A78BFA");
-        var sampleOpacity = GetNumber("sampleOpacity", 0.48);
-        var nodeCount = Math.Max(1, _residualNodes.Count);
-        foreach (var node in _residualNodes)
+        var nodes = GetResidualTrailNodes(maxNodes: 56, minRemainingLife: 0.08);
+        if (nodes.Count < 3)
         {
-            var progress = Math.Clamp(node.Age / node.Lifetime, 0, 1);
-            var alpha = opacity * (1.0 - progress);
-            var nodeSize = size * (0.28 + ((1.0 - progress) * 0.22)) * node.Scale;
-            var direction = node.Velocity.LengthSquared > 0.1 ? node.Velocity : _trailDirection;
-            if (direction.LengthSquared <= 0.0001)
+            return;
+        }
+
+        var alphaScale = nodes.Average(node => 1.0 - Math.Clamp(node.Age / node.Lifetime, 0, 1));
+        var alpha = opacity * alphaScale;
+        var ribbon = BuildResidualRibbonGeometry(
+            nodes,
+            widthSelector: (node, t) =>
             {
-                direction = new Vector(0, 1);
-            }
-            direction.Normalize();
-            var normal = new Vector(-direction.Y, direction.X);
-
-            drawingContext.DrawEllipse(CreateRadialBrush(accentColor, alpha * 0.12, 0.0, 1.0), null, node.Position, nodeSize * 0.95, nodeSize * 0.74);
-
-            var rift = new StreamGeometry();
-            using (var context = rift.Open())
+                var progress = Math.Clamp(node.Age / node.Lifetime, 0, 1);
+                var baseWidth = size * (0.18 + ((1.0 - progress) * 0.08)) * node.Scale;
+                var taper = 0.92 + (Math.Sin(t * Math.PI) * 0.34);
+                return baseWidth * taper;
+            },
+            waveSelector: (node, t) =>
             {
-                var start = node.Position + (direction * (nodeSize * 0.1));
-                context.BeginFigure(start, true, true);
-                var crackLength = nodeSize * 1.25;
-                for (var index = 1; index <= detail; index++)
-                {
-                    var t = index / (double)detail;
-                    var along = start - (direction * crackLength * t);
-                    var offset = Math.Sin((node.Seed * 1.3) + (_timeSeconds * motion * 1.8) + (index * 0.7)) * (nodeSize * 0.08);
-                    context.LineTo(along + (normal * (offset + (nodeSize * 0.04 * (1.0 - t)))), true, false);
-                }
+                var phase = (node.Seed * 1.05) + (_timeSeconds * motion * 0.75) + (t * 4.2);
+                return Math.Sin(phase) * size * 0.018;
+            });
 
-                for (var index = detail; index >= 0; index--)
-                {
-                    var t = index / (double)detail;
-                    var along = start - (direction * crackLength * t);
-                    var offset = Math.Sin((node.Seed * 1.3) + (_timeSeconds * motion * 1.8) + (index * 0.7)) * (nodeSize * 0.08);
-                    context.LineTo(along - (normal * (offset + (nodeSize * 0.04 * (1.0 - t)))), true, false);
-                }
-            }
-            rift.Freeze();
+        if (ribbon is null)
+        {
+            return;
+        }
 
-            if (_lastBackdropSample is not null)
+        var innerRibbon = BuildResidualRibbonGeometry(
+            nodes,
+            widthSelector: (node, t) =>
             {
-                var rect = BuildSampleRect(node.Position, nodeSize * 1.32, nodeSize * 1.08);
-                drawingContext.PushClip(rift);
-                drawingContext.DrawRectangle(CreateImageBrush(_lastBackdropSample.Image, alpha * sampleOpacity), null, rect);
-                drawingContext.Pop();
-            }
-
-            drawingContext.DrawGeometry(CreateSolidBrush(primaryColor, alpha * 0.7), CreatePen(accentColor, 1.0, alpha * 0.35), rift);
-
-            var starsPerNode = Math.Max(2, GetNumber("particles", 14) / Math.Max(1, nodeCount / 3));
-            for (var index = 0; index < starsPerNode; index++)
+                var progress = Math.Clamp(node.Age / node.Lifetime, 0, 1);
+                var baseWidth = size * (0.1 + ((1.0 - progress) * 0.04)) * node.Scale;
+                var taper = 0.82 + (Math.Sin(t * Math.PI) * 0.2);
+                return baseWidth * taper;
+            },
+            waveSelector: (node, t) =>
             {
-                var phase = node.Seed + (_timeSeconds * motion) + (index * 0.47);
-                var radial = nodeSize * (0.28 + ((index % 4) * 0.18));
-                var point = node.Position + new Vector(Math.Cos(phase * 0.8), Math.Sin(phase * 1.1)) * radial;
-                var starAlpha = alpha * (0.18 + (0.2 * Math.Abs(Math.Sin(phase * 2.1))));
-                drawingContext.DrawEllipse(CreateSolidBrush(index % 4 == 0 ? accentColor : Colors.White, starAlpha), null, point, 1.2, 1.2);
-            }
+                var phase = (node.Seed * 0.84) + (_timeSeconds * motion * 0.62) + (t * 3.7);
+                return Math.Sin(phase) * size * 0.01;
+            });
+
+        drawingContext.DrawGeometry(CreateRadialBrush(accentColor, alpha * 0.16, 0.0, 1.0), null, ribbon);
+        drawingContext.DrawGeometry(CreateSolidBrush(primaryColor, alpha * 0.88), null, ribbon);
+
+        if (innerRibbon is not null)
+        {
+            drawingContext.DrawGeometry(CreateSolidBrush(Color.FromRgb(28, 22, 56), alpha * 0.82), null, innerRibbon);
+            drawingContext.DrawGeometry(CreateSolidBrush(accentColor, alpha * 0.06), null, innerRibbon);
+        }
+
+        var coreRibbon = BuildResidualRibbonGeometry(
+            nodes,
+            widthSelector: (node, t) =>
+            {
+                var progress = Math.Clamp(node.Age / node.Lifetime, 0, 1);
+                return size * (0.035 + ((1.0 - progress) * 0.016)) * (0.74 + (Math.Sin(t * Math.PI) * 0.1));
+            },
+            waveSelector: (node, t) =>
+            {
+                var phase = (node.Seed * 0.55) + (_timeSeconds * motion * 0.34) + (t * 2.9);
+                return Math.Sin(phase) * size * 0.006;
+            });
+
+        if (coreRibbon is not null)
+        {
+            drawingContext.DrawGeometry(CreateSolidBrush(accentColor, alpha * 0.08), null, coreRibbon);
+        }
+
+        var starCount = Math.Clamp((int)Math.Round(GetNumber("particles", 4)), 2, 12);
+        var trailLength = nodes.Count;
+        for (var index = 0; index < starCount; index++)
+        {
+            var node = nodes[(index * Math.Max(1, trailLength - 1)) / Math.Max(1, starCount - 1)];
+            var phase = (node.Seed * 0.73) + (index * 0.81);
+            var offset = new Vector(Math.Cos(phase), Math.Sin(phase * 1.4)) * (size * 0.08 * (0.4 + HashToUnit(phase, index + 31)));
+            var point = node.Position + offset;
+            var starAlpha = alpha * (0.08 + (0.05 * HashToUnit(phase, index + 7)));
+            drawingContext.DrawEllipse(CreateSolidBrush(index % 3 == 0 ? accentColor : Colors.White, starAlpha), null, point, 1.2, 1.2);
         }
 
         RenderClickShockwaves(drawingContext, accentColor, size * 1.15, opacity * 0.7, 1.6);
@@ -729,62 +754,74 @@ public sealed class TemplateEffect : IEffect
         var opacity = GetNumber("opacity", 0.5) * _masterOpacity;
         var detail = Math.Max(5, (int)Math.Round(GetNumber("detail", 8)));
         var motion = GetNumber("motion", 1.8);
-        var primaryColor = GetColor("primaryColor", "#60A5FA");
-        var accentColor = GetColor("accentColor", "#F472B6");
         var sampleOpacity = GetNumber("sampleOpacity", 0.52);
         var distortion = GetNumber("distortion", 10.0);
-        foreach (var node in _residualNodes)
+        var nodes = GetResidualTrailNodes(maxNodes: 48, minRemainingLife: 0.08);
+        if (nodes.Count < 3)
         {
-            var progress = Math.Clamp(node.Age / node.Lifetime, 0, 1);
-            var alpha = opacity * (1.0 - progress);
-            var sizeScale = size * (0.4 + ((1.0 - progress) * 0.3)) * node.Scale;
-            var direction = node.Velocity.LengthSquared > 0.1 ? node.Velocity : _trailDirection;
-            if (direction.LengthSquared <= 0.0001)
-            {
-                direction = new Vector(0, 1);
-            }
-            direction.Normalize();
-            var normal = new Vector(-direction.Y, direction.X);
-            var sampleRect = BuildSampleRect(node.Position, sizeScale * 1.38, sizeScale * 0.92);
-
-            if (_lastBackdropSample is not null)
-            {
-                var bandCount = Math.Max(3, detail / 2);
-                for (var band = 0; band < bandCount; band++)
-                {
-                    var bandHeight = sampleRect.Height / bandCount;
-                    var bandRect = new Rect(sampleRect.X, sampleRect.Y + (band * bandHeight), sampleRect.Width, bandHeight + 1);
-                    var shift = HashToSigned(node.Seed + (_timeSeconds * motion), band + 41) * distortion;
-                    var yShift = HashToSigned(node.Seed * 0.7, band + 73) * 2.4;
-                    drawingContext.PushClip(new RectangleGeometry(bandRect, 1.5, 1.5));
-                    drawingContext.DrawRectangle(CreateImageBrush(_lastBackdropSample.Image, alpha * sampleOpacity, shift, yShift), null, sampleRect);
-                    drawingContext.Pop();
-                }
-            }
-
-            for (var layer = 0; layer < 3; layer++)
-            {
-                var offsetShift = (layer - 1) * (1.2 + (Math.Sin((_timeSeconds * motion * 4.0) + node.Seed) * 1.2));
-                var color = layer == 0 ? Colors.White : layer == 1 ? primaryColor : accentColor;
-                var pen = CreatePen(color, 1.0 + (layer * 0.15), alpha * (layer == 0 ? 0.32 : 0.54));
-
-                for (var branch = 0; branch < detail; branch++)
-                {
-                    var t = branch / (double)Math.Max(1, detail - 1);
-                    var anchor = node.Position - (direction * sizeScale * (0.15 + t * 0.9));
-                    var jag = HashToSigned((node.Seed * 1.7) + (_timeSeconds * 3.2), branch + (layer * 19)) * (sizeScale * 0.12);
-                    var branchDir = normal * (jag + offsetShift);
-                    var start = anchor + branchDir;
-                    var end = start + (direction * (-sizeScale * 0.16)) + (normal * HashToSigned(node.Seed * 0.9, branch + 7) * sizeScale * 0.08);
-                    drawingContext.DrawLine(pen, start, end);
-                }
-            }
-
-            drawingContext.DrawRectangle(CreateSolidBrush(primaryColor, alpha * 0.08), null, new Rect(node.Position.X - (sizeScale * 0.7), node.Position.Y - 3, sizeScale, 6));
-            drawingContext.DrawRectangle(CreateSolidBrush(accentColor, alpha * 0.06), null, new Rect(node.Position.X - (sizeScale * 0.3), node.Position.Y - 10, sizeScale * 0.8, 4));
+            return;
         }
 
-        RenderClickSparkDots(drawingContext, accentColor, 4.0, opacity * 0.9);
+        var alphaScale = nodes.Average(node => 1.0 - Math.Clamp(node.Age / node.Lifetime, 0, 1));
+        var alpha = opacity * alphaScale;
+        var ribbon = BuildResidualRibbonGeometry(
+            nodes,
+            widthSelector: (node, t) =>
+            {
+                var progress = Math.Clamp(node.Age / node.Lifetime, 0, 1);
+                var baseWidth = size * (0.11 + ((1.0 - progress) * 0.05)) * node.Scale;
+                return baseWidth * (0.92 + (Math.Sin(t * Math.PI) * 0.12));
+            },
+            waveSelector: (node, t) =>
+            {
+                var phase = (node.Seed * 0.9) + (_timeSeconds * motion * 1.15) + (t * 4.0);
+                return Math.Sin(phase) * size * 0.012;
+            });
+
+        if (ribbon is null)
+        {
+            return;
+        }
+
+        var bounds = ribbon.Bounds;
+        bounds.Inflate(size * 0.12, size * 0.08);
+
+        var bandCount = Math.Clamp((int)Math.Round(GetNumber("particles", 5)), 3, 10);
+        for (var index = 1; index < nodes.Count; index++)
+        {
+            var node = nodes[index];
+            if (node.BackdropImage is null || node.BackdropBounds.IsEmpty)
+            {
+                continue;
+            }
+
+            var previous = nodes[index - 1];
+            var segmentNodes = new[] { previous, node };
+            var segment = BuildResidualRibbonGeometry(
+                segmentNodes,
+                widthSelector: (current, t) => size * 0.095 * current.Scale,
+                waveSelector: (_, _) => 0);
+
+            if (segment is null)
+            {
+                continue;
+            }
+
+            var segmentBounds = segment.Bounds;
+            segmentBounds.Inflate(size * 0.04, size * 0.03);
+            for (var band = 0; band < bandCount; band++)
+            {
+                var bandHeight = segmentBounds.Height / bandCount;
+                var bandRect = new Rect(segmentBounds.X, segmentBounds.Y + (band * bandHeight), segmentBounds.Width, bandHeight + 1);
+                var shift = HashToSigned(node.Seed + (index * 0.31), band + 41) * distortion;
+                var yShift = HashToSigned(node.Seed * 0.7, band + 73) * 1.1;
+                drawingContext.PushClip(Geometry.Combine(segment, new RectangleGeometry(bandRect, 1.2, 1.2), GeometryCombineMode.Intersect, null));
+                drawingContext.DrawRectangle(CreateImageBrush(node.BackdropImage, alpha * sampleOpacity, shift, yShift), null, node.BackdropBounds);
+                drawingContext.Pop();
+            }
+        }
+
+        RenderClickShockwaves(drawingContext, Colors.White, size * 0.95, opacity * 0.18, 0.8);
     }
 
     private void RenderVelvetFlame(DrawingContext drawingContext)
@@ -833,8 +870,8 @@ public sealed class TemplateEffect : IEffect
             }
             plume.Freeze();
 
-            drawingContext.DrawGeometry(CreateSolidBrush(primaryColor, alpha * 0.38), null, plume);
-            drawingContext.DrawGeometry(CreateRadialBrush(accentColor, alpha * 0.2, 0.0, 1.0), null, plume);
+            drawingContext.DrawGeometry(CreateSolidBrush(primaryColor, alpha * 0.32), null, plume);
+            drawingContext.DrawGeometry(CreateSolidBrush(accentColor, alpha * 0.18), CreatePen(accentColor, 0.7, alpha * 0.16), plume);
         }
 
         var emitter = GetEmitterPosition();
@@ -846,15 +883,16 @@ public sealed class TemplateEffect : IEffect
     {
         var size = GetNumber("size", 62);
         var opacity = GetNumber("opacity", 0.62) * _masterOpacity;
-        var detail = Math.Max(8, (int)Math.Round(GetNumber("detail", 12)));
+        var detail = Math.Max(4, (int)Math.Round(GetNumber("detail", 10)));
         var motion = GetNumber("motion", 1.8);
         var primaryColor = GetColor("primaryColor", "#F59E0B");
         var accentColor = GetColor("accentColor", "#FDE68A");
-        foreach (var node in _residualNodes)
+        var nodes = GetResidualTrailNodes(maxNodes: 28, minRemainingLife: 0.06);
+        foreach (var node in nodes)
         {
             var progress = Math.Clamp(node.Age / node.Lifetime, 0, 1);
             var alpha = opacity * (1.0 - progress);
-            var nodeSize = size * (0.45 + ((1.0 - progress) * 0.35)) * node.Scale;
+            var nodeSize = size * (0.36 + ((1.0 - progress) * 0.22)) * node.Scale;
             var direction = node.Velocity.LengthSquared > 0.1 ? node.Velocity : _trailDirection;
             if (direction.LengthSquared <= 0.0001)
             {
@@ -865,13 +903,26 @@ public sealed class TemplateEffect : IEffect
 
             for (var index = 0; index < detail; index++)
             {
-                var phase = node.Seed + (_timeSeconds * motion * 2.2) + (index * 0.63);
-                var distance = nodeSize * (0.18 + HashToUnit(phase, index) * 0.95);
-                var spread = HashToSigned(phase * 0.7, index + 11) * nodeSize * 0.34;
+                var phase = node.Seed + (_timeSeconds * motion * 1.7) + (index * 0.79);
+                var distance = nodeSize * (0.16 + HashToUnit(phase, index) * 0.42);
+                var spread = HashToSigned(phase * 0.7, index + 11) * nodeSize * 0.18;
                 var point = node.Position - (direction * distance) + (normal * spread);
-                var tail = point + (direction * (6 + (HashToUnit(phase, index + 5) * 12)));
-                drawingContext.DrawLine(CreatePen(index % 3 == 0 ? accentColor : primaryColor, 1.0, alpha * 0.72), point, tail);
-                drawingContext.DrawEllipse(CreateSolidBrush(accentColor, alpha * 0.62), null, point, 1.5, 1.5);
+                var tangent = (direction * (4.0 + (HashToUnit(phase, index + 5) * 4.5))) + (normal * HashToSigned(phase, index + 17) * 2.2);
+                var control = point + (normal * HashToSigned(phase, index + 29) * 3.2);
+                var tailEnd = point + tangent;
+                var glowColor = index % 2 == 0 ? accentColor : primaryColor;
+
+                var microTrail = new StreamGeometry();
+                using (var context = microTrail.Open())
+                {
+                    context.BeginFigure(point, false, false);
+                    context.QuadraticBezierTo(control, tailEnd, true, false);
+                }
+                microTrail.Freeze();
+
+                drawingContext.DrawGeometry(null, CreatePen(glowColor, 0.95, alpha * 0.32), microTrail);
+                drawingContext.DrawEllipse(CreateSolidBrush(glowColor, alpha * 0.12), null, point, 2.4, 2.4);
+                drawingContext.DrawEllipse(CreateSolidBrush(accentColor, alpha * 0.74), null, point, 1.35, 1.35);
             }
         }
 
@@ -1051,9 +1102,24 @@ public sealed class TemplateEffect : IEffect
             TemplateEffectKind.SparkShower;
     }
 
+    private List<ResidualNode> GetResidualTrailNodes(int maxNodes, double minRemainingLife)
+    {
+        if (_residualNodes.Count == 0)
+        {
+            return [];
+        }
+
+        var filtered = _residualNodes
+            .Where(node => (1.0 - Math.Clamp(node.Age / Math.Max(0.001, node.Lifetime), 0, 1)) >= minRemainingLife)
+            .TakeLast(maxNodes)
+            .ToList();
+
+        return filtered;
+    }
+
     private bool UsesBackdropSampling()
     {
-        return _template?.Kind is TemplateEffectKind.CosmicRift or TemplateEffectKind.GlitchFracture;
+        return _template?.Kind is TemplateEffectKind.GlitchFracture;
     }
 
     private void UpdateBackdropSample()
@@ -1165,6 +1231,69 @@ public sealed class TemplateEffect : IEffect
         return new Rect(center.X - (width * 0.5), center.Y - (height * 0.5), width, height);
     }
 
+    private static StreamGeometry? BuildResidualRibbonGeometry(
+        IReadOnlyList<ResidualNode> nodes,
+        Func<ResidualNode, double, double> widthSelector,
+        Func<ResidualNode, double, double> waveSelector)
+    {
+        if (nodes.Count < 2)
+        {
+            return null;
+        }
+
+        var leftPoints = new List<Point>(nodes.Count);
+        var rightPoints = new List<Point>(nodes.Count);
+
+        for (var index = 0; index < nodes.Count; index++)
+        {
+            var node = nodes[index];
+            var t = nodes.Count == 1 ? 0.0 : index / (double)(nodes.Count - 1);
+
+            Vector tangent;
+            if (index == 0)
+            {
+                tangent = nodes[index + 1].Position - node.Position;
+            }
+            else if (index == nodes.Count - 1)
+            {
+                tangent = node.Position - nodes[index - 1].Position;
+            }
+            else
+            {
+                tangent = nodes[index + 1].Position - nodes[index - 1].Position;
+            }
+
+            if (tangent.LengthSquared <= 0.0001)
+            {
+                tangent = new Vector(0, -1);
+            }
+
+            tangent.Normalize();
+            var normal = new Vector(-tangent.Y, tangent.X);
+            var width = Math.Max(1.0, widthSelector(node, t));
+            var wave = waveSelector(node, t);
+            var center = node.Position + (normal * wave);
+            leftPoints.Add(center + (normal * width));
+            rightPoints.Add(center - (normal * width));
+        }
+
+        var geometry = new StreamGeometry();
+        using var context = geometry.Open();
+        context.BeginFigure(leftPoints[0], true, true);
+        for (var index = 1; index < leftPoints.Count; index++)
+        {
+            context.LineTo(leftPoints[index], true, false);
+        }
+
+        for (var index = rightPoints.Count - 1; index >= 0; index--)
+        {
+            context.LineTo(rightPoints[index], true, false);
+        }
+
+        geometry.Freeze();
+        return geometry;
+    }
+
     private static Color WithAlpha(Color color, double opacity)
     {
         return Color.FromArgb((byte)(Math.Clamp(opacity, 0, 1) * 255), color.R, color.G, color.B);
@@ -1220,5 +1349,9 @@ public sealed class TemplateEffect : IEffect
         public double Seed { get; set; }
 
         public double Scale { get; set; }
+
+        public BitmapSource? BackdropImage { get; set; }
+
+        public Rect BackdropBounds { get; set; }
     }
 }

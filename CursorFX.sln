@@ -13,7 +13,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorFX.Platform", "Cursor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorFX.App", "CursorFX.App\CursorFX.App.csproj", "{FE79FAA5-AFBE-4140-A27E-489843B4DFB5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CursorFX.PluginTemplate", "CursorFX.PluginTemplate\CursorFX.PluginTemplate.csproj", "{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{74FB3C53-482D-4C19-9D77-EE9C7C3738EA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluxor.PluginCursorFlameContour", "Plugins\Fluxor.PluginCursorFlameContour\Fluxor.PluginCursorFlameContour.csproj", "{BD2AA237-18B6-4EEB-83CA-2E37AE74ED28}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluxor.PluginVelvetVoid", "Plugins\Fluxor.PluginVelvetVoid\Fluxor.PluginVelvetVoid.csproj", "{07848D2D-0FE6-47AF-94C5-8EA9D958BAA3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluxor.PluginFireflySwarm", "Plugins\Fluxor.PluginFireflySwarm\Fluxor.PluginFireflySwarm.csproj", "{A182920C-8168-4148-9C3E-D9426A82FF5E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,9 +50,22 @@ Global
 		{FE79FAA5-AFBE-4140-A27E-489843B4DFB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FE79FAA5-AFBE-4140-A27E-489843B4DFB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FE79FAA5-AFBE-4140-A27E-489843B4DFB5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E61FD0EE-0F7B-4695-91D1-7BF0EE9D5D57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD2AA237-18B6-4EEB-83CA-2E37AE74ED28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD2AA237-18B6-4EEB-83CA-2E37AE74ED28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD2AA237-18B6-4EEB-83CA-2E37AE74ED28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD2AA237-18B6-4EEB-83CA-2E37AE74ED28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07848D2D-0FE6-47AF-94C5-8EA9D958BAA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07848D2D-0FE6-47AF-94C5-8EA9D958BAA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07848D2D-0FE6-47AF-94C5-8EA9D958BAA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07848D2D-0FE6-47AF-94C5-8EA9D958BAA3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A182920C-8168-4148-9C3E-D9426A82FF5E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A182920C-8168-4148-9C3E-D9426A82FF5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A182920C-8168-4148-9C3E-D9426A82FF5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A182920C-8168-4148-9C3E-D9426A82FF5E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BD2AA237-18B6-4EEB-83CA-2E37AE74ED28} = {74FB3C53-482D-4C19-9D77-EE9C7C3738EA}
+		{07848D2D-0FE6-47AF-94C5-8EA9D958BAA3} = {74FB3C53-482D-4C19-9D77-EE9C7C3738EA}
+		{A182920C-8168-4148-9C3E-D9426A82FF5E} = {74FB3C53-482D-4C19-9D77-EE9C7C3738EA}
 	EndGlobalSection
 EndGlobal

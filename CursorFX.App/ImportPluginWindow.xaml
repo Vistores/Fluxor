@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Fluxor · Import Plugin"
         Icon="pack://application:,,,/Assets/FluxorIco.ico"
-        Width="620"
-        Height="360"
+        Width="700"
+        Height="560"
         MinWidth="560"
         MinHeight="460"
         WindowStartupLocation="CenterOwner"
@@ -28,25 +28,45 @@
                 <TextBlock Margin="0,10,0,18"
                            Foreground="{StaticResource MutedTextBrush}"
                            TextWrapping="Wrap"
-                           Text="Choose a C# source file and, optionally, a JSON manifest. If C# is selected Fluxor will compile it automatically. If only JSON is selected Fluxor will import the profile manifest." />
+                           Text="Choose a plugin DLL. Fluxor will read plugin metadata and parameter schema directly from the assembly, generate the profile automatically and copy companion runtime files when they exist." />
 
-                <Border Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="16">
+                <Border Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="10">
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="C# Source File" />
-                        <TextBox Margin="0,8,0,0" IsReadOnly="True" Text="{Binding SourcePath, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Content="Browse C# File" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseSourceClick" HorizontalAlignment="Left" />
+                        <TextBlock FontWeight="SemiBold" Text="DLL Assembly File" />
+                        <TextBlock Margin="0,6,0,0"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   Text="The DLL must contain a public ICursorEffectPlugin implementation and expose settings via GetParameters()." />
+                        <TextBox Margin="0,8,0,0" IsReadOnly="True" Text="{Binding AssemblyPath, UpdateSourceTrigger=PropertyChanged}" />
+                        <WrapPanel Margin="0,10,0,0">
+                            <Button Content="Browse DLL File" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseAssemblyClick" />
+                            <Button Content="Open Plugins Folder" Style="{StaticResource GhostButtonStyle}" Click="OnOpenWorkspaceClick" />
+                        </WrapPanel>
                     </StackPanel>
                 </Border>
 
-                <Border Margin="0,16,0,0" Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="16">
+                <Border Margin="0,16,0,0"
+                        Padding="16"
+                        Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource SurfaceBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10">
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="JSON Manifest File" />
-                        <TextBox Margin="0,8,0,0" IsReadOnly="True" Text="{Binding ManifestPath, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Content="Browse JSON File" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseManifestClick" HorizontalAlignment="Left" />
+                        <TextBlock FontWeight="SemiBold" Text="Plugin Type" />
+                        <TextBlock Margin="0,6,0,0"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   Text="If the DLL contains multiple plugins, choose which one should be imported." />
+                        <ComboBox Margin="0,8,0,0"
+                                  ItemsSource="{Binding AvailablePlugins}"
+                                  SelectedItem="{Binding SelectedPluginCandidate, UpdateSourceTrigger=PropertyChanged}"
+                                  DisplayMemberPath="DisplayName" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Foreground="{StaticResource AccentMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding SelectedPluginSummary}" />
                     </StackPanel>
                 </Border>
 
-                <Border Margin="0,16,0,0" Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="16">
+                <Border Margin="0,16,0,0" Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="10">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="84" />

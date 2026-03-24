@@ -280,7 +280,7 @@
                                                Foreground="{StaticResource MutedTextBrush}"
                                                FontSize="13"
                                                TextWrapping="Wrap"
-                                               Text="Open the built-in guide to see how to structure plugin JSON and C# files correctly." />
+                                               Text="Open the built-in guide to see how to build DLL-only plugins and expose settings directly from code." />
                                 </StackPanel>
                                 <Button HorizontalAlignment="Right"
                                         Content="Open Authoring Guide"

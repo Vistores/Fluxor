@@ -9,6 +9,20 @@ public interface ICursorEffectPlugin : IDisposable
 {
     string DisplayName => GetType().Name;
 
+    string PluginId => ToKebabCase(GetType().Name);
+
+    string Description => string.Empty;
+
+    string IconGlyph => "*";
+
+    string AccentColor => "#4FD1C5";
+
+    TemplateEffectKind Kind => TemplateEffectKind.CursorAura;
+
+    TemplateTrigger Trigger => TemplateTrigger.FollowCursor;
+
+    IReadOnlyList<TemplateParameterDefinition> GetParameters() => [];
+
     void ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)
     {
         var legacyValues = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
@@ -53,5 +67,27 @@ public interface ICursorEffectPlugin : IDisposable
 
     void Update(double deltaTime)
     {
+    }
+
+    private static string ToKebabCase(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "plugin";
+        }
+
+        var buffer = new System.Text.StringBuilder(value.Length + 8);
+        for (var i = 0; i < value.Length; i++)
+        {
+            var c = value[i];
+            if (char.IsUpper(c) && i > 0)
+            {
+                buffer.Append('-');
+            }
+
+            buffer.Append(char.ToLowerInvariant(c));
+        }
+
+        return buffer.ToString();
     }
 }
