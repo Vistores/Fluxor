@@ -300,45 +300,47 @@
                 Background="{StaticResource CardBackgroundSecondaryBrush}"
                 BorderBrush="{StaticResource CardBorderBrush}"
                 BorderThickness="1"
-                CornerRadius="20">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+                CornerRadius="20"
+                PreviewMouseWheel="OnProfilesPaneMouseWheel">
+            <ScrollViewer x:Name="ProfilesScrollViewer"
+                          VerticalScrollBarVisibility="Auto">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                <StackPanel>
-                    <TextBlock FontSize="21" FontWeight="SemiBold" Text="Profiles" />
-                    <TextBlock Margin="0,6,0,0"
-                               Foreground="{StaticResource MutedTextBrush}"
-                               FontSize="13"
-                               Text="10 built-in starter profiles are available, plus any custom DLL plugins you import." />
-                </StackPanel>
+                    <StackPanel>
+                        <TextBlock FontSize="21" FontWeight="SemiBold" Text="Profiles" />
+                        <TextBlock Margin="0,6,0,0"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   FontSize="13"
+                                   Text="10 built-in starter profiles are available, plus any custom DLL plugins you import." />
+                    </StackPanel>
 
-                <ScrollViewer Grid.Row="1"
-                              Margin="0,14,0,14"
-                              VerticalScrollBarVisibility="Auto"
-                              PreviewMouseWheel="OnNestedScrollViewerMouseWheel">
-                    <ListBox ItemsSource="{Binding AvailablePlugins}"
+                    <ListBox Grid.Row="1"
+                             Margin="0,14,0,14"
+                             ItemsSource="{Binding AvailablePlugins}"
                              SelectedItem="{Binding SelectedPlugin}"
+                             PreviewMouseWheel="OnProfilesPaneMouseWheel"
                              ItemTemplate="{StaticResource PluginListItemTemplate}"
                              Background="Transparent"
                              BorderThickness="0"
                              ScrollViewer.VerticalScrollBarVisibility="Disabled" />
-                </ScrollViewer>
 
-                <Border Grid.Row="2" Style="{StaticResource PanelCardStyle}">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Status" />
-                        <TextBlock Margin="0,8,0,0"
-                                   Foreground="{StaticResource MutedTextBrush}"
-                                   FontSize="13"
-                                   TextWrapping="Wrap"
-                                   Text="{Binding AutosaveStatus}" />
-                    </StackPanel>
-                </Border>
-            </Grid>
+                    <Border Grid.Row="2" Style="{StaticResource PanelCardStyle}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Status" />
+                            <TextBlock Margin="0,8,0,0"
+                                       Foreground="{StaticResource MutedTextBrush}"
+                                       FontSize="13"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding AutosaveStatus}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
         </Border>
     </Grid>
 </Window>

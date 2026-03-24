@@ -24,6 +24,12 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void OnProfilesPaneMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        ProfilesScrollViewer.ScrollToVerticalOffset(ProfilesScrollViewer.VerticalOffset - e.Delta);
+        e.Handled = true;
+    }
+
     private static ScrollViewer? FindParentScrollViewer(DependencyObject? current)
     {
         while (current is not null)
