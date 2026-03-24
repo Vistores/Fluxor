@@ -83,7 +83,11 @@ public enum TemplateEffectKind
     FrostHalo,
     SolarFlare,
     MysticRunes,
-    MatrixCascade
+    MatrixCascade,
+    CosmicRift,
+    GlitchFracture,
+    VelvetFlame,
+    SparkShower
 }
 
 public enum TemplateRuntimeKind

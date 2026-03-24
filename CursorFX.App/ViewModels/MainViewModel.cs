@@ -721,7 +721,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             "mystic-runes" or
             "ribbon-wave" or
             "torn-current" or
-            "matrix-cascade";
+            "matrix-cascade" or
+            "cosmic-rift" or
+            "glitch-fracture" or
+            "velvet-flame" or
+            "spark-shower";
     }
 
     private void TryDeletePluginAssembly(ShaderTemplateDefinition plugin)
