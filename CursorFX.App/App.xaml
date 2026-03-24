@@ -92,7 +92,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="12"
+                                CornerRadius="8"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter Margin="{TemplateBinding Padding}"
                                               HorizontalAlignment="Center"
@@ -158,7 +158,7 @@
                                             <ControlTemplate TargetType="Thumb">
                                                 <Border Margin="2"
                                                         Background="{StaticResource SurfaceBorderBrush}"
-                                                        CornerRadius="999" />
+                                                        CornerRadius="4" />
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>
@@ -193,7 +193,7 @@
                                 Background="{StaticResource SurfaceBrush}"
                                 BorderBrush="{StaticResource SurfaceBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="14">
+                                CornerRadius="10">
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -216,7 +216,7 @@
             <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
             <Setter Property="BorderBrush" Value="{StaticResource SurfaceBorderBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="CornerRadius" Value="10" />
             <Setter Property="Effect" Value="{StaticResource PanelShadowEffect}" />
         </Style>
 
@@ -239,7 +239,7 @@
                         <Border Background="{StaticResource SurfaceBrush}"
                                 BorderBrush="{StaticResource SurfaceBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="16">
+                                CornerRadius="10">
                             <DockPanel>
                                 <ToggleButton DockPanel.Dock="Top"
                                               BorderThickness="0"
@@ -256,7 +256,7 @@
                                                     Background="{StaticResource SurfaceRaisedBrush}"
                                                     BorderBrush="{StaticResource SurfaceBorderBrush}"
                                                     BorderThickness="0,0,0,1"
-                                                    CornerRadius="15">
+                                                    CornerRadius="9">
                                                 <DockPanel LastChildFill="True">
                                                     <TextBlock Text="{TemplateBinding Content}"
                                                                FontSize="15"
