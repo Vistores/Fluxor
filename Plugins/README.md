@@ -1,6 +1,9 @@
 # Fluxor Plugins
 
-This folder is the default workspace for DLL-only Fluxor plugins.
+This folder is the source workspace for DLL-only Fluxor plugins.
+
+For installed builds, Fluxor opens the user workspace here:
+- `%USERPROFILE%\Documents\Fluxor\Plugins`
 
 Included sample projects:
 - `Fluxor.PluginCursorFlameContour`
@@ -12,7 +15,9 @@ Included sample projects:
 
 Recommended flow:
 1. Duplicate one of the sample folders or create a new folder here.
-2. Reference `..\..\CursorFX.Core\CursorFX.Core.csproj`.
+2. Build against `CursorFX.Core`.
+   - inside the repository the sample projects use `..\..\CursorFX.Core\CursorFX.Core.csproj`
+   - in installed setups they fall back to `..\Fluxor.PluginSdk\CursorFX.Core.dll`
 3. Implement `ICursorEffectPlugin`.
 4. Expose metadata and settings directly from code via:
    - `DisplayName`

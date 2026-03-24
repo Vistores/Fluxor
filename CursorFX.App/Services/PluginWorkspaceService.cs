@@ -6,7 +6,10 @@ public sealed class PluginWorkspaceService
 {
     public PluginWorkspaceService()
     {
-        WorkspaceDirectory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Plugins"));
+        WorkspaceDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "Fluxor",
+            "Plugins");
     }
 
     public string WorkspaceDirectory { get; }

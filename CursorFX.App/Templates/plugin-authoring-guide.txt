@@ -3,9 +3,9 @@ Fluxor Plugin Authoring Guide
 
 1. Core idea
 ------------
-Fluxor now uses a DLL-only plugin flow.
+Fluxor uses a DLL-only plugin flow.
 
-You ship one compiled plugin DLL.
+You build one plugin DLL.
 The DLL contains:
 - rendering logic
 - plugin identity
@@ -13,55 +13,85 @@ The DLL contains:
 - default values and section grouping
 
 Fluxor reads all of this directly from the plugin type.
-Separate JSON manifests are no longer required for import.
-The recommended workspace layout is one plugin project per folder inside the shared Plugins directory.
+Separate JSON manifests are not used anymore.
 
 
-2. What the plugin must implement
+2. Where plugins live
+---------------------
+
+Installed Fluxor builds open this writable user workspace by default:
+- `%USERPROFILE%\Documents\Fluxor\Plugins`
+
+That folder is meant for:
+- your own plugin projects
+- sample plugin projects
+- ready-to-import built DLL files
+- the bundled `Fluxor.PluginSdk` folder
+
+Fluxor copies imported plugin DLL files into its runtime catalog automatically.
+The runtime catalog is separate from the user workspace.
+
+
+3. SDK dependency
+-----------------
+
+Plugins compile against `CursorFX.Core.dll`.
+
+In the repository, sample projects reference:
+- `..\..\CursorFX.Core\CursorFX.Core.csproj`
+
+In installed builds, sample projects fall back to:
+- `..\Fluxor.PluginSdk\CursorFX.Core.dll`
+
+That means users can build plugins without having the full Fluxor source tree.
+
+
+4. What the plugin must implement
 ---------------------------------
 
 Your plugin class must:
-- implement ICursorEffectPlugin
+- implement `ICursorEffectPlugin`
 - have a public parameterless constructor
 - expose metadata and settings schema from code
 
-Minimal required namespace:
+Useful namespaces:
 
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Media;
 using CursorFX.Core.Interfaces;
-
-Common additional namespaces:
-- using System;
-- using System.Collections.Generic;
-- using System.Windows;
-- using System.Windows.Media;
-- using CursorFX.Core.Models;
+using CursorFX.Core.Models;
+```
 
 
-3. Required runtime contract
+5. Required runtime contract
 ----------------------------
 
-Your class should expose:
-- DisplayName
-- PluginId
-- Description
-- IconGlyph
-- AccentColor
-- Kind
-- Trigger
-- GetParameters()
+Expose:
+- `DisplayName`
+- `PluginId`
+- `Description`
+- `IconGlyph`
+- `AccentColor`
+- `Kind`
+- `Trigger`
+- `GetParameters()`
 
-And implement:
-- ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)
-- Update(TimeSpan deltaTime)
-- Render(DrawingContext drawingContext)
-- OnMouseMove(Point position)
-- OnMouseClick(Point position)
-- Dispose()
+Implement:
+- `ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)`
+- `Update(TimeSpan deltaTime)`
+- `Render(DrawingContext drawingContext)`
+- `OnMouseMove(Point position)`
+- `OnMouseClick(Point position)`
+- `Dispose()`
 
 
-4. Minimal skeleton
+6. Minimal skeleton
 -------------------
 
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -97,259 +127,176 @@ public sealed class MyPlugin : ICursorEffectPlugin
         }
     ];
 
-    public void ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)
-    {
-    }
-
-    public void Update(TimeSpan deltaTime)
-    {
-    }
-
-    public void Render(DrawingContext drawingContext)
-    {
-    }
-
-    public void OnMouseMove(Point position)
-    {
-    }
-
-    public void OnMouseClick(Point position)
-    {
-    }
-
-    public void Dispose()
-    {
-    }
+    public void ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity) { }
+    public void Update(TimeSpan deltaTime) { }
+    public void Render(DrawingContext drawingContext) { }
+    public void OnMouseMove(Point position) { }
+    public void OnMouseClick(Point position) { }
+    public void Dispose() { }
 }
+```
 
 
-5. How Fluxor builds the settings UI
+7. How Fluxor builds the settings UI
 ------------------------------------
 
-Fluxor uses GetParameters() to build the settings panel.
+Fluxor uses `GetParameters()` to build the settings panel.
 
-Each parameter must define:
-- Key
-- DisplayName
-- Section
-- SectionName
-- Type
-- Min
-- Max
-- Step
-- DefaultNumber or DefaultColor or DefaultBoolean
+Each parameter should define:
+- `Key`
+- `DisplayName`
+- `Section`
+- `SectionName`
+- `Type`
+- `Min`
+- `Max`
+- `Step`
+- one default value
 
-Type values:
-- Number
-- Color
-- Toggle
+Supported types:
+- `Number`
+- `Color`
+- `Toggle`
 
 Sections:
-- Trail
-- Glow
-- Ripple
-- Shader
+- `Trail`
+- `Glow`
+- `Ripple`
+- `Shader`
 
 
-6. Mapping rules inside the plugin
-----------------------------------
+8. Mapping rules
+----------------
 
-If your plugin reads:
-- opacity
-- primaryColor
-- enabled
+If your plugin reads keys like:
+- `opacity`
+- `primaryColor`
+- `enabled`
 
-then these exact keys must exist in GetParameters().
+then the same keys must exist in `GetParameters()`.
 
-Example:
-- GetNumber("opacity", 0.8) -> Number parameter with Key = "opacity"
-- GetColor("primaryColor", "#7DD3FC") -> Color parameter with Key = "primaryColor"
-- GetToggle("enabled", true) -> Toggle parameter with Key = "enabled"
-
-Key names must stay stable.
-Changing them later will reset user settings for that plugin.
+Keep keys stable after release.
+Changing them later resets saved values for that plugin.
 
 
-7. Recommended plugin structure
--------------------------------
-
-Use this layout:
-- configuration fields
-- runtime state
-- cached visual resources
-- metadata properties
-- GetParameters()
-- ApplyParameters(...)
-- Update(...)
-- Render(...)
-- OnMouseMove(...)
-- OnMouseClick(...)
-- Dispose()
-
-Best practice:
-- read and clamp values in ApplyParameters
-- rebuild cached resources only when values change
-- keep Update for animation only
-- keep Render focused on drawing only
-
-
-8. Performance recommendations
-------------------------------
-
-- Use fixed-size buffers for trails and particles
-- Reuse lists and arrays where possible
-- Avoid creating Random every frame
-- Avoid rebuilding Pen and Brush objects inside Render
-- Clamp deltaTime
-- Cap maximum spawned elements
-- Prefer one well-shaped shader/ribbon over many weak particles
-- Keep external screen sampling optional and minimal
-
-For plugin DLLs specifically:
-- keep per-frame allocations low
-- avoid creating large geometries for tiny details
-- avoid reflection or file IO during render/update
-- cache parsed colors and derived values after ApplyParameters
-
-
-9. Stability recommendations
-----------------------------
-
-- Always provide safe defaults
-- Never assume a parameter exists
-- Clamp all numeric values
-- Keep Dispose lightweight
-- Fail gracefully if a parameter is missing
-- Keep one plugin self-contained
-- Do not depend on another plugin DLL being loaded first
-
-
-10. Visual design recommendations
----------------------------------
-
-Cursor effect design works best when:
-- cursor is the source, not the whole effect
-- the effect can live briefly after the cursor moves on
-- one strong silhouette leads the look
-- secondary details support the silhouette instead of replacing it
-
-Examples:
-- electric: smooth emitter + branching arcs + calm idle corona
-- fireflies: few readable lights + short curved micro-trails
-- void: dark ribbon mass + subtle inner glow + slow healing tail
-- aurora: one connected soft band + inner light core
-
-
-11. Import workflow
--------------------
-
-1. Build the plugin DLL inside its own folder under Plugins
-2. In Fluxor click Import Plugin
-3. Choose the DLL
-4. Optionally choose an icon image
-5. Confirm import
-
-Fluxor will:
-- load the plugin type
-- read metadata from the DLL
-- build the profile automatically
-- copy the DLL and its companion runtime files into the plugin catalog
-
-
-12. Where to create and store plugins
--------------------------------------
-
-Recommended workspace:
-- `C:\Users\Gyrocopter_UA\Desktop\TestProj\Plugins`
-
-Recommended layout:
-- one folder per plugin
-- one `.csproj` per folder
-- one main plugin class per folder
-
-Examples already included:
-- `Plugins\Fluxor.PluginCursorFlameContour`
-- `Plugins\Fluxor.PluginVelvetVoid`
-- `Plugins\Fluxor.PluginFireflySwarm`
-
-Recommended user flow:
-1. Copy one of the sample folders
-2. Rename the folder and project
-3. Change:
-   - namespace
-   - class name
-   - DisplayName
-   - PluginId
-4. Build the project
-5. Import the DLL into Fluxor
-
-
-13. How to build the DLL
+9. Recommended structure
 ------------------------
 
-From the project root:
+Inside one plugin class, keep this order:
+- metadata properties
+- config fields
+- runtime state
+- cached visual resources
+- `GetParameters()`
+- `ApplyParameters(...)`
+- `Update(...)`
+- `Render(...)`
+- `OnMouseMove(...)`
+- `OnMouseClick(...)`
+- `Dispose()`
 
-`dotnet build .\Plugins\MyPluginFolder\MyPluginProject.csproj -m:1 -v minimal`
 
-Example:
+10. Performance recommendations
+-------------------------------
 
-`dotnet build .\Plugins\Fluxor.PluginVelvetVoid\Fluxor.PluginVelvetVoid.csproj -m:1 -v minimal`
+- clamp all numeric values
+- use fixed-size buffers for trails and particles
+- avoid per-frame file IO
+- avoid reflection in update/render
+- cache brushes, pens and parsed colors
+- keep per-frame allocations low
+- prefer one strong readable silhouette over many weak noisy particles
+- keep screen sampling minimal if you use it
 
-The built DLL will be here:
 
-`Plugins\MyPluginFolder\bin\Debug\net9.0-windows\MyPluginProject.dll`
+11. Visual recommendations
+--------------------------
 
-Fluxor imports this DLL file directly.
+Good cursor effects usually follow one of these models:
+- cursor is the source of an effect
+- cursor leaves a short-lived residual effect
+- cursor is wrapped by a contour, aura or shell
+
+Examples:
+- flame contour around the live cursor alpha
+- void ribbon that slowly heals behind the cursor
+- sparse fireflies with tiny curved micro-trails
 
 
-14. How to install the plugin into Fluxor
------------------------------------------
+12. How to create a new plugin
+------------------------------
+
+1. Open `%USERPROFILE%\Documents\Fluxor\Plugins`
+2. Copy one of the sample folders
+3. Rename the folder, `.csproj`, namespace and class
+4. Update:
+   - `DisplayName`
+   - `PluginId`
+   - `Description`
+   - `IconGlyph`
+   - parameters returned by `GetParameters()`
+5. Build the project
+
+Build command example:
+
+```powershell
+dotnet build .\Fluxor.PluginVelvetVoid\Fluxor.PluginVelvetVoid.csproj -m:1 -v minimal
+```
+
+Built DLL location example:
+
+```text
+Fluxor.PluginVelvetVoid\bin\Debug\net9.0-windows\Fluxor.PluginVelvetVoid.dll
+```
+
+
+13. How to import into Fluxor
+-----------------------------
 
 1. Open Fluxor
 2. Click `Import Plugin`
-3. The dialog opens in the shared `Plugins` folder by default
-4. Choose your built DLL
-5. If the DLL contains one plugin type, Fluxor selects it automatically
-6. If the DLL contains multiple plugin types, choose one in the `Plugin Type` field
-7. Optionally choose a custom card icon
-8. Confirm import
+3. The dialog opens in `%USERPROFILE%\Documents\Fluxor\Plugins`
+4. Choose a built DLL
+5. If the DLL contains several plugin types, choose one in `Plugin Type`
+6. Optionally choose an icon for the plugin card
+7. Confirm import
 
-Fluxor then copies the DLL into its runtime plugin catalog automatically.
+Fluxor will:
+- read metadata from the DLL
+- build the settings profile automatically
+- copy the DLL and runtime companion files into its internal catalog
 
 
-15. Recommended testing checklist
----------------------------------
+14. Testing checklist
+---------------------
 
 Before sharing a plugin, verify:
-- plugin appears in the profile list
-- parameters appear correctly in sections
-- sliders update live
-- colors update live
-- effect survives rapid cursor movement
-- effect survives repeated clicks
-- plugin does not freeze when hidden and shown again
-- plugin does not over-allocate on long sessions
+- the plugin appears in the profile list
+- parameters are grouped correctly
+- sliders and colors update live
+- the effect survives rapid movement and repeated clicks
+- the effect does not freeze when the cursor is hidden and shown again
+- the plugin does not allocate excessively during long use
 
 
-16. Common mistakes
+15. Common mistakes
 -------------------
 
-- not implementing ICursorEffectPlugin
 - missing public parameterless constructor
-- GetParameters() returns empty list
-- key mismatch between parameter schema and code
+- not implementing `ICursorEffectPlugin`
+- `GetParameters()` returns an empty list
+- key mismatch between schema and code
 - rebuilding heavy resources every frame
-- creating too many particles for a soft effect
-- trying to express every effect as noise instead of one readable shape
+- making soft effects from too many noisy particles
+- depending on another plugin DLL already being loaded
 
 
-17. Best practice for maintainability
-------------------------------------
+16. Maintainability advice
+--------------------------
 
-- Keep one clear visual idea per plugin
-- Keep one plugin project per folder
-- Prefer 8 to 15 meaningful controls
-- Name keys in plain English
-- Keep PluginId stable
-- Keep metadata in code close to the rendering logic
-- Use DLL-only import as the canonical Fluxor plugin workflow
+- keep one plugin project per folder
+- keep one clear visual idea per plugin
+- prefer 8 to 15 meaningful controls
+- keep `PluginId` stable
+- keep metadata close to the rendering logic
+- treat DLL-only import as the canonical Fluxor plugin workflow

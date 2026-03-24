@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
+  <ItemGroup Condition="Exists('..\..\CursorFX.Core\CursorFX.Core.csproj')">
     <ProjectReference Include="..\..\CursorFX.Core\CursorFX.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="!Exists('..\..\CursorFX.Core\CursorFX.Core.csproj')">
+    <Reference Include="CursorFX.Core">
+      <HintPath>..\Fluxor.PluginSdk\CursorFX.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <PropertyGroup>

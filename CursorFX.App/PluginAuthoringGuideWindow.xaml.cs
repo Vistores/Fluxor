@@ -12,7 +12,7 @@ public partial class PluginAuthoringGuideWindow : Window
         InitializeComponent();
         _guideText = File.Exists(guidePath)
             ? File.ReadAllText(guidePath)
-            : "Plugin authoring guide was not found.";
+            : $"Plugin authoring guide was not found.{Environment.NewLine}{Environment.NewLine}Expected path:{Environment.NewLine}{guidePath}";
         GuideTextBox.Text = _guideText;
     }
 

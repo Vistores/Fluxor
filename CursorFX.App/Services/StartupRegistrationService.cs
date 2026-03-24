@@ -8,7 +8,7 @@ namespace CursorFX.App.Services;
 public sealed class StartupRegistrationService
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string AppName = "CursorFX";
+    private const string AppName = "Fluxor";
 
     public void Apply(bool enabled)
     {

@@ -8,3 +8,6 @@ _verify_plugin_build/
 _tmp_inferno_check/
 build.log
 pathwalk.log
+artifacts/
+InstallerOutput/
+_verify_cursor_contour_build/

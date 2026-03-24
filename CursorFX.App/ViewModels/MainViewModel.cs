@@ -179,7 +179,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string PluginFolderPath => _templateCatalog.CatalogDirectory;
 
-    public string PluginAuthoringGuidePath => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "CursorFX.App", "Templates", "plugin-authoring-guide.txt"));
+    public string PluginAuthoringGuidePath => Path.Combine(AppContext.BaseDirectory, "Templates", "plugin-authoring-guide.txt");
+
+    public string ApplicationVersion => "v0.0.1";
+
+    public string ApplicationAuthor => "Dokzya_dev";
+
+    public string ApplicationSignature => $"{ApplicationVersion} • {ApplicationAuthor}";
 
     public bool RunInBackgroundEnabled => _settings.General.RunInBackground;
 

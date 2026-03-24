@@ -21,10 +21,15 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
 
     public ShaderTemplateCatalog()
     {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         CatalogDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "CursorFX",
+            localAppData,
+            "Fluxor",
             "Plugins");
+
+        TryMigrateLegacyCatalog(
+            Path.Combine(localAppData, "CursorFX", "Plugins"),
+            CatalogDirectory);
     }
 
     public string CatalogDirectory { get; }
@@ -640,4 +645,37 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             Type = TemplateParameterType.Toggle,
             DefaultBoolean = defaultBoolean
         };
+
+    private static void TryMigrateLegacyCatalog(string legacyCatalogDirectory, string targetCatalogDirectory)
+    {
+        if (!Directory.Exists(legacyCatalogDirectory))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(targetCatalogDirectory);
+
+            foreach (var sourcePath in Directory.EnumerateFiles(legacyCatalogDirectory))
+            {
+                var fileName = Path.GetFileName(sourcePath);
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    continue;
+                }
+
+                var destinationPath = Path.Combine(targetCatalogDirectory, fileName);
+                if (File.Exists(destinationPath))
+                {
+                    continue;
+                }
+
+                File.Copy(sourcePath, destinationPath, overwrite: false);
+            }
+        }
+        catch
+        {
+        }
+    }
 }

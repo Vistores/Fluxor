@@ -1,11 +1,10 @@
-using System.ComponentModel;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using CursorFX.App.Services;
-using Microsoft.Win32;
-using System.Diagnostics;
 
 namespace CursorFX.App;
 
@@ -76,7 +75,7 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
 
     public string SelectedPluginSummary => SelectedPluginCandidate is null
         ? "No plugin type selected yet."
-        : $"{SelectedPluginCandidate.DisplayName} • {SelectedPluginCandidate.PluginId}{Environment.NewLine}{SelectedPluginCandidate.Description}";
+        : $"{SelectedPluginCandidate.DisplayName} - {SelectedPluginCandidate.PluginId}{Environment.NewLine}{SelectedPluginCandidate.Description}";
 
     private void OnBrowseAssemblyClick(object sender, RoutedEventArgs e)
     {

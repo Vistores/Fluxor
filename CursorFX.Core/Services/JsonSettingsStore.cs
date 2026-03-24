@@ -18,10 +18,14 @@ public sealed class JsonSettingsStore : ISettingsStore
     {
         var appDataPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Fluxor");
+        var legacyAppDataPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "CursorFX");
 
         Directory.CreateDirectory(appDataPath);
         _settingsFilePath = Path.Combine(appDataPath, "settings.json");
+        TryMigrateLegacySettings(Path.Combine(legacyAppDataPath, "settings.json"), _settingsFilePath);
     }
 
     public AppSettings Load()
@@ -48,5 +52,21 @@ public sealed class JsonSettingsStore : ISettingsStore
 
         var json = JsonSerializer.Serialize(settings, SerializerOptions);
         File.WriteAllText(_settingsFilePath, json);
+    }
+
+    private static void TryMigrateLegacySettings(string legacySettingsPath, string targetSettingsPath)
+    {
+        if (File.Exists(targetSettingsPath) || !File.Exists(legacySettingsPath))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Copy(legacySettingsPath, targetSettingsPath, overwrite: false);
+        }
+        catch
+        {
+        }
     }
 }
