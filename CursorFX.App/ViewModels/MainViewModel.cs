@@ -65,6 +65,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _autosaveTimer.Tick += OnAutosaveTick;
 
         AvailablePlugins = new ObservableCollection<ShaderTemplateDefinition>(_templateCatalog.LoadTemplates());
+        RefreshPluginCollections();
         ImportTemplateCommand = new RelayCommand(ImportPlugin);
         OpenPluginFolderCommand = new RelayCommand(OpenPluginFolder);
         OpenSettingsCommand = new RelayCommand(OpenSettings);
@@ -89,6 +90,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ObservableCollection<ShaderTemplateDefinition> AvailablePlugins { get; }
+
+    public ObservableCollection<ShaderTemplateDefinition> BuiltInPlugins { get; } = [];
+
+    public ObservableCollection<ShaderTemplateDefinition> ImportedPlugins { get; } = [];
 
     public ObservableCollection<PluginCategoryViewModel> PluginCategories { get; } = [];
 
@@ -177,6 +182,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string FpsLabel => $"FPS cap: {_settings.General.TargetFps}";
 
+    public double CursorAttachStrength
+    {
+        get => _settings.General.CursorAttachStrength;
+        set
+        {
+            if (!SetNestedDouble(_settings.General.CursorAttachStrength, value, v => _settings.General.CursorAttachStrength = v))
+            {
+                return;
+            }
+
+            ApplyRuntimeSettings();
+            OnPropertyChanged(nameof(CursorAttachStrengthLabel));
+            ScheduleAutosave("General settings changed.");
+        }
+    }
+
+    public string CursorAttachStrengthLabel => $"Cursor attach: {_settings.General.CursorAttachStrength:0.0}x";
+
     public string PluginFolderPath => _templateCatalog.CatalogDirectory;
 
     public string PluginAuthoringGuidePath => Path.Combine(AppContext.BaseDirectory, "Templates", "plugin-authoring-guide.txt");
@@ -186,6 +209,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string ApplicationAuthor => "Dokzya_dev";
 
     public string ApplicationSignature => $"{ApplicationVersion} • {ApplicationAuthor}";
+
+    public string BuiltInProfilesSummary => $"{BuiltInPlugins.Count} built-in profiles.";
+
+    public string ImportedProfilesSummary => ImportedPlugins.Count == 0
+        ? "No imported plugins yet."
+        : $"Imported plugins sorted by newest first ({ImportedPlugins.Count}).";
 
     public bool RunInBackgroundEnabled => _settings.General.RunInBackground;
 
@@ -443,7 +472,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
 
         var result = System.Windows.MessageBox.Show(
-            $"Delete plugin '{SelectedPlugin.Name}'?\n\nThis removes its JSON profile from the plugin catalog. For external plugins CursorFX will also try to remove the DLL if no other profile references it.",
+            $"Delete plugin '{SelectedPlugin.Name}'?\n\nThis removes the profile from the Fluxor plugin catalog. For external plugins Fluxor will also try to remove the DLL if no other profile references it.",
             "Delete Plugin",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
@@ -489,9 +518,35 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             AvailablePlugins.Add(plugin);
         }
 
+        RefreshPluginCollections();
+
         SelectedPlugin = AvailablePlugins.FirstOrDefault(plugin => plugin.Id == selectedPluginId)
             ?? AvailablePlugins.FirstOrDefault(plugin => plugin.Id == _settings.TemplateEffect.SelectedTemplateId)
             ?? AvailablePlugins.FirstOrDefault();
+    }
+
+    private void RefreshPluginCollections()
+    {
+        BuiltInPlugins.Clear();
+        foreach (var plugin in AvailablePlugins
+                     .Where(plugin => plugin.RuntimeKind == TemplateRuntimeKind.BuiltInTemplate)
+                     .OrderBy(plugin => GetBuiltInSortOrder(plugin.Id))
+                     .ThenBy(plugin => plugin.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            BuiltInPlugins.Add(plugin);
+        }
+
+        ImportedPlugins.Clear();
+        foreach (var plugin in AvailablePlugins
+                     .Where(plugin => plugin.RuntimeKind == TemplateRuntimeKind.ExternalAssembly)
+                     .OrderByDescending(plugin => plugin.DateAddedUtc)
+                     .ThenBy(plugin => plugin.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            ImportedPlugins.Add(plugin);
+        }
+
+        OnPropertyChanged(nameof(BuiltInProfilesSummary));
+        OnPropertyChanged(nameof(ImportedProfilesSummary));
     }
 
     private void SaveSettings()
@@ -619,7 +674,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                     Opacity = _settings.Glow.Opacity,
                     Color = _settings.Glow.Color
                 },
-                _settings.General.MasterOpacity);
+                _settings.General.MasterOpacity,
+                _settings.General.CursorAttachStrength);
 
             _rippleEffect.UpdateSettings(
                 new RippleSettings
@@ -636,7 +692,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         else
         {
             _trailEffect.UpdateSettings(_settings.Trail, _settings.General.MasterOpacity);
-            _glowEffect.UpdateSettings(_settings.Glow, _settings.General.MasterOpacity);
+            _glowEffect.UpdateSettings(_settings.Glow, _settings.General.MasterOpacity, _settings.General.CursorAttachStrength);
             _rippleEffect.UpdateSettings(_settings.Ripple, _settings.General.MasterOpacity);
         }
 
@@ -644,7 +700,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             SelectedPlugin?.RuntimeKind == TemplateRuntimeKind.BuiltInTemplate ? SelectedPlugin : null,
             SelectedPlugin is null ? new Dictionary<string, TemplateParameterValue>(StringComparer.OrdinalIgnoreCase) : GetOrCreatePluginValues(SelectedPlugin),
             _settings.TemplateEffect.IsEnabled,
-            _settings.General.MasterOpacity);
+            _settings.General.MasterOpacity,
+            _settings.General.CursorAttachStrength);
         try
         {
             _customPluginEffect.UpdatePlugin(
@@ -711,18 +768,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         return pluginId is
             "neon-suite" or
             "minimal-suite" or
-            "gaming-suite" or
-            "prism-bloom" or
-            "arc-sparkle" or
-            "comet-ribbon" or
-            "nebula-drift" or
             "frost-halo" or
-            "solar-flare" or
-            "mystic-runes" or
-            "ribbon-wave" or
-            "torn-current" or
             "matrix-cascade" or
-            "velvet-flame";
+            "tap-cross" or
+            "critical-spike";
+    }
+
+    private static int GetBuiltInSortOrder(string pluginId)
+    {
+        return pluginId switch
+        {
+            "minimal-suite" => 0,
+            "neon-suite" => 1,
+            "frost-halo" => 2,
+            "matrix-cascade" => 3,
+            "tap-cross" => 4,
+            "critical-spike" => 5,
+            _ => 100
+        };
     }
 
     private void TryDeletePluginAssembly(ShaderTemplateDefinition plugin)

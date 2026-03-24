@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace CursorFX.Core.Models;
 
 public sealed class ShaderTemplateDefinition
@@ -15,6 +17,9 @@ public sealed class ShaderTemplateDefinition
     public string AccentColor { get; init; } = "#4FD1C5";
 
     public string ResolvedIconPath { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public DateTime DateAddedUtc { get; set; }
 
     public TemplateRuntimeKind RuntimeKind { get; init; } = TemplateRuntimeKind.BuiltInTemplate;
 
@@ -87,7 +92,9 @@ public enum TemplateEffectKind
     CosmicRift,
     GlitchFracture,
     VelvetFlame,
-    SparkShower
+    SparkShower,
+    IrregularCrossTap,
+    CriticalSpikes
 }
 
 public enum TemplateRuntimeKind

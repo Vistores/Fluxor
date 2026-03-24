@@ -12,6 +12,7 @@ public sealed class GlowEffect : IEffect
     private GlowSettings _settings;
     private double _masterOpacity = 1.0;
     private Point _smoothedPosition;
+    private double _cursorAttachStrength = 2.0;
 
     public GlowEffect(GlowSettings settings)
     {
@@ -26,7 +27,13 @@ public sealed class GlowEffect : IEffect
 
     public void Update(TimeSpan deltaTime)
     {
-        var blend = Math.Clamp(deltaTime.TotalSeconds * 18d, 0d, 1d);
+        if (_cursorAttachStrength >= 3.95)
+        {
+            _smoothedPosition = _position;
+            return;
+        }
+
+        var blend = Math.Clamp(deltaTime.TotalSeconds * 18d * Math.Max(1.0, _cursorAttachStrength), 0d, 1d);
         _smoothedPosition = new Point(
             _smoothedPosition.X + ((_position.X - _smoothedPosition.X) * blend),
             _smoothedPosition.Y + ((_position.Y - _smoothedPosition.Y) * blend));
@@ -60,10 +67,11 @@ public sealed class GlowEffect : IEffect
     {
     }
 
-    public void UpdateSettings(GlowSettings settings, double masterOpacity)
+    public void UpdateSettings(GlowSettings settings, double masterOpacity, double cursorAttachStrength = 2.0)
     {
         _settings = Clone(settings);
         _masterOpacity = masterOpacity;
+        _cursorAttachStrength = cursorAttachStrength;
         IsEnabled = settings.IsEnabled;
         RefreshBrush();
     }

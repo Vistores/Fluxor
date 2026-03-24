@@ -210,11 +210,13 @@
 
                                 <StackPanel Margin="0,0,14,0">
                                     <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="General" />
-                                    <TextBlock Margin="0,10,0,0" FontSize="13" Text="{Binding EffectOpacityLabel}" />
-                                    <Slider Minimum="0.1" Maximum="1.0" Value="{Binding MasterOpacity}" TickFrequency="0.02" />
-                                    <TextBlock FontSize="13" Text="{Binding FpsLabel}" />
-                                    <Slider Minimum="30" Maximum="144" Value="{Binding TargetFps}" TickFrequency="1" IsSnapToTickEnabled="True" />
-                                </StackPanel>
+                                <TextBlock Margin="0,10,0,0" FontSize="13" Text="{Binding EffectOpacityLabel}" />
+                                <Slider Minimum="0.1" Maximum="1.0" Value="{Binding MasterOpacity}" TickFrequency="0.02" />
+                                <TextBlock FontSize="13" Text="{Binding FpsLabel}" />
+                                <Slider Minimum="30" Maximum="144" Value="{Binding TargetFps}" TickFrequency="1" IsSnapToTickEnabled="True" />
+                                <TextBlock FontSize="13" Text="{Binding CursorAttachStrengthLabel}" />
+                                <Slider Minimum="1.0" Maximum="4.0" Value="{Binding CursorAttachStrength}" TickFrequency="0.1" />
+                            </StackPanel>
 
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="Current Profile" />
@@ -321,18 +323,42 @@
                         <TextBlock Margin="0,6,0,0"
                                    Foreground="{StaticResource MutedTextBrush}"
                                    FontSize="13"
-                                   Text="10 built-in starter profiles are available, plus any custom DLL plugins you import." />
+                                   Text="Built-in profiles are separated from imported DLL plugins and imported entries are sorted by newest first." />
                     </StackPanel>
 
-                    <ListBox Grid.Row="1"
-                             Margin="0,14,0,14"
-                             ItemsSource="{Binding AvailablePlugins}"
-                             SelectedItem="{Binding SelectedPlugin}"
-                             PreviewMouseWheel="OnProfilesPaneMouseWheel"
-                             ItemTemplate="{StaticResource PluginListItemTemplate}"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             ScrollViewer.VerticalScrollBarVisibility="Disabled" />
+                    <StackPanel Grid.Row="1" Margin="0,14,0,14">
+                        <Expander IsExpanded="True" Style="{StaticResource CompactExpanderStyle}" Header="Built-in Profiles">
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Margin="0,0,0,10"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           FontSize="12"
+                                           Text="{Binding BuiltInProfilesSummary}" />
+                                <ListBox ItemsSource="{Binding BuiltInPlugins}"
+                                         SelectedItem="{Binding SelectedPlugin}"
+                                         PreviewMouseWheel="OnProfilesPaneMouseWheel"
+                                         ItemTemplate="{StaticResource PluginListItemTemplate}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         ScrollViewer.VerticalScrollBarVisibility="Disabled" />
+                            </StackPanel>
+                        </Expander>
+
+                        <Expander IsExpanded="True" Style="{StaticResource CompactExpanderStyle}" Header="Imported Plugins">
+                            <StackPanel Margin="0,10,0,0">
+                                <TextBlock Margin="0,0,0,10"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           FontSize="12"
+                                           Text="{Binding ImportedProfilesSummary}" />
+                                <ListBox ItemsSource="{Binding ImportedPlugins}"
+                                         SelectedItem="{Binding SelectedPlugin}"
+                                         PreviewMouseWheel="OnProfilesPaneMouseWheel"
+                                         ItemTemplate="{StaticResource PluginListItemTemplate}"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         ScrollViewer.VerticalScrollBarVisibility="Disabled" />
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
 
                     <Border Grid.Row="2" Style="{StaticResource PanelCardStyle}">
                         <StackPanel>

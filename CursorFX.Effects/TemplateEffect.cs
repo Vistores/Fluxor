@@ -28,6 +28,7 @@ public sealed class TemplateEffect : IEffect
     private Vector _trailDirection = new(0, 1);
     private double _timeSeconds;
     private double _matrixSpawnAccumulator;
+    private double _globalCursorAttachStrength = 2.0;
 
     public string Name => "Template Shader";
 
@@ -48,12 +49,19 @@ public sealed class TemplateEffect : IEffect
         var dt = Math.Clamp(deltaTime.TotalSeconds, 0.0, 0.05);
         _timeSeconds += dt;
 
-        var inertia = Math.Max(2.0, GetNumber("inertia", 18));
+        var inertia = Math.Max(2.0, GetNumber("inertia", 18)) * Math.Max(1.0, _globalCursorAttachStrength);
         var previous = _smoothedCursorPosition;
-        var followBlend = Math.Clamp(dt * inertia, 0d, 1d);
-        _smoothedCursorPosition = new Point(
-            _smoothedCursorPosition.X + ((_cursorPosition.X - _smoothedCursorPosition.X) * followBlend),
-            _smoothedCursorPosition.Y + ((_cursorPosition.Y - _smoothedCursorPosition.Y) * followBlend));
+        if (_globalCursorAttachStrength >= 3.95)
+        {
+            _smoothedCursorPosition = _cursorPosition;
+        }
+        else
+        {
+            var followBlend = Math.Clamp(dt * inertia, 0d, 1d);
+            _smoothedCursorPosition = new Point(
+                _smoothedCursorPosition.X + ((_cursorPosition.X - _smoothedCursorPosition.X) * followBlend),
+                _smoothedCursorPosition.Y + ((_cursorPosition.Y - _smoothedCursorPosition.Y) * followBlend));
+        }
 
         if (dt > 0.0001)
         {
@@ -140,6 +148,12 @@ public sealed class TemplateEffect : IEffect
             case TemplateEffectKind.MatrixCascade:
                 RenderMatrixCascade(drawingContext);
                 break;
+            case TemplateEffectKind.IrregularCrossTap:
+                RenderIrregularCrossTap(drawingContext);
+                break;
+            case TemplateEffectKind.CriticalSpikes:
+                RenderCriticalSpikes(drawingContext);
+                break;
             case TemplateEffectKind.CosmicRift:
                 RenderCosmicRift(drawingContext);
                 break;
@@ -184,12 +198,14 @@ public sealed class TemplateEffect : IEffect
         ShaderTemplateDefinition? template,
         IReadOnlyDictionary<string, TemplateParameterValue> parameterValues,
         bool isEnabled,
-        double masterOpacity)
+        double masterOpacity,
+        double globalCursorAttachStrength = 2.0)
     {
         _template = template;
         _parameterValues = parameterValues.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase);
         IsEnabled = isEnabled && template is not null;
         _masterOpacity = masterOpacity;
+        _globalCursorAttachStrength = globalCursorAttachStrength;
         _clickPulses.Clear();
         _matrixParticles.Clear();
         _residualNodes.Clear();
@@ -206,11 +222,18 @@ public sealed class TemplateEffect : IEffect
             previousEmitter = _emitterPosition;
         }
 
-        var emitterFollow = Math.Max(2.0, GetNumber("sourceLag", Math.Max(3.0, GetNumber("inertia", 18) * 0.6)));
-        var emitterBlend = Math.Clamp(dt * emitterFollow, 0d, 1d);
-        _emitterPosition = new Point(
-            _emitterPosition.X + ((_smoothedCursorPosition.X - _emitterPosition.X) * emitterBlend),
-            _emitterPosition.Y + ((_smoothedCursorPosition.Y - _emitterPosition.Y) * emitterBlend));
+        var emitterFollow = Math.Max(0.0, GetNumber("sourceLag", Math.Max(3.0, GetNumber("inertia", 18) * 0.6))) * Math.Max(1.0, _globalCursorAttachStrength);
+        if (emitterFollow <= 0.01 || _globalCursorAttachStrength >= 3.95)
+        {
+            _emitterPosition = _cursorPosition;
+        }
+        else
+        {
+            var emitterBlend = Math.Clamp(dt * emitterFollow, 0d, 1d);
+            _emitterPosition = new Point(
+                _emitterPosition.X + ((_smoothedCursorPosition.X - _emitterPosition.X) * emitterBlend),
+                _emitterPosition.Y + ((_smoothedCursorPosition.Y - _emitterPosition.Y) * emitterBlend));
+        }
 
         SpawnResidualTrail(previousEmitter, _emitterPosition, dt);
     }
@@ -656,6 +679,66 @@ public sealed class TemplateEffect : IEffect
         RenderClickSparkDots(drawingContext, accentColor, 4.5, opacity * 0.85);
     }
 
+    private void RenderIrregularCrossTap(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 18);
+        var opacity = GetNumber("opacity", 0.24) * _masterOpacity;
+        var detail = GetNumber("detail", 5);
+        var primaryColor = GetColor("primaryColor", "#F4B183");
+        var accentColor = GetColor("accentColor", "#FFF1D6");
+        var emitter = GetEmitterPosition();
+
+        drawingContext.DrawEllipse(CreateRadialBrush(primaryColor, opacity * 0.42, 0.0, 1.0), null, emitter, size * 0.88, size * 0.88);
+        drawingContext.DrawEllipse(null, CreatePen(accentColor, 1.2 + (detail * 0.08), opacity * 0.7), emitter, size * 0.56, size * 0.56);
+
+        var lifetime = GetClickLifetime();
+        foreach (var pulse in _clickPulses)
+        {
+            var progress = Math.Clamp(pulse.Age / lifetime, 0, 1);
+            var eased = 1.0 - Math.Pow(1.0 - progress, 2.0);
+            var alpha = opacity * (1.0 - progress) * 1.6;
+            var radius = size * (0.8 + (eased * 2.1));
+            var armA = Math.PI * 0.25 + (Math.Sin((_timeSeconds * 7.0) + pulse.Seed) * 0.18);
+            var armB = armA + (Math.PI * 0.5) + (Math.Cos((_timeSeconds * 5.0) + pulse.Seed) * 0.08);
+
+            DrawCrossArm(drawingContext, pulse.Position, armA, radius, detail, primaryColor, accentColor, alpha);
+            DrawCrossArm(drawingContext, pulse.Position, armB, radius * 0.92, detail * 0.9, primaryColor, accentColor, alpha * 0.92);
+        }
+    }
+
+    private void RenderCriticalSpikes(DrawingContext drawingContext)
+    {
+        var size = GetNumber("size", 20);
+        var opacity = GetNumber("opacity", 0.28) * _masterOpacity;
+        var detail = GetNumber("detail", 8);
+        var primaryColor = GetColor("primaryColor", "#FF6B6B");
+        var accentColor = GetColor("accentColor", "#FFF0CC");
+        var emitter = GetEmitterPosition();
+
+        drawingContext.DrawEllipse(CreateRadialBrush(primaryColor, opacity * 0.34, 0.0, 1.0), null, emitter, size * 0.9, size * 0.9);
+        drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.9), null, emitter, size * 0.18, size * 0.18);
+
+        var lifetime = GetClickLifetime();
+        var spikeCount = Math.Max(6, (int)Math.Round(GetNumber("particles", 10)));
+        foreach (var pulse in _clickPulses)
+        {
+            var progress = Math.Clamp(pulse.Age / lifetime, 0, 1);
+            var alpha = opacity * (1.0 - progress) * 1.7;
+            var burstRadius = size * (1.0 + (progress * 4.0));
+            for (var index = 0; index < spikeCount; index++)
+            {
+                var angle = (index * ((Math.PI * 2.0) / spikeCount)) + (pulse.Seed * 0.5);
+                var longSpike = (index % 2 == 0 ? 1.0 : 0.62) * burstRadius;
+                var inner = pulse.Position + new Vector(Math.Cos(angle), Math.Sin(angle)) * (burstRadius * 0.18);
+                var outer = pulse.Position + new Vector(Math.Cos(angle), Math.Sin(angle)) * longSpike;
+                drawingContext.DrawLine(CreatePen(primaryColor, 1.4 + (detail * 0.08), alpha * 0.88), inner, outer);
+                drawingContext.DrawLine(CreatePen(accentColor, 0.8 + (detail * 0.04), alpha * 0.95), pulse.Position, outer);
+            }
+
+            drawingContext.DrawEllipse(null, CreatePen(primaryColor, 1.2 + (detail * 0.04), alpha * 0.72), pulse.Position, burstRadius * 0.42, burstRadius * 0.42);
+        }
+    }
+
     private void RenderCosmicRift(DrawingContext drawingContext)
     {
         var size = GetNumber("size", 78);
@@ -1053,6 +1136,17 @@ public sealed class TemplateEffect : IEffect
         drawingContext.DrawLine(pen, new Point(center.X, center.Y - size), new Point(center.X, center.Y + size));
         drawingContext.DrawLine(pen, new Point(center.X - (size * 0.6), center.Y), new Point(center.X + (size * 0.6), center.Y));
         drawingContext.Pop();
+    }
+
+    private static void DrawCrossArm(DrawingContext drawingContext, Point center, double angle, double radius, double detail, Color primaryColor, Color accentColor, double opacity)
+    {
+        var direction = new Vector(Math.Cos(angle), Math.Sin(angle));
+        var lengthA = radius * 0.78;
+        var lengthB = radius * 1.08;
+        var start = center - (direction * lengthA);
+        var end = center + (direction * lengthB);
+        drawingContext.DrawLine(CreatePen(primaryColor, 1.2 + (detail * 0.08), opacity * 0.82), start, end);
+        drawingContext.DrawLine(CreatePen(accentColor, 0.7 + (detail * 0.04), opacity), center - (direction * (lengthA * 0.54)), center + (direction * (lengthB * 0.76)));
     }
 
     private static void DrawGlyph(DrawingContext drawingContext, string glyph, Point point, double fontSize, Color color, double opacity)

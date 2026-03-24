@@ -24,6 +24,7 @@ public sealed class AppSettings
             {
                 MasterOpacity = 0.85,
                 TargetFps = 60,
+                CursorAttachStrength = 2.0,
                 LaunchOnStartup = false,
                 RunInBackground = true,
                 PauseWhenCursorHidden = true
@@ -67,6 +68,8 @@ public sealed class GeneralSettings
     public double MasterOpacity { get; set; } = 0.85;
 
     public int TargetFps { get; set; } = 60;
+
+    public double CursorAttachStrength { get; set; } = 2.0;
 
     public bool LaunchOnStartup { get; set; }
 

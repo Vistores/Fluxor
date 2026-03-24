@@ -11,7 +11,17 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
     [
         "cosmic-rift",
         "glitch-fracture",
-        "spark-shower"
+        "spark-shower",
+        "gaming-suite",
+        "prism-bloom",
+        "arc-sparkle",
+        "comet-ribbon",
+        "nebula-drift",
+        "solar-flare",
+        "mystic-runes",
+        "ribbon-wave",
+        "torn-current",
+        "velvet-flame"
     ];
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -40,18 +50,10 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         RemoveRetiredBuiltIns();
         SeedTemplate("neon-suite.cursorfx-plugin.json", BuildNeonSuite(), overwrite: true);
         SeedTemplate("minimal-suite.cursorfx-plugin.json", BuildMinimalSuite(), overwrite: true);
-        SeedTemplate("gaming-suite.cursorfx-plugin.json", BuildGamingSuite(), overwrite: true);
-        SeedTemplate("prism-bloom.cursorfx-plugin.json", BuildPrismBloomSuite(), overwrite: true);
-        SeedTemplate("arc-sparkle.cursorfx-plugin.json", BuildArcSparkleSuite(), overwrite: true);
-        SeedTemplate("comet-ribbon.cursorfx-plugin.json", BuildCometRibbonSuite(), overwrite: true);
-        SeedTemplate("nebula-drift.cursorfx-plugin.json", BuildNebulaDriftSuite(), overwrite: true);
         SeedTemplate("frost-halo.cursorfx-plugin.json", BuildFrostHaloSuite(), overwrite: true);
-        SeedTemplate("solar-flare.cursorfx-plugin.json", BuildSolarFlareSuite(), overwrite: true);
-        SeedTemplate("mystic-runes.cursorfx-plugin.json", BuildMysticRunesSuite(), overwrite: true);
-        SeedTemplate("ribbon-wave.cursorfx-plugin.json", BuildRibbonWaveSuite(), overwrite: true);
-        SeedTemplate("torn-current.cursorfx-plugin.json", BuildTornCurrentSuite(), overwrite: true);
         SeedTemplate("matrix-cascade.cursorfx-plugin.json", BuildMatrixCascadeSuite(), overwrite: true);
-        SeedTemplate("velvet-flame.cursorfx-plugin.json", BuildVelvetFlameSuite(), overwrite: true);
+        SeedTemplate("tap-cross.cursorfx-plugin.json", BuildTapCrossSuite(), overwrite: true);
+        SeedTemplate("critical-spike.cursorfx-plugin.json", BuildCriticalSpikeSuite(), overwrite: true);
     }
 
     public IReadOnlyList<ShaderTemplateDefinition> LoadTemplates()
@@ -69,6 +71,9 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
                 {
                     ValidateTemplate(template);
                     template.ResolvedIconPath = ResolveIconPath(template.IconPath);
+                    template.DateAddedUtc = template.RuntimeKind == TemplateRuntimeKind.ExternalAssembly
+                        ? File.GetLastWriteTimeUtc(filePath)
+                        : DateTime.MinValue;
                     templates.Add(template);
                 }
             }
@@ -78,7 +83,8 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         }
 
         return templates
-            .OrderBy(template => template.Name, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(template => template.RuntimeKind)
+            .ThenBy(template => template.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
@@ -295,12 +301,14 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
     private static ShaderTemplateDefinition BuildNeonSuite() =>
         BuildSuite("neon-suite", "Neon Suite", "Balanced neon cursor profile with trail, glow, ripple and shader aura.", "N", "#54D0C8", TemplateEffectKind.CursorAura,
             "#22D3EE", "#67E8F9", "#A5F3FC", "#22D3EE", "#F97316", 32, 12, 0.55, 32, 0.42, 86, 0.7, 0.75, 3, 54, 0.42, 1.4, 3,
-            [Toggle("showRing", "Show Orbit Ring", PluginParameterSection.Shader, "Shader", true), Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 18), Number("clickLifetime", "Click Accent Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.8), Number("particles", "Accent Particles", PluginParameterSection.Shader, "Shader", 4, 24, 1, 8)]);
+            [Toggle("showRing", "Show Orbit Ring", PluginParameterSection.Shader, "Shader", true), Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 18), Number("clickLifetime", "Click Accent Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.8), Number("particles", "Accent Particles", PluginParameterSection.Shader, "Shader", 4, 24, 1, 8)],
+            sourceLag: 0);
 
     private static ShaderTemplateDefinition BuildMinimalSuite() =>
         BuildSuite("minimal-suite", "Minimal Suite", "Soft lightweight profile with subtle built-in effects.", "M", "#AAB8C8", TemplateEffectKind.CursorAura,
             "#CBD5E1", "#E2E8F0", "#CBD5E1", "#E2E8F0", "#94A3B8", 18, 6, 0.32, 18, 0.18, 54, 0.45, 0.35, 2, 26, 0.18, 0.9, 2,
-            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 20), Number("clickLifetime", "Click Accent Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.5), Number("particles", "Accent Particles", PluginParameterSection.Shader, "Shader", 4, 24, 1, 6)]);
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 20), Number("clickLifetime", "Click Accent Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.5), Number("particles", "Accent Particles", PluginParameterSection.Shader, "Shader", 4, 24, 1, 6)],
+            sourceLag: 0);
 
     private static ShaderTemplateDefinition BuildGamingSuite() =>
         BuildSuite("gaming-suite", "Gaming Suite", "Aggressive preset with stronger trail and click feedback.", "G", "#F59E0B", TemplateEffectKind.ClickBurst,
@@ -330,7 +338,8 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
     private static ShaderTemplateDefinition BuildFrostHaloSuite() =>
         BuildSuite("frost-halo", "Frost Halo", "Crystalline halo with orbiting snowflakes and icy tap accents.", "F", "#BFDBFE", TemplateEffectKind.FrostHalo,
             "#BFDBFE", "#E0F2FE", "#DBEAFE", "#BFDBFE", "#E0F2FE", 24, 8, 0.36, 28, 0.26, 72, 0.72, 0.54, 2.2, 58, 0.4, 1.55, 7,
-            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 18), Number("clickLifetime", "Snow Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.82), Number("particles", "Snowflake Count", PluginParameterSection.Shader, "Shader", 4, 18, 1, 8)]);
+            [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 18), Number("clickLifetime", "Snow Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.82), Number("particles", "Snowflake Count", PluginParameterSection.Shader, "Shader", 4, 18, 1, 8)],
+            sourceLag: 0);
 
     private static ShaderTemplateDefinition BuildSolarFlareSuite() =>
         BuildSuite("solar-flare", "Solar Flare", "Hot solar corona with flare spokes and bright expanding taps.", "S", "#F59E0B", TemplateEffectKind.SolarFlare,
@@ -390,7 +399,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             waveFrequency: 1.2,
             noiseAmount: 0,
             ribbonSoftness: 0.45,
-            sourceLag: 11,
+            sourceLag: 0,
             idleRadius: 0.8,
             idleSpeed: 0.85,
             gravityY: 0,
@@ -413,6 +422,26 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
                 Number("idleScatterRadius", "Idle Scatter Radius", PluginParameterSection.Shader, "Shader", 4, 80, 1, 16),
                 Number("idleScatterSpeed", "Idle Scatter Speed", PluginParameterSection.Shader, "Shader", 4, 120, 1, 28)
             ]);
+
+    private static ShaderTemplateDefinition BuildTapCrossSuite() =>
+        BuildSuite("tap-cross", "Tap Cross", "Cursor-glued profile with a slightly irregular cross-shaped tap accent.", "T", "#F4B183", TemplateEffectKind.IrregularCrossTap,
+            "#F4B183", "#FCE7C8", "#FFD0A8", "#F4B183", "#FFF1D6", 12, 3, 0.24, 16, 0.14, 54, 0.48, 0.75, 2.2, 18, 0.24, 1.0, 5,
+            [Number("clickLifetime", "Cross Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.48)],
+            trailEnabled: false,
+            sourceLag: 0,
+            idleRadius: 0,
+            idleSpeed: 0.1,
+            randomness: 0.15);
+
+    private static ShaderTemplateDefinition BuildCriticalSpikeSuite() =>
+        BuildSuite("critical-spike", "Critical Spike", "Attached cursor core with a sharp critical-hit burst of spikes on tap.", "!", "#FF6B6B", TemplateEffectKind.CriticalSpikes,
+            "#FF6B6B", "#FFD8A8", "#FFE7C2", "#FF6B6B", "#FFF0CC", 14, 3.5, 0.26, 18, 0.16, 82, 0.56, 0.82, 2.8, 20, 0.28, 1.2, 8,
+            [Number("clickLifetime", "Spike Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.56), Number("particles", "Spike Count", PluginParameterSection.Shader, "Shader", 6, 22, 1, 10)],
+            trailEnabled: false,
+            sourceLag: 0,
+            idleRadius: 0,
+            idleSpeed: 0.1,
+            randomness: 0.12);
 
     private static ShaderTemplateDefinition BuildCosmicRiftSuite() =>
         BuildSuite("cosmic-rift", "Cosmic Rift", "Soft space fracture with dark velvet cracks and drifting star dust around the cursor path.", "C", "#7C3AED", TemplateEffectKind.CosmicRift,
@@ -564,7 +593,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             Number("opacity", "Shader Opacity", PluginParameterSection.Shader, "Shader", 0.05, 1, 0.01, shaderOpacity),
             Number("motion", kind == TemplateEffectKind.OrbitTrail ? "Orbit Speed" : kind == TemplateEffectKind.ClickBurst ? "Burst Lifetime" : "Motion", PluginParameterSection.Shader, "Shader", 0.1, 8, 0.1, shaderMotion),
             Number("detail", ResolveDetailLabel(kind), PluginParameterSection.Shader, "Shader", 1, 16, 0.5, shaderDetail),
-            Number("sourceLag", "Emitter Follow", PluginParameterSection.Shader, "Shader", 2, 32, 1, sourceLag),
+            Number("sourceLag", "Cursor Attach", PluginParameterSection.Shader, "Shader", 0, 32, 0.5, sourceLag),
             Number("idleRadius", "Idle Radius", PluginParameterSection.Shader, "Shader", 0, 24, 0.5, idleRadius),
             Number("idleSpeed", "Idle Speed", PluginParameterSection.Shader, "Shader", 0.1, 6, 0.1, idleSpeed),
             Number("gravityX", "Gravity X", PluginParameterSection.Shader, "Shader", -20, 20, 0.5, gravityX),
@@ -602,6 +631,8 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         TemplateEffectKind.SolarFlare => "Flare Count",
         TemplateEffectKind.MysticRunes => "Rune Density",
         TemplateEffectKind.MatrixCascade => "Glyph Streams",
+        TemplateEffectKind.IrregularCrossTap => "Cross Weight",
+        TemplateEffectKind.CriticalSpikes => "Spike Density",
         TemplateEffectKind.CosmicRift => "Fracture Depth",
         TemplateEffectKind.GlitchFracture => "Glitch Count",
         TemplateEffectKind.VelvetFlame => "Flame Layers",
