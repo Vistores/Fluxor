@@ -26,6 +26,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly CursorFxEngine _engine;
     private readonly ISettingsStore _settingsStore;
     private readonly IShaderTemplateCatalog _templateCatalog;
+    private readonly LocalizationService _localizationService;
     private readonly AssemblyPluginImporter _assemblyPluginImporter;
     private readonly PluginWorkspaceService _pluginWorkspaceService;
     private readonly StartupRegistrationService _startupRegistrationService;
@@ -42,7 +43,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         CustomPluginEffect customPluginEffect,
         CursorFxEngine engine,
         ISettingsStore settingsStore,
-        IShaderTemplateCatalog templateCatalog)
+        IShaderTemplateCatalog templateCatalog,
+        LocalizationService localizationService)
     {
         _settings = settings;
         _trailEffect = trailEffect;
@@ -53,6 +55,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _engine = engine;
         _settingsStore = settingsStore;
         _templateCatalog = templateCatalog;
+        _localizationService = localizationService;
         _assemblyPluginImporter = new AssemblyPluginImporter();
         _pluginWorkspaceService = new PluginWorkspaceService();
         _pluginWorkspaceService.EnsureWorkspace();
@@ -493,7 +496,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void OpenSettings()
     {
-        var settingsWindow = new SettingsWindow(_settings.General)
+        var settingsWindow = new SettingsWindow(_settings.General, _settings.Localization, _localizationService)
         {
             Owner = System.Windows.Application.Current?.MainWindow
         };
@@ -506,12 +509,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _settings.General.LaunchOnStartup = settingsWindow.LaunchOnStartup;
         _settings.General.RunInBackground = settingsWindow.RunInBackground;
         _settings.General.PauseWhenCursorHidden = settingsWindow.PauseWhenCursorHidden;
+        _settings.Localization.UseSystemLanguage = settingsWindow.UseSystemLanguage;
+        _settings.Localization.LanguageCode = settingsWindow.SelectedLanguageCode;
+        _localizationService.Apply(_settings.Localization);
 
         OnPropertyChanged(nameof(RunInBackgroundEnabled));
         ApplyRuntimeSettings();
         ApplyStartupRegistration();
         SaveSettings();
-        AutosaveStatus = "Application settings updated.";
+        AutosaveStatus = _localizationService.Get("settings.updated");
     }
 
     private void DeleteSelectedPlugin()

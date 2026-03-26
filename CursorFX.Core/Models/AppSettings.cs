@@ -14,6 +14,8 @@ public sealed class AppSettings
 
     public TemplateEffectSettings TemplateEffect { get; set; } = new();
 
+    public LocalizationSettings Localization { get; set; } = new();
+
     public string SelectedPreset { get; set; } = "Neon";
 
     public static AppSettings CreateDefault()
@@ -58,9 +60,21 @@ public sealed class AppSettings
                 IsEnabled = false,
                 SelectedTemplateId = "neon-suite"
             },
+            Localization = new LocalizationSettings
+            {
+                UseSystemLanguage = true,
+                LanguageCode = "en"
+            },
             SelectedPreset = "Neon"
         };
     }
+}
+
+public sealed class LocalizationSettings
+{
+    public bool UseSystemLanguage { get; set; } = true;
+
+    public string LanguageCode { get; set; } = "en";
 }
 
 public sealed class GeneralSettings

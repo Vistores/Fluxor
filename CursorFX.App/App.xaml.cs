@@ -29,6 +29,7 @@ public partial class App : System.Windows.Application
     private TrayIconService? _trayIconService;
     private IScreenSampler? _screenSampler;
     private ICursorSnapshotProvider? _cursorSnapshotProvider;
+    private LocalizationService? _localizationService;
     private bool _forceExit;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -49,6 +50,8 @@ public partial class App : System.Windows.Application
         _templateCatalog = new ShaderTemplateCatalog();
         _templateCatalog.EnsureCatalog();
         var settings = _settingsStore.Load();
+        _localizationService = new LocalizationService();
+        _localizationService.Apply(settings.Localization);
 
         var effectManager = new EffectManager();
         var trailEffect = new TrailEffect(settings.Trail);
@@ -90,7 +93,8 @@ public partial class App : System.Windows.Application
             _customPluginEffect,
             _engine,
             _settingsStore,
-            _templateCatalog);
+            _templateCatalog,
+            _localizationService);
 
         var mainWindow = new MainWindow
         {
