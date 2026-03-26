@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -15,15 +15,39 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
     private PluginAssemblyCandidate? _selectedPluginCandidate;
     private readonly AssemblyPluginImporter _assemblyPluginImporter = new();
     private readonly string _pluginWorkspacePath;
+    private readonly LocalizationService _localizationService;
 
-    public ImportPluginWindow(string pluginWorkspacePath)
+    public ImportPluginWindow(string pluginWorkspacePath, LocalizationService localizationService)
     {
         _pluginWorkspacePath = pluginWorkspacePath;
+        _localizationService = localizationService;
         DataContext = this;
         InitializeComponent();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public string WindowTitle => _localizationService.Get("import.windowTitle");
+    public string HeadingText => _localizationService.Get("import.heading");
+    public string IntroText => _localizationService.Get("import.intro");
+    public string AssemblyTitleText => _localizationService.Get("import.assemblyTitle");
+    public string AssemblyHintText => _localizationService.Get("import.assemblyHint");
+    public string BrowseDllButtonText => _localizationService.Get("import.browseDll");
+    public string OpenWorkspaceButtonText => _localizationService.Get("import.openPluginsFolder");
+    public string PluginTypeTitleText => _localizationService.Get("import.pluginTypeTitle");
+    public string PluginTypeHintText => _localizationService.Get("import.pluginTypeHint");
+    public string PreviewTitleText => _localizationService.Get("import.previewTitle");
+    public string PreviewHintText => _localizationService.Get("import.previewHint");
+    public string PreviewDisplayNameText => _localizationService.Get("import.preview.displayName");
+    public string PreviewPluginIdText => _localizationService.Get("import.preview.pluginId");
+    public string PreviewEntryTypeText => _localizationService.Get("import.preview.entryType");
+    public string IconTitleText => _localizationService.Get("import.iconTitle");
+    public string IconHintText => _localizationService.Get("import.iconHint");
+    public string ChooseIconButtonText => _localizationService.Get("import.chooseIcon");
+    public string ClearIconButtonText => _localizationService.Get("import.clearIcon");
+    public string IconPlaceholderText => _localizationService.Get("import.iconPlaceholder");
+    public string CancelButtonText => _localizationService.Get("import.cancel");
+    public string ImportButtonText => _localizationService.Get("import.confirm");
 
     public string AssemblyPath
     {
@@ -54,7 +78,7 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
     }
 
     public string IconFileName => string.IsNullOrWhiteSpace(IconPath)
-        ? "No icon selected."
+        ? _localizationService.Get("import.iconNone")
         : Path.GetFileName(IconPath);
 
     public ObservableCollection<PluginAssemblyCandidate> AvailablePlugins { get; } = [];
@@ -132,13 +156,13 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
     {
         if (string.IsNullOrWhiteSpace(AssemblyPath))
         {
-            System.Windows.MessageBox.Show("Choose a DLL file.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(_localizationService.Get("import.validation.chooseDll"), _localizationService.Get("import.validation.title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (AvailablePlugins.Count > 1 && SelectedPluginCandidate is null)
         {
-            System.Windows.MessageBox.Show("Choose a plugin type from the DLL.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(_localizationService.Get("import.validation.choosePluginType"), _localizationService.Get("import.validation.title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

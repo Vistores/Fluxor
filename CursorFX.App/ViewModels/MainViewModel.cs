@@ -451,7 +451,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void ImportPlugin()
     {
-        var importWindow = new ImportPluginWindow(_pluginWorkspaceService.WorkspaceDirectory)
+        var importWindow = new ImportPluginWindow(_pluginWorkspaceService.WorkspaceDirectory, _localizationService)
         {
             Owner = System.Windows.Application.Current?.MainWindow
         };
@@ -470,7 +470,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 _templateCatalog,
                 string.IsNullOrWhiteSpace(importWindow.IconPath) ? null : importWindow.IconPath);
             ReloadPlugins(importedAssemblyPlugin.Id);
-            AutosaveStatus = $"Plugin {importedAssemblyPlugin.Name} imported from DLL.";
+            AutosaveStatus = string.Format(_localizationService.Get("main.importedStatus"), importedAssemblyPlugin.Name);
         }
         catch (Exception ex)
         {
@@ -486,7 +486,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void OpenPluginAuthoringGuide()
     {
-        var guideWindow = new PluginAuthoringGuideWindow(PluginAuthoringGuidePath)
+        var guideWindow = new PluginAuthoringGuideWindow(PluginAuthoringGuidePath, _localizationService)
         {
             Owner = System.Windows.Application.Current?.MainWindow
         };

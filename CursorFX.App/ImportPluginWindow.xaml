@@ -1,7 +1,7 @@
-﻿<Window x:Class="CursorFX.App.ImportPluginWindow"
+<Window x:Class="CursorFX.App.ImportPluginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Fluxor | Import Plugin"
+        Title="{Binding WindowTitle, RelativeSource={RelativeSource AncestorType=Window}}"
         Icon="pack://application:,,,/Assets/FluxorIco.ico"
         Width="700"
         Height="620"
@@ -17,29 +17,29 @@
                 BorderBrush="{StaticResource SurfaceBorderBrush}"
                 BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel" Style="{StaticResource SecondaryButtonStyle}" Click="OnCancelClick" />
-                <Button Content="Import Plugin" Click="OnImportClick" />
+                <Button Content="{Binding CancelButtonText, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource SecondaryButtonStyle}" Click="OnCancelClick" />
+                <Button Content="{Binding ImportButtonText, RelativeSource={RelativeSource AncestorType=Window}}" Click="OnImportClick" />
             </StackPanel>
         </Border>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <TextBlock FontSize="24" FontWeight="SemiBold" Text="Import Plugin" />
+                <TextBlock FontSize="24" FontWeight="SemiBold" Text="{Binding HeadingText, RelativeSource={RelativeSource AncestorType=Window}}" />
                 <TextBlock Margin="0,10,0,18"
                            Foreground="{StaticResource MutedTextBrush}"
                            TextWrapping="Wrap"
-                           Text="Choose a plugin DLL. Fluxor will read plugin metadata and parameter schema directly from the assembly, generate the profile automatically and copy companion runtime files when they exist." />
+                           Text="{Binding IntroText, RelativeSource={RelativeSource AncestorType=Window}}" />
 
                 <Border Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="10">
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="DLL Assembly File" />
+                        <TextBlock FontWeight="SemiBold" Text="{Binding AssemblyTitleText, RelativeSource={RelativeSource AncestorType=Window}}" />
                         <TextBlock Margin="0,6,0,0"
                                    Foreground="{StaticResource MutedTextBrush}"
-                                   Text="The DLL must contain a public ICursorEffectPlugin implementation and expose settings via GetParameters()." />
+                                   Text="{Binding AssemblyHintText, RelativeSource={RelativeSource AncestorType=Window}}" />
                         <TextBox Margin="0,8,0,0" IsReadOnly="True" Text="{Binding AssemblyPath, UpdateSourceTrigger=PropertyChanged}" />
                         <WrapPanel Margin="0,10,0,0">
-                            <Button Content="Browse DLL File" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseAssemblyClick" />
-                            <Button Content="Open Plugins Folder" Style="{StaticResource GhostButtonStyle}" Click="OnOpenWorkspaceClick" />
+                            <Button Content="{Binding BrowseDllButtonText, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseAssemblyClick" />
+                            <Button Content="{Binding OpenWorkspaceButtonText, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource GhostButtonStyle}" Click="OnOpenWorkspaceClick" />
                         </WrapPanel>
                     </StackPanel>
                 </Border>
@@ -51,10 +51,10 @@
                         BorderThickness="1"
                         CornerRadius="10">
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="Plugin Type" />
+                        <TextBlock FontWeight="SemiBold" Text="{Binding PluginTypeTitleText, RelativeSource={RelativeSource AncestorType=Window}}" />
                         <TextBlock Margin="0,6,0,0"
                                    Foreground="{StaticResource MutedTextBrush}"
-                                   Text="If the DLL contains multiple plugins, choose which one should be imported." />
+                                   Text="{Binding PluginTypeHintText, RelativeSource={RelativeSource AncestorType=Window}}" />
                         <ComboBox Margin="0,8,0,0"
                                   ItemsSource="{Binding AvailablePlugins}"
                                   SelectedItem="{Binding SelectedPluginCandidate, UpdateSourceTrigger=PropertyChanged}"
@@ -73,16 +73,16 @@
                         BorderThickness="1"
                         CornerRadius="10">
                     <StackPanel>
-                        <TextBlock FontWeight="SemiBold" Text="Import Preview" />
+                        <TextBlock FontWeight="SemiBold" Text="{Binding PreviewTitleText, RelativeSource={RelativeSource AncestorType=Window}}" />
                         <TextBlock Margin="0,8,0,0"
                                    Foreground="{StaticResource MutedTextBrush}"
-                                   Text="Fluxor will generate the plugin profile directly from the selected assembly metadata." />
+                                   Text="{Binding PreviewHintText, RelativeSource={RelativeSource AncestorType=Window}}" />
                         <Grid Margin="0,12,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="120" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Display name" />
+                            <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding PreviewDisplayNameText, RelativeSource={RelativeSource AncestorType=Window}}" />
                             <TextBlock Grid.Column="1" Text="{Binding SelectedPluginDisplayName}" />
                         </Grid>
                         <Grid Margin="0,6,0,0">
@@ -90,7 +90,7 @@
                                 <ColumnDefinition Width="120" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Plugin ID" />
+                            <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding PreviewPluginIdText, RelativeSource={RelativeSource AncestorType=Window}}" />
                             <TextBlock Grid.Column="1" Text="{Binding SelectedPluginId}" />
                         </Grid>
                         <Grid Margin="0,6,0,0">
@@ -98,7 +98,7 @@
                                 <ColumnDefinition Width="120" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Entry type" />
+                            <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding PreviewEntryTypeText, RelativeSource={RelativeSource AncestorType=Window}}" />
                             <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{Binding SelectedPluginEntryType}" />
                         </Grid>
                     </StackPanel>
@@ -124,7 +124,7 @@
                                 <TextBlock HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
                                            Foreground="{StaticResource MutedTextBrush}"
-                                           Text="Icon">
+                                           Text="{Binding IconPlaceholderText, RelativeSource={RelativeSource AncestorType=Window}}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -143,18 +143,18 @@
                         </Border>
 
                         <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                            <TextBlock FontWeight="SemiBold" Text="Plugin Icon" />
+                            <TextBlock FontWeight="SemiBold" Text="{Binding IconTitleText, RelativeSource={RelativeSource AncestorType=Window}}" />
                             <TextBlock Margin="0,8,0,0"
                                        Foreground="{StaticResource MutedTextBrush}"
                                        TextWrapping="Wrap"
-                                       Text="Optional image for the plugin card. Fluxor will copy it to the plugin catalog and render it as a square icon." />
+                                       Text="{Binding IconHintText, RelativeSource={RelativeSource AncestorType=Window}}" />
                             <TextBlock Margin="0,8,0,0"
                                        Foreground="{StaticResource AccentMutedBrush}"
                                        TextWrapping="Wrap"
                                        Text="{Binding IconFileName}" />
                             <WrapPanel Margin="0,10,0,0">
-                                <Button Content="Choose Icon" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseIconClick" />
-                                <Button Content="Clear Icon" Style="{StaticResource GhostButtonStyle}" Click="OnClearIconClick" />
+                                <Button Content="{Binding ChooseIconButtonText, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource SecondaryButtonStyle}" Click="OnBrowseIconClick" />
+                                <Button Content="{Binding ClearIconButtonText, RelativeSource={RelativeSource AncestorType=Window}}" Style="{StaticResource GhostButtonStyle}" Click="OnClearIconClick" />
                             </WrapPanel>
                         </StackPanel>
                     </Grid>
