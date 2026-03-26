@@ -164,7 +164,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string SelectedPluginDiagnosticsAssembly => _customPluginEffect.RuntimeAssemblyFileName;
 
+    public string SelectedPluginDiagnosticsAssemblyPath => _customPluginEffect.RuntimeAssemblyPath;
+
     public string SelectedPluginDiagnosticsEntryType => _customPluginEffect.RuntimeEntryTypeName;
+
+    public string SelectedPluginDiagnosticsLoadedAt => _customPluginEffect.LoadedAtLabel;
+
+    public string SelectedPluginDiagnosticsLastErrorAt => _customPluginEffect.LastErrorAtLabel;
+
+    public string SelectedPluginDiagnosticsContext => _customPluginEffect.ContextSummary;
 
     public double MasterOpacity
     {
@@ -786,7 +794,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsStatus));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsMessage));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsAssembly));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsAssemblyPath));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsEntryType));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsLoadedAt));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsLastErrorAt));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsContext));
     }
 
     private void ApplyStartupRegistration()

@@ -14,6 +14,16 @@ public sealed class PluginRuntimeLoader
         _pluginDirectory = pluginDirectory;
     }
 
+    public string ResolveAssemblyPath(ShaderTemplateDefinition definition)
+    {
+        if (string.IsNullOrWhiteSpace(definition.AssemblyFileName))
+        {
+            return string.Empty;
+        }
+
+        return Path.Combine(_pluginDirectory, definition.AssemblyFileName);
+    }
+
     public ICursorEffectPlugin Load(ShaderTemplateDefinition definition)
     {
         if (definition.RuntimeKind != TemplateRuntimeKind.ExternalAssembly)
@@ -31,7 +41,7 @@ public sealed class PluginRuntimeLoader
             throw new InvalidOperationException($"Plugin '{definition.Name}' is missing EntryTypeName.");
         }
 
-        var assemblyPath = Path.Combine(_pluginDirectory, definition.AssemblyFileName);
+        var assemblyPath = ResolveAssemblyPath(definition);
         if (!File.Exists(assemblyPath))
         {
             throw new FileNotFoundException($"Plugin assembly was not found: {assemblyPath}", assemblyPath);

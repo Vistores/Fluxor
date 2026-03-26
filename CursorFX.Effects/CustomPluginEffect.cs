@@ -18,6 +18,8 @@ public sealed class CustomPluginEffect : IEffect, IPluginRuntimeContextSink, IDi
     private ScreenSampleFrame? _backdropSample;
     private CursorVisualSnapshot? _cursorSnapshot;
     private TimeSpan _lastDeltaTime;
+    private DateTimeOffset? _loadedAtUtc;
+    private DateTimeOffset? _lastErrorAtUtc;
 
     public CustomPluginEffect(PluginRuntimeLoader runtimeLoader)
     {
@@ -42,7 +44,15 @@ public sealed class CustomPluginEffect : IEffect, IPluginRuntimeContextSink, IDi
 
     public string RuntimeAssemblyFileName => _currentDefinition?.AssemblyFileName ?? string.Empty;
 
+    public string RuntimeAssemblyPath => _currentDefinition is null ? string.Empty : _runtimeLoader.ResolveAssemblyPath(_currentDefinition);
+
     public string RuntimeEntryTypeName => _currentDefinition?.EntryTypeName ?? string.Empty;
+
+    public string LoadedAtLabel => _loadedAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "Not loaded";
+
+    public string LastErrorAtLabel => _lastErrorAtUtc?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "No runtime errors";
+
+    public string ContextSummary => $"Cursor snapshot: {(_cursorSnapshot is null ? "no" : "yes")} | Backdrop sample: {(_backdropSample is null ? "no" : "yes")} | Cursor visible: {(_isCursorVisible ? "yes" : "no")}";
 
     public void Dispose()
     {
@@ -97,6 +107,8 @@ public sealed class CustomPluginEffect : IEffect, IPluginRuntimeContextSink, IDi
             IsEnabled = false;
             _currentDefinition = null;
             _lastError = null;
+            _loadedAtUtc = null;
+            _lastErrorAtUtc = null;
             UnloadRuntime();
             return;
         }
@@ -109,6 +121,8 @@ public sealed class CustomPluginEffect : IEffect, IPluginRuntimeContextSink, IDi
             _runtime = _runtimeLoader.Load(definition);
             _runtimeSignature = signature;
             _lastError = null;
+            _lastErrorAtUtc = null;
+            _loadedAtUtc = DateTimeOffset.UtcNow;
         }
 
         try
@@ -124,6 +138,7 @@ public sealed class CustomPluginEffect : IEffect, IPluginRuntimeContextSink, IDi
         catch (Exception ex)
         {
             _lastError = ex.Message;
+            _lastErrorAtUtc = DateTimeOffset.UtcNow;
             IsEnabled = false;
             UnloadRuntime();
         }
@@ -150,6 +165,7 @@ public sealed class CustomPluginEffect : IEffect, IPluginRuntimeContextSink, IDi
         catch (Exception ex)
         {
             _lastError = ex.Message;
+            _lastErrorAtUtc = DateTimeOffset.UtcNow;
             IsEnabled = false;
             UnloadRuntime();
         }
