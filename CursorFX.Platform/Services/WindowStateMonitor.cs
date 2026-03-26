@@ -16,6 +16,7 @@ public sealed class WindowStateMonitor : IWindowStateMonitor
     private readonly DispatcherTimer _timer;
     private bool _isFullscreen;
     private bool _areEffectsSuspended;
+    private bool _isCursorVisible = true;
     private int _centerLockedTicks;
     private bool? _pendingSuspendState;
     private int _pendingSuspendTicks;
@@ -36,6 +37,8 @@ public sealed class WindowStateMonitor : IWindowStateMonitor
     public bool IsFullscreen => _isFullscreen;
 
     public bool AreEffectsSuspended => _areEffectsSuspended;
+
+    public bool IsCursorVisible => _isCursorVisible;
 
     public void Start()
     {
@@ -70,7 +73,8 @@ public sealed class WindowStateMonitor : IWindowStateMonitor
             FullscreenStateChanged?.Invoke(this, _isFullscreen);
         }
 
-        var isCursorVisible = IsCursorVisible();
+        var isCursorVisible = IsCursorVisibleNow();
+        _isCursorVisible = isCursorVisible;
         var isCursorCenterLocked = isFullscreen && IsCursorCenterLocked(foregroundWindow);
         var shouldSuspendEffects = !isCursorVisible || isCursorCenterLocked;
         if (shouldSuspendEffects == _areEffectsSuspended)
@@ -129,7 +133,7 @@ public sealed class WindowStateMonitor : IWindowStateMonitor
                windowRect.Bottom >= monitorInfo.rcMonitor.Bottom;
     }
 
-    private static bool IsCursorVisible()
+    private static bool IsCursorVisibleNow()
     {
         var cursorInfo = new NativeMethods.CURSORINFO
         {

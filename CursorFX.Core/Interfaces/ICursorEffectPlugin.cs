@@ -50,14 +50,34 @@ public interface ICursorEffectPlugin : IDisposable
         ApplyParameters(legacyValues);
     }
 
+    void Update(PluginRenderContext context)
+    {
+        Update(context.DeltaTime);
+    }
+
     void Update(TimeSpan deltaTime)
     {
         Update(deltaTime.TotalSeconds);
     }
 
+    void Render(PluginRenderContext context, DrawingContext drawingContext)
+    {
+        Render(drawingContext);
+    }
+
     void Render(DrawingContext drawingContext);
 
+    void OnMouseMove(PluginRenderContext context, Point position)
+    {
+        OnMouseMove(position);
+    }
+
     void OnMouseMove(Point position);
+
+    void OnMouseClick(PluginRenderContext context, Point position)
+    {
+        OnMouseClick(position);
+    }
 
     void OnMouseClick(Point position);
 

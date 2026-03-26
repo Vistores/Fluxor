@@ -136,6 +136,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(SelectedPluginName));
             OnPropertyChanged(nameof(SelectedPluginDescription));
             OnPropertyChanged(nameof(SelectedPluginResolvedIconPath));
+            OnPropertyChanged(nameof(IsExternalPluginSelected));
+            OnPropertyChanged(nameof(SelectedPluginRuntimeKindLabel));
             ScheduleAutosave("Plugin profile changed.");
             CommandManager.InvalidateRequerySuggested();
         }
@@ -146,6 +148,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string SelectedPluginDescription => SelectedPlugin?.Description ?? "Select a plugin profile.";
 
     public string SelectedPluginResolvedIconPath => SelectedPlugin?.ResolvedIconPath ?? string.Empty;
+
+    public bool IsExternalPluginSelected => SelectedPlugin?.RuntimeKind == TemplateRuntimeKind.ExternalAssembly;
+
+    public string SelectedPluginRuntimeKindLabel => SelectedPlugin?.RuntimeKind == TemplateRuntimeKind.ExternalAssembly
+        ? "Imported DLL plugin"
+        : "Built-in profile";
+
+    public string SelectedPluginDiagnosticsStatus => _customPluginEffect.Status;
+
+    public string SelectedPluginDiagnosticsMessage => _customPluginEffect.StatusDetails;
+
+    public string SelectedPluginDiagnosticsAssembly => _customPluginEffect.RuntimeAssemblyFileName;
+
+    public string SelectedPluginDiagnosticsEntryType => _customPluginEffect.RuntimeEntryTypeName;
 
     public double MasterOpacity
     {
@@ -754,8 +770,17 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             _customPluginEffect.IsEnabled = false;
             AutosaveStatus = ex.Message;
         }
+        RefreshPluginDiagnostics();
         _engine.SetTargetFps(_settings.General.TargetFps);
         _engine.SetPauseWhenCursorHidden(_settings.General.PauseWhenCursorHidden);
+    }
+
+    private void RefreshPluginDiagnostics()
+    {
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsStatus));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsMessage));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsAssembly));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsEntryType));
     }
 
     private void ApplyStartupRegistration()

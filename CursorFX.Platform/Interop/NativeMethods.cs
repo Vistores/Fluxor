@@ -34,6 +34,15 @@ public static class NativeMethods
     [DllImport("user32.dll")]
     public static extern bool GetCursorInfo(ref CURSORINFO pci);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern IntPtr CopyIcon(IntPtr hIcon);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool DestroyIcon(IntPtr hIcon);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool GetIconInfo(IntPtr hIcon, out ICONINFO piconinfo);
+
     [DllImport("user32.dll")]
     public static extern short GetAsyncKeyState(int vKey);
 
@@ -150,6 +159,16 @@ public static class NativeMethods
         public uint flags;
         public IntPtr hCursor;
         public POINT ptScreenPos;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ICONINFO
+    {
+        public bool fIcon;
+        public int xHotspot;
+        public int yHotspot;
+        public IntPtr hbmMask;
+        public IntPtr hbmColor;
     }
 
     [StructLayout(LayoutKind.Sequential)]

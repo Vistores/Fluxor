@@ -10,6 +10,8 @@ public interface IWindowStateMonitor : IDisposable
 
     bool AreEffectsSuspended { get; }
 
+    bool IsCursorVisible { get; }
+
     void Start();
 
     void Stop();

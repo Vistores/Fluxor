@@ -28,6 +28,7 @@ public partial class App : System.Windows.Application
     private CustomPluginEffect? _customPluginEffect;
     private TrayIconService? _trayIconService;
     private IScreenSampler? _screenSampler;
+    private ICursorSnapshotProvider? _cursorSnapshotProvider;
     private bool _forceExit;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -54,6 +55,7 @@ public partial class App : System.Windows.Application
         var glowEffect = new GlowEffect(settings.Glow);
         var clickRippleEffect = new ClickRippleEffect(settings.Ripple);
         _screenSampler = new GdiScreenSampler();
+        _cursorSnapshotProvider = new Win32CursorSnapshotProvider();
         var templateEffect = new TemplateEffect(_screenSampler);
         _customPluginEffect = new CustomPluginEffect(new PluginRuntimeLoader(_templateCatalog.CatalogDirectory));
 
@@ -75,6 +77,8 @@ public partial class App : System.Windows.Application
             _clickMonitor,
             _windowStateMonitor,
             _screenSampler,
+            _cursorSnapshotProvider,
+            _customPluginEffect,
             settings.General.TargetFps);
 
         _mainViewModel = new MainViewModel(
@@ -111,6 +115,7 @@ public partial class App : System.Windows.Application
         _mouseTracker?.Dispose();
         _customPluginEffect?.Dispose();
         _screenSampler?.Dispose();
+        _cursorSnapshotProvider?.Dispose();
         _overlayWindow?.Close();
         _singleInstanceMutex?.ReleaseMutex();
         _singleInstanceMutex?.Dispose();
