@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -204,11 +204,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string PluginAuthoringGuidePath => Path.Combine(AppContext.BaseDirectory, "Templates", "plugin-authoring-guide.txt");
 
-    public string ApplicationVersion => "v0.0.2";
+    public string ApplicationVersion => "v0.0.3";
 
     public string ApplicationAuthor => "Dokzya_dev";
 
-    public string ApplicationSignature => $"{ApplicationVersion} • {ApplicationAuthor}";
+    public string ApplicationSignature => $"{ApplicationVersion} | {ApplicationAuthor}";
 
     public string BuiltInProfilesSummary => $"{BuiltInPlugins.Count} built-in profiles.";
 
@@ -905,3 +905,4 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 }
+

@@ -22,6 +22,8 @@ public static class NativeMethods
     public const uint CursorShowing = 0x00000001;
     public const int VkLbutton = 0x01;
     public const int VkRbutton = 0x02;
+    public const uint SwpNosize = 0x0001;
+    public const uint SwpNomove = 0x0002;
     public const uint SwpNoZorder = 0x0004;
     public const uint SwpNoActivate = 0x0010;
     public static readonly IntPtr HwndTopmost = new(-1);

@@ -10,11 +10,13 @@ namespace CursorFX.Rendering;
 
 public sealed class OverlayWindow : IDisposable
 {
+    private static readonly TimeSpan TopmostRefreshInterval = TimeSpan.FromMilliseconds(900);
     private readonly EffectManager _effectManager;
     private readonly Dictionary<string, OverlayViewportWindow> _viewports = new(StringComparer.OrdinalIgnoreCase);
     private IReadOnlyList<MonitorLayout> _monitorLayouts = Array.Empty<MonitorLayout>();
     private bool _isShown;
     private bool _isDormant;
+    private DateTime _lastTopmostRefreshUtc = DateTime.MinValue;
 
     public OverlayWindow(EffectManager effectManager)
     {
@@ -39,6 +41,7 @@ public sealed class OverlayWindow : IDisposable
     public void Show()
     {
         _isShown = true;
+        _lastTopmostRefreshUtc = DateTime.MinValue;
         RefreshBounds();
         foreach (var viewport in _viewports.Values)
         {
@@ -73,6 +76,28 @@ public sealed class OverlayWindow : IDisposable
         foreach (var viewport in _viewports.Values)
         {
             viewport.InvalidateSurface();
+        }
+
+        EnsureTopmost();
+    }
+
+    public void EnsureTopmost(bool force = false)
+    {
+        if (!_isShown || _isDormant)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        if (!force && (now - _lastTopmostRefreshUtc) < TopmostRefreshInterval)
+        {
+            return;
+        }
+
+        _lastTopmostRefreshUtc = now;
+        foreach (var viewport in _viewports.Values)
+        {
+            viewport.EnsureTopmost();
         }
     }
 
@@ -256,8 +281,20 @@ public sealed class OverlayWindow : IDisposable
 
         public void EnsureTopmost()
         {
-            Topmost = false;
             Topmost = true;
+            if (!_sourceReady || PresentationSource.FromVisual(this) is not HwndSource source)
+            {
+                return;
+            }
+
+            NativeMethods.SetWindowPos(
+                source.Handle,
+                NativeMethods.HwndTopmost,
+                0,
+                0,
+                0,
+                0,
+                NativeMethods.SwpNomove | NativeMethods.SwpNosize | NativeMethods.SwpNoActivate);
         }
 
         public Point? PointFromScreenSafe(Point screenPixels)
