@@ -97,6 +97,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public ObservableCollection<PluginCategoryViewModel> PluginCategories { get; } = [];
 
+    public ObservableCollection<PluginCategoryViewModel> BasicPluginCategories { get; } = [];
+
+    public ObservableCollection<PluginCategoryViewModel> AdvancedPluginCategories { get; } = [];
+
     public RelayCommand ImportTemplateCommand { get; }
 
     public RelayCommand OpenPluginFolderCommand { get; }
@@ -216,6 +220,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ? "No imported plugins yet."
         : $"Imported plugins sorted by newest first ({ImportedPlugins.Count}).";
 
+    public bool HasAdvancedParameters => AdvancedPluginCategories.Count > 0;
+
     public bool RunInBackgroundEnabled => _settings.General.RunInBackground;
 
     public string AutosaveStatus
@@ -243,8 +249,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private void BuildPluginCategories()
     {
         PluginCategories.Clear();
+        BasicPluginCategories.Clear();
+        AdvancedPluginCategories.Clear();
         if (SelectedPlugin is null)
         {
+            OnPropertyChanged(nameof(HasAdvancedParameters));
             return;
         }
 
@@ -268,7 +277,38 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             }
 
             PluginCategories.Add(category);
+            if (category.Parameters.Any(parameter => !parameter.IsAdvanced))
+            {
+                var basicCategory = new PluginCategoryViewModel
+                {
+                    Name = category.Name
+                };
+
+                foreach (var parameter in category.Parameters.Where(parameter => !parameter.IsAdvanced))
+                {
+                    basicCategory.Parameters.Add(parameter);
+                }
+
+                BasicPluginCategories.Add(basicCategory);
+            }
+
+            if (category.Parameters.Any(parameter => parameter.IsAdvanced))
+            {
+                var advancedCategory = new PluginCategoryViewModel
+                {
+                    Name = category.Name
+                };
+
+                foreach (var parameter in category.Parameters.Where(parameter => parameter.IsAdvanced))
+                {
+                    advancedCategory.Parameters.Add(parameter);
+                }
+
+                AdvancedPluginCategories.Add(advancedCategory);
+            }
         }
+
+        OnPropertyChanged(nameof(HasAdvancedParameters));
     }
 
     private static TemplateParameterValue GetStoredParameterValue(

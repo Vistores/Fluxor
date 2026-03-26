@@ -1,12 +1,12 @@
-<Window x:Class="CursorFX.App.ImportPluginWindow"
+﻿<Window x:Class="CursorFX.App.ImportPluginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Fluxor · Import Plugin"
+        Title="Fluxor | Import Plugin"
         Icon="pack://application:,,,/Assets/FluxorIco.ico"
         Width="700"
-        Height="560"
+        Height="620"
         MinWidth="560"
-        MinHeight="460"
+        MinHeight="500"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip"
         Background="{StaticResource WindowBackgroundBrush}">
@@ -66,6 +66,44 @@
                     </StackPanel>
                 </Border>
 
+                <Border Margin="0,16,0,0"
+                        Padding="16"
+                        Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource SurfaceBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="Import Preview" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   Text="Fluxor will generate the plugin profile directly from the selected assembly metadata." />
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Display name" />
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedPluginDisplayName}" />
+                        </Grid>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Plugin ID" />
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedPluginId}" />
+                        </Grid>
+                        <Grid Margin="0,6,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Entry type" />
+                            <TextBlock Grid.Column="1" TextWrapping="Wrap" Text="{Binding SelectedPluginEntryType}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
                 <Border Margin="0,16,0,0" Padding="16" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource SurfaceBorderBrush}" BorderThickness="1" CornerRadius="10">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -79,7 +117,7 @@
                                 Background="{StaticResource SurfaceRaisedBrush}"
                                 BorderBrush="{StaticResource SurfaceBorderBrush}"
                                 BorderThickness="1"
-                                CornerRadius="16"
+                                CornerRadius="10"
                                 ClipToBounds="True">
                             <Grid>
                                 <Image Source="{Binding IconPath}" Stretch="UniformToFill" />

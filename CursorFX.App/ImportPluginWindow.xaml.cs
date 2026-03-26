@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
@@ -69,13 +69,19 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
                 return;
             }
 
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginSummary)));
+            RaisePluginPreviewProperties();
         }
     }
 
     public string SelectedPluginSummary => SelectedPluginCandidate is null
         ? "No plugin type selected yet."
         : $"{SelectedPluginCandidate.DisplayName} - {SelectedPluginCandidate.PluginId}{Environment.NewLine}{SelectedPluginCandidate.Description}";
+
+    public string SelectedPluginDisplayName => SelectedPluginCandidate?.DisplayName ?? "Not selected";
+
+    public string SelectedPluginId => SelectedPluginCandidate?.PluginId ?? "Will be generated from the selected plugin.";
+
+    public string SelectedPluginEntryType => SelectedPluginCandidate?.EntryTypeName ?? "Select a plugin type to preview it.";
 
     private void OnBrowseAssemblyClick(object sender, RoutedEventArgs e)
     {
@@ -163,6 +169,7 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
 
         if (string.IsNullOrWhiteSpace(AssemblyPath) || !File.Exists(AssemblyPath))
         {
+            RaisePluginPreviewProperties();
             return;
         }
 
@@ -184,6 +191,14 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
             SelectedPluginCandidate = null;
         }
 
+        RaisePluginPreviewProperties();
+    }
+
+    private void RaisePluginPreviewProperties()
+    {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginSummary)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginDisplayName)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginId)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginEntryType)));
     }
 }
