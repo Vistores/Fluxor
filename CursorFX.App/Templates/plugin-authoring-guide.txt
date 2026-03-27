@@ -119,6 +119,7 @@ public sealed class MyPlugin : ICursorEffectPlugin
             DisplayName = "Opacity",
             Section = PluginParameterSection.Shader,
             SectionName = "Shader",
+            IsAdvanced = false,
             Type = TemplateParameterType.Number,
             Min = 0.05,
             Max = 1.0,
@@ -147,6 +148,7 @@ Each parameter should define:
 - `DisplayName`
 - `Section`
 - `SectionName`
+- `IsAdvanced` when you want the control to appear under the Advanced block
 - `Type`
 - `Min`
 - `Max`
@@ -177,6 +179,7 @@ then the same keys must exist in `GetParameters()`.
 
 Keep keys stable after release.
 Changing them later resets saved values for that plugin.
+Use `IsAdvanced = true` for secondary or expert-only controls so the default UI stays clean.
 
 
 9. Recommended structure

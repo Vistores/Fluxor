@@ -65,9 +65,14 @@
                                        Text="{Binding LanguageLabelText, RelativeSource={RelativeSource AncestorType=Window}}" />
                             <ComboBox ItemsSource="{Binding AvailableLanguages, RelativeSource={RelativeSource AncestorType=Window}}"
                                       SelectedValuePath="Code"
-                                      DisplayMemberPath="DisplayName"
                                       SelectedValue="{Binding SelectedLanguageCode, RelativeSource={RelativeSource AncestorType=Window}}"
-                                      IsEnabled="{Binding IsLanguageSelectionEnabled, RelativeSource={RelativeSource AncestorType=Window}}" />
+                                      IsEnabled="{Binding IsLanguageSelectionEnabled, RelativeSource={RelativeSource AncestorType=Window}}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DisplayName}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                             <TextBlock Margin="0,10,0,0"
                                        Foreground="{StaticResource MutedTextBrush}"
                                        TextWrapping="Wrap"

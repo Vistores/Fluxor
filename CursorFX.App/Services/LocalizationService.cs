@@ -345,4 +345,7 @@ public sealed class LocalizationService
     }
 }
 
-public sealed record LocalizationOption(string Code, string DisplayName);
+public sealed record LocalizationOption(string Code, string DisplayName)
+{
+    public override string ToString() => DisplayName;
+}

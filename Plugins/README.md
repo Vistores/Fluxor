@@ -28,6 +28,7 @@ Recommended flow:
    - `Kind`
    - `Trigger`
    - `GetParameters()`
+   - mark expert-only controls with `IsAdvanced = true` in your parameter definitions
 5. Build the project.
 6. In Fluxor click `Import Plugin`.
 7. Choose the built DLL from the plugin folder.

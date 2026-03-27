@@ -7,6 +7,32 @@ namespace CursorFX.Core.Services;
 
 public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
 {
+    private static readonly HashSet<string> AdvancedParameterKeys =
+    [
+        "trailMode",
+        "waveAmplitude",
+        "waveFrequency",
+        "noiseAmount",
+        "ribbonSoftness",
+        "detail",
+        "gravityX",
+        "gravityY",
+        "randomness",
+        "driftStrength",
+        "spawnRadius",
+        "spawnRate",
+        "matrixDamping",
+        "idleScatterThreshold",
+        "idleScatterRadius",
+        "idleScatterSpeed",
+        "trailFreedom",
+        "trailSpawnSpacing",
+        "trailLifetime",
+        "sampleOpacity",
+        "backdropSize",
+        "distortion"
+    ];
+
     private static readonly string[] RetiredBuiltInTemplateIds =
     [
         "cosmic-rift",
@@ -641,7 +667,16 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         _ => "Ring Thickness"
     };
 
-    private static TemplateParameterDefinition Number(string key, string displayName, PluginParameterSection section, string sectionName, double min, double max, double step, double defaultNumber) =>
+    private static TemplateParameterDefinition Number(
+        string key,
+        string displayName,
+        PluginParameterSection section,
+        string sectionName,
+        double min,
+        double max,
+        double step,
+        double defaultNumber,
+        bool? isAdvanced = null) =>
         new()
         {
             Key = key,
@@ -652,10 +687,17 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             Min = min,
             Max = max,
             Step = step,
-            DefaultNumber = defaultNumber
+            DefaultNumber = defaultNumber,
+            IsAdvanced = isAdvanced ?? IsAdvancedKey(key)
         };
 
-    private static TemplateParameterDefinition Color(string key, string displayName, PluginParameterSection section, string sectionName, string defaultColor) =>
+    private static TemplateParameterDefinition Color(
+        string key,
+        string displayName,
+        PluginParameterSection section,
+        string sectionName,
+        string defaultColor,
+        bool? isAdvanced = null) =>
         new()
         {
             Key = key,
@@ -663,10 +705,17 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             Section = section,
             SectionName = sectionName,
             Type = TemplateParameterType.Color,
-            DefaultColor = defaultColor
+            DefaultColor = defaultColor,
+            IsAdvanced = isAdvanced ?? IsAdvancedKey(key)
         };
 
-    private static TemplateParameterDefinition Toggle(string key, string displayName, PluginParameterSection section, string sectionName, bool defaultBoolean) =>
+    private static TemplateParameterDefinition Toggle(
+        string key,
+        string displayName,
+        PluginParameterSection section,
+        string sectionName,
+        bool defaultBoolean,
+        bool? isAdvanced = null) =>
         new()
         {
             Key = key,
@@ -674,8 +723,12 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             Section = section,
             SectionName = sectionName,
             Type = TemplateParameterType.Toggle,
-            DefaultBoolean = defaultBoolean
+            DefaultBoolean = defaultBoolean,
+            IsAdvanced = isAdvanced ?? IsAdvancedKey(key)
         };
+
+    private static bool IsAdvancedKey(string key) =>
+        AdvancedParameterKeys.Contains(key);
 
     private static void TryMigrateLegacyCatalog(string legacyCatalogDirectory, string targetCatalogDirectory)
     {

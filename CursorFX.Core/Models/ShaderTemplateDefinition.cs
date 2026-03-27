@@ -57,6 +57,8 @@ public sealed class TemplateParameterDefinition
     public string DefaultColor { get; init; } = "#FFFFFF";
 
     public bool DefaultBoolean { get; init; }
+
+    public bool IsAdvanced { get; init; }
 }
 
 public sealed class TemplateParameterValue

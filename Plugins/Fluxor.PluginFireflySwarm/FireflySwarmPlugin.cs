@@ -36,12 +36,12 @@ public sealed class FireflySwarmPlugin : ICursorEffectPlugin
         Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Motion", 2, 28, 1, 10),
         Number("follow", "Emitter Follow", PluginParameterSection.Shader, "Motion", 2, 28, 1, 8),
         Number("spawnRate", "Spawn Rate", PluginParameterSection.Shader, "Swarm", 2, 28, 1, 8),
-        Number("spawnRadius", "Spawn Radius", PluginParameterSection.Shader, "Swarm", 0, 36, 1, 6),
+        Number("spawnRadius", "Spawn Radius", PluginParameterSection.Shader, "Swarm", 0, 36, 1, 6, isAdvanced: true),
         Number("speed", "Drift Speed", PluginParameterSection.Shader, "Swarm", 10, 180, 1, 58),
-        Number("curvature", "Curve Amount", PluginParameterSection.Shader, "Swarm", 0, 10, 0.25, 2.6),
+        Number("curvature", "Curve Amount", PluginParameterSection.Shader, "Swarm", 0, 10, 0.25, 2.6, isAdvanced: true),
         Number("life", "Spark Lifetime", PluginParameterSection.Shader, "Swarm", 0.2, 2.2, 0.05, 0.82),
         Number("size", "Spark Size", PluginParameterSection.Shader, "Swarm", 1, 14, 0.5, 4.5),
-        Number("tail", "Micro Trail Length", PluginParameterSection.Shader, "Swarm", 4, 36, 1, 14)
+        Number("tail", "Micro Trail Length", PluginParameterSection.Shader, "Swarm", 4, 36, 1, 14, isAdvanced: true)
     ];
 
     public void ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)
@@ -203,7 +203,7 @@ public sealed class FireflySwarmPlugin : ICursorEffectPlugin
     private Color GetColor(string key, string fallback)
         => ParseColor(_parameters.TryGetValue(key, out var value) ? value.ColorValue ?? fallback : fallback, fallback);
 
-    private static TemplateParameterDefinition Number(string key, string name, PluginParameterSection section, string sectionName, double min, double max, double step, double value) =>
+    private static TemplateParameterDefinition Number(string key, string name, PluginParameterSection section, string sectionName, double min, double max, double step, double value, bool isAdvanced = false) =>
         new()
         {
             Key = key,
@@ -215,10 +215,11 @@ public sealed class FireflySwarmPlugin : ICursorEffectPlugin
             Max = max,
             Step = step,
             DefaultNumber = value,
-            DefaultColor = "#FFFFFF"
+            DefaultColor = "#FFFFFF",
+            IsAdvanced = isAdvanced
         };
 
-    private static TemplateParameterDefinition ColorParameter(string key, string name, PluginParameterSection section, string sectionName, string color) =>
+    private static TemplateParameterDefinition ColorParameter(string key, string name, PluginParameterSection section, string sectionName, string color, bool isAdvanced = false) =>
         new()
         {
             Key = key,
@@ -226,10 +227,11 @@ public sealed class FireflySwarmPlugin : ICursorEffectPlugin
             Section = section,
             SectionName = sectionName,
             Type = TemplateParameterType.Color,
-            DefaultColor = color
+            DefaultColor = color,
+            IsAdvanced = isAdvanced
         };
 
-    private static TemplateParameterDefinition Toggle(string key, string name, PluginParameterSection section, string sectionName, bool value) =>
+    private static TemplateParameterDefinition Toggle(string key, string name, PluginParameterSection section, string sectionName, bool value, bool isAdvanced = false) =>
         new()
         {
             Key = key,
@@ -238,7 +240,8 @@ public sealed class FireflySwarmPlugin : ICursorEffectPlugin
             SectionName = sectionName,
             Type = TemplateParameterType.Toggle,
             DefaultBoolean = value,
-            DefaultColor = "#FFFFFF"
+            DefaultColor = "#FFFFFF",
+            IsAdvanced = isAdvanced
         };
 
     private static SolidColorBrush CreateBrush(Color color, double opacity)

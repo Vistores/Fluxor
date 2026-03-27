@@ -32,14 +32,14 @@ public sealed class HeatContourPlugin : ICursorEffectPlugin
         ColorParameter("heatColor", "Heat Tint", PluginParameterSection.Shader, "Heat", "#FFC57A"),
         Number("opacity", "Opacity", PluginParameterSection.Shader, "Contour", 0.05, 1.0, 0.01, 0.9),
         Number("outlineThickness", "Outline Thickness", PluginParameterSection.Shader, "Contour", 0.5, 18, 0.1, 2.2),
-        Number("outlinePasses", "Outline Passes", PluginParameterSection.Shader, "Contour", 4, 20, 1, 9),
+        Number("outlinePasses", "Outline Passes", PluginParameterSection.Shader, "Contour", 4, 20, 1, 9, isAdvanced: true),
         Number("haloSize", "Halo Size", PluginParameterSection.Glow, "Glow", 4, 72, 1, 18),
         Number("haloOpacity", "Halo Opacity", PluginParameterSection.Glow, "Glow", 0.05, 1.0, 0.01, 0.22),
         Number("distortionRadius", "Distortion Radius", PluginParameterSection.Shader, "Heat", 12, 140, 1, 34),
         Number("distortionStrength", "Distortion Strength", PluginParameterSection.Shader, "Heat", 0.2, 20, 0.1, 3.8),
-        Number("distortionLayers", "Distortion Layers", PluginParameterSection.Shader, "Heat", 1, 8, 1, 4),
-        Number("distortionOpacity", "Distortion Opacity", PluginParameterSection.Shader, "Heat", 0.03, 1.0, 0.01, 0.16),
-        Number("heatSpeed", "Heat Speed", PluginParameterSection.Shader, "Heat", 0.2, 8, 0.1, 2.4)
+        Number("distortionLayers", "Distortion Layers", PluginParameterSection.Shader, "Heat", 1, 8, 1, 4, isAdvanced: true),
+        Number("distortionOpacity", "Distortion Opacity", PluginParameterSection.Shader, "Heat", 0.03, 1.0, 0.01, 0.16, isAdvanced: true),
+        Number("heatSpeed", "Heat Speed", PluginParameterSection.Shader, "Heat", 0.2, 8, 0.1, 2.4, isAdvanced: true)
     ];
 
     public void ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)
@@ -242,7 +242,7 @@ public sealed class HeatContourPlugin : ICursorEffectPlugin
     private Color GetColor(string key, string fallback)
         => ParseColor(_parameters.TryGetValue(key, out var value) ? value.ColorValue ?? fallback : fallback, fallback);
 
-    private static TemplateParameterDefinition Number(string key, string name, PluginParameterSection section, string sectionName, double min, double max, double step, double value) =>
+    private static TemplateParameterDefinition Number(string key, string name, PluginParameterSection section, string sectionName, double min, double max, double step, double value, bool isAdvanced = false) =>
         new()
         {
             Key = key,
@@ -254,10 +254,11 @@ public sealed class HeatContourPlugin : ICursorEffectPlugin
             Max = max,
             Step = step,
             DefaultNumber = value,
-            DefaultColor = "#FFFFFF"
+            DefaultColor = "#FFFFFF",
+            IsAdvanced = isAdvanced
         };
 
-    private static TemplateParameterDefinition ColorParameter(string key, string name, PluginParameterSection section, string sectionName, string color) =>
+    private static TemplateParameterDefinition ColorParameter(string key, string name, PluginParameterSection section, string sectionName, string color, bool isAdvanced = false) =>
         new()
         {
             Key = key,
@@ -265,10 +266,11 @@ public sealed class HeatContourPlugin : ICursorEffectPlugin
             Section = section,
             SectionName = sectionName,
             Type = TemplateParameterType.Color,
-            DefaultColor = color
+            DefaultColor = color,
+            IsAdvanced = isAdvanced
         };
 
-    private static TemplateParameterDefinition Toggle(string key, string name, PluginParameterSection section, string sectionName, bool value) =>
+    private static TemplateParameterDefinition Toggle(string key, string name, PluginParameterSection section, string sectionName, bool value, bool isAdvanced = false) =>
         new()
         {
             Key = key,
@@ -277,7 +279,8 @@ public sealed class HeatContourPlugin : ICursorEffectPlugin
             SectionName = sectionName,
             Type = TemplateParameterType.Toggle,
             DefaultBoolean = value,
-            DefaultColor = "#FFFFFF"
+            DefaultColor = "#FFFFFF",
+            IsAdvanced = isAdvanced
         };
 
     private static Color ParseColor(string value, string fallback)

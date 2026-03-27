@@ -69,7 +69,7 @@ public sealed class ShaderTemplateParameterViewModel : INotifyPropertyChanged
 
     public bool IsToggle => _definition.Type == TemplateParameterType.Toggle;
 
-    public bool IsAdvanced => AdvancedKeys.Contains(Key);
+    public bool IsAdvanced => _definition.IsAdvanced || AdvancedKeys.Contains(Key);
 
     public string HelperText => Key switch
     {
