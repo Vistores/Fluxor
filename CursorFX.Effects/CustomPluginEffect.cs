@@ -36,6 +36,12 @@ public sealed class CustomPluginEffect : IEffect, IPluginRuntimeContextSink, IDi
             ? "Idle"
             : "Error";
 
+    public bool HasCursorSnapshot => _cursorSnapshot is not null;
+
+    public bool HasBackdropSample => _backdropSample is not null;
+
+    public bool IsCursorVisibleInContext => _isCursorVisible;
+
     public string StatusDetails => _runtime is not null
         ? "Plugin runtime loaded and active."
         : !string.IsNullOrWhiteSpace(_lastError)

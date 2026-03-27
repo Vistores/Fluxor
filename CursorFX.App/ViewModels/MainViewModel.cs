@@ -159,7 +159,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ? _localizationService.Get("main.runtimeKind.imported")
         : _localizationService.Get("main.runtimeKind.builtIn");
 
-    public string SelectedPluginDiagnosticsStatus => _customPluginEffect.Status;
+    public string SelectedPluginDiagnosticsStatus => _customPluginEffect.Status switch
+    {
+        "Loaded" => _localizationService.Get("main.diag.status.loaded"),
+        "Error" => _localizationService.Get("main.diag.status.error"),
+        _ => _localizationService.Get("main.diag.status.idle")
+    };
 
     public string SelectedPluginDiagnosticsMessage => _customPluginEffect.StatusDetails;
 
@@ -173,7 +178,36 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string SelectedPluginDiagnosticsLastErrorAt => _customPluginEffect.LastErrorAtLabel;
 
-    public string SelectedPluginDiagnosticsContext => _customPluginEffect.ContextSummary;
+    public string SelectedPluginDiagnosticsContext => string.Format(
+        _localizationService.Get("main.diag.context"),
+        _customPluginEffect.HasCursorSnapshot ? _localizationService.Get("main.diag.bool.yes") : _localizationService.Get("main.diag.bool.no"),
+        _customPluginEffect.HasBackdropSample ? _localizationService.Get("main.diag.bool.yes") : _localizationService.Get("main.diag.bool.no"),
+        _customPluginEffect.IsCursorVisibleInContext ? _localizationService.Get("main.diag.bool.yes") : _localizationService.Get("main.diag.bool.no"));
+
+    public string DiagnosticsWarningText => _localizationService.Get("main.diag.warning");
+
+    public string SelectedPluginDiagnosticsWarning
+    {
+        get
+        {
+            if (!_customPluginEffect.IsCursorVisibleInContext)
+            {
+                return _localizationService.Get("main.diag.warning.hiddenCursor");
+            }
+
+            if (!_customPluginEffect.HasCursorSnapshot)
+            {
+                return _localizationService.Get("main.diag.warning.noSnapshot");
+            }
+
+            if (!_customPluginEffect.HasBackdropSample)
+            {
+                return _localizationService.Get("main.diag.warning.noBackdrop");
+            }
+
+            return _localizationService.Get("main.diag.warning.none");
+        }
+    }
 
     public double MasterOpacity
     {
@@ -879,6 +913,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsLoadedAt));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsLastErrorAt));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsContext));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsWarning));
     }
 
     private void RefreshLocalizedText()
@@ -915,6 +950,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(DiagnosticsEntryTypeText));
         OnPropertyChanged(nameof(DiagnosticsLoadedAtText));
         OnPropertyChanged(nameof(DiagnosticsLastErrorText));
+        OnPropertyChanged(nameof(DiagnosticsWarningText));
         OnPropertyChanged(nameof(ProfilesText));
         OnPropertyChanged(nameof(ProfilesHintText));
         OnPropertyChanged(nameof(BuiltInProfilesText));
@@ -926,6 +962,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(SelectedPluginRuntimeKindLabel));
         OnPropertyChanged(nameof(BuiltInProfilesSummary));
         OnPropertyChanged(nameof(ImportedProfilesSummary));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsStatus));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsContext));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsWarning));
         OnPropertyChanged(nameof(AutosaveStatus));
     }
 
