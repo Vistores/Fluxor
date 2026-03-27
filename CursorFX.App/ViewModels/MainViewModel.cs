@@ -270,7 +270,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string PluginAuthoringGuidePath => Path.Combine(AppContext.BaseDirectory, "Templates", "plugin-authoring-guide.txt");
 
-    public string ApplicationVersion => "v0.0.3";
+    public string ApplicationVersion => "v0.0.4";
 
     public string ApplicationAuthor => "Dokzya_dev";
 
@@ -283,6 +283,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string ImportPluginText => _localizationService.Get("main.importPlugin");
 
     public string CurrentProfileText => _localizationService.Get("main.currentProfile");
+
+    public string MoreActionsText => _localizationService.Get("main.moreActions");
 
     public string SaveSettingsText => _localizationService.Get("main.saveSettings");
 
@@ -615,7 +617,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void OpenSettings()
     {
-        var settingsWindow = new SettingsWindow(_settings.General, _settings.Localization, _localizationService)
+        var settingsWindow = new SettingsWindow(
+            _settings.General,
+            _settings.Localization,
+            _localizationService,
+            PluginAuthoringGuidePath,
+            PluginFolderPath)
         {
             Owner = System.Windows.Application.Current?.MainWindow
         };
@@ -922,6 +929,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(ApplicationSettingsText));
         OnPropertyChanged(nameof(ImportPluginText));
         OnPropertyChanged(nameof(CurrentProfileText));
+        OnPropertyChanged(nameof(MoreActionsText));
         OnPropertyChanged(nameof(SaveSettingsText));
         OnPropertyChanged(nameof(ResetProfileText));
         OnPropertyChanged(nameof(ChooseIconText));

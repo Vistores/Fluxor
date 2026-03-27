@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using CursorFX.App.Services;
@@ -8,13 +10,24 @@ namespace CursorFX.App;
 
 public partial class SettingsWindow : Window, INotifyPropertyChanged
 {
+    private readonly LocalizationService _localizationService;
+    private readonly string _pluginGuidePath;
+    private readonly string _pluginFolderPath;
     private bool _useSystemLanguage;
     private string _selectedLanguageCode = "en";
 
-    public SettingsWindow(GeneralSettings settings, LocalizationSettings localizationSettings, LocalizationService localizationService)
+    public SettingsWindow(
+        GeneralSettings settings,
+        LocalizationSettings localizationSettings,
+        LocalizationService localizationService,
+        string pluginGuidePath,
+        string pluginFolderPath)
     {
         InitializeComponent();
 
+        _localizationService = localizationService;
+        _pluginGuidePath = pluginGuidePath;
+        _pluginFolderPath = pluginFolderPath;
         AvailableLanguages = localizationService.AvailableLanguages;
         LaunchOnStartup = settings.LaunchOnStartup;
         RunInBackground = settings.RunInBackground;
@@ -35,6 +48,10 @@ public partial class SettingsWindow : Window, INotifyPropertyChanged
         UseSystemLanguageText = localizationService.Get("settings.useSystemLanguage");
         LanguageLabelText = localizationService.Get("settings.languageLabel");
         LanguageHintText = localizationService.Get("settings.languageHint");
+        PluginToolsTitle = localizationService.Get("settings.pluginTools");
+        PluginToolsHintText = localizationService.Get("settings.pluginToolsHint");
+        OpenGuideButtonText = localizationService.Get("settings.openGuide");
+        OpenPluginsFolderButtonText = localizationService.Get("settings.openPluginsFolder");
         CancelButtonText = localizationService.Get("settings.cancel");
         ApplyButtonText = localizationService.Get("settings.apply");
 
@@ -110,6 +127,14 @@ public partial class SettingsWindow : Window, INotifyPropertyChanged
 
     public string LanguageHintText { get; }
 
+    public string PluginToolsTitle { get; }
+
+    public string PluginToolsHintText { get; }
+
+    public string OpenGuideButtonText { get; }
+
+    public string OpenPluginsFolderButtonText { get; }
+
     public string CancelButtonText { get; }
 
     public string ApplyButtonText { get; }
@@ -117,6 +142,39 @@ public partial class SettingsWindow : Window, INotifyPropertyChanged
     private void OnApplyClick(object sender, RoutedEventArgs e)
     {
         DialogResult = true;
+    }
+
+    private void OnOpenGuideClick(object sender, RoutedEventArgs e)
+    {
+        if (!File.Exists(_pluginGuidePath))
+        {
+            System.Windows.MessageBox.Show(_localizationService.Get("guide.missing"), "Fluxor", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var guideWindow = new PluginAuthoringGuideWindow(_pluginGuidePath, _localizationService)
+        {
+            Owner = this
+        };
+        guideWindow.ShowDialog();
+    }
+
+    private void OnOpenPluginsFolderClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Directory.CreateDirectory(_pluginFolderPath);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"\"{_pluginFolderPath}\"",
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Fluxor", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

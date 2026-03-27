@@ -30,6 +30,18 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void OnProfileActionsClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button button || button.ContextMenu is null)
+        {
+            return;
+        }
+
+        button.ContextMenu.PlacementTarget = button;
+        button.ContextMenu.IsOpen = true;
+        e.Handled = true;
+    }
+
     private static ScrollViewer? FindParentScrollViewer(DependencyObject? current)
     {
         while (current is not null)

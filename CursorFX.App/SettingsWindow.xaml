@@ -79,6 +79,24 @@
                                        Text="{Binding LanguageHintText, RelativeSource={RelativeSource AncestorType=Window}}" />
                         </StackPanel>
                     </Border>
+
+                    <Border Margin="0,14,0,0" Style="{StaticResource PanelCardStyle}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleTextStyle}" Text="{Binding PluginToolsTitle, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            <TextBlock Margin="0,10,0,0"
+                                       Foreground="{StaticResource MutedTextBrush}"
+                                       TextWrapping="Wrap"
+                                       Text="{Binding PluginToolsHintText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            <WrapPanel Margin="0,12,0,0">
+                                <Button Content="{Binding OpenGuideButtonText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Click="OnOpenGuideClick" />
+                                <Button Content="{Binding OpenPluginsFolderButtonText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Click="OnOpenPluginsFolderClick" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </Border>
