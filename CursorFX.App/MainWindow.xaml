@@ -211,7 +211,7 @@
                             <TextBlock Margin="40,8,0,0"
                                        Foreground="{StaticResource MutedTextBrush}"
                                        FontSize="13"
-                                       Text="A cleaner control center for cursor effects, built-in styles, and DLL plugins." />
+                                       Text="{Binding HeroSubtitle}" />
                             <TextBlock Margin="40,6,0,0"
                                        Foreground="{StaticResource AccentStrongBrush}"
                                        FontSize="12"
@@ -220,10 +220,10 @@
                         </StackPanel>
                         <WrapPanel Grid.Column="1"
                                    VerticalAlignment="Top">
-                            <Button Content="Application Settings"
+                            <Button Content="{Binding ApplicationSettingsText}"
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     Command="{Binding OpenSettingsCommand}" />
-                            <Button Content="Import Plugin"
+                            <Button Content="{Binding ImportPluginText}"
                                     Command="{Binding ImportTemplateCommand}" />
                         </WrapPanel>
                     </Grid>
@@ -257,7 +257,7 @@
                                                 <TextBlock HorizontalAlignment="Center"
                                                            VerticalAlignment="Center"
                                                            Foreground="{StaticResource MutedTextBrush}"
-                                                           Text="Icon">
+                                                           Text="{Binding IconPlaceholderText}">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">
                                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -279,7 +279,7 @@
                                             <TextBlock FontSize="14"
                                                        FontWeight="SemiBold"
                                                        Foreground="{StaticResource AccentMutedBrush}"
-                                                       Text="Current Profile" />
+                                                       Text="{Binding CurrentProfileText}" />
                                             <TextBlock Margin="0,4,0,0"
                                                        FontSize="22"
                                                        FontWeight="SemiBold"
@@ -299,21 +299,21 @@
                                     </DockPanel>
 
                                     <WrapPanel Margin="0,12,0,0">
-                                        <Button Content="Save Settings"
+                                        <Button Content="{Binding SaveSettingsText}"
                                                 Command="{Binding SaveSettingsCommand}" />
-                                        <Button Content="Reset Profile"
+                                        <Button Content="{Binding ResetProfileText}"
                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 Command="{Binding ResetPluginSettingsCommand}" />
-                                        <Button Content="Choose Icon"
+                                        <Button Content="{Binding ChooseIconText}"
                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 Command="{Binding ChoosePluginIconCommand}" />
-                                        <Button Content="Clear Icon"
+                                        <Button Content="{Binding ClearIconText}"
                                                 Style="{StaticResource GhostButtonStyle}"
                                                 Command="{Binding ClearPluginIconCommand}" />
-                                        <Button Content="Open Plugin Folder"
+                                        <Button Content="{Binding OpenPluginFolderText}"
                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 Command="{Binding OpenPluginFolderCommand}" />
-                                        <Button Content="Delete Plugin"
+                                        <Button Content="{Binding DeletePluginText}"
                                                 Command="{Binding DeletePluginCommand}"
                                                 Style="{StaticResource DangerButtonStyle}" />
                                     </WrapPanel>
@@ -328,7 +328,7 @@
                                     <StackPanel>
                                         <TextBlock FontSize="14"
                                                    FontWeight="SemiBold"
-                                                   Text="Status" />
+                                                   Text="{Binding StatusText}" />
                                         <TextBlock Margin="0,8,0,0"
                                                    Foreground="{StaticResource MutedTextBrush}"
                                                    FontSize="12.5"
@@ -350,7 +350,7 @@
                                     Style="{StaticResource PanelCardStyle}">
                                 <StackPanel>
                                     <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                               Text="General Controls" />
+                                               Text="{Binding GeneralControlsText}" />
 
                                     <Grid Margin="0,12,0,0">
                                         <Grid.ColumnDefinitions>
@@ -359,7 +359,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock VerticalAlignment="Center"
                                                    FontSize="13"
-                                                   Text="Master opacity" />
+                                                   Text="{Binding MasterOpacityText}" />
                                         <TextBlock Grid.Column="1"
                                                    VerticalAlignment="Center"
                                                    Foreground="{StaticResource AccentMutedBrush}"
@@ -379,7 +379,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock VerticalAlignment="Center"
                                                    FontSize="13"
-                                                   Text="FPS cap" />
+                                                   Text="{Binding FpsCapText}" />
                                         <TextBlock Grid.Column="1"
                                                    VerticalAlignment="Center"
                                                    Foreground="{StaticResource AccentMutedBrush}"
@@ -400,7 +400,7 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock VerticalAlignment="Center"
                                                    FontSize="13"
-                                                   Text="Cursor attach" />
+                                                   Text="{Binding CursorAttachText}" />
                                         <TextBlock Grid.Column="1"
                                                    VerticalAlignment="Center"
                                                    Foreground="{StaticResource AccentMutedBrush}"
@@ -417,7 +417,7 @@
                                                Foreground="{StaticResource MutedTextBrush}"
                                                FontSize="11.5"
                                                TextWrapping="Wrap"
-                                               Text="Use higher attach values when you want built-in effects to stay visually glued to the cursor during fast motion." />
+                                               Text="{Binding CursorAttachHintText}" />
                                 </StackPanel>
                             </Border>
 
@@ -425,17 +425,17 @@
                                     Style="{StaticResource PanelCardStyle}">
                                 <StackPanel>
                                     <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                               Text="Plugin Authoring" />
+                                               Text="{Binding PluginAuthoringText}" />
                                     <TextBlock Margin="0,10,0,0"
                                                Foreground="{StaticResource MutedTextBrush}"
                                                FontSize="13"
                                                TextWrapping="Wrap"
-                                               Text="Fluxor supports DLL-only plugins. Open the guide to see how to create a plugin, expose parameters from code, build the DLL, and import it into the app." />
+                                               Text="{Binding PluginAuthoringHintText}" />
                                     <WrapPanel Margin="0,10,0,0">
-                                        <Button Content="Open Authoring Guide"
+                                        <Button Content="{Binding OpenAuthoringGuideText}"
                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 Command="{Binding OpenPluginAuthoringGuideCommand}" />
-                                        <Button Content="Import Plugin"
+                                        <Button Content="{Binding ImportPluginText}"
                                                 Command="{Binding ImportTemplateCommand}" />
                                     </WrapPanel>
                                 </StackPanel>
@@ -444,11 +444,11 @@
                         <Border Margin="0,14,0,0">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                           Text="Profile Controls" />
+                                           Text="{Binding ProfileControlsText}" />
                                 <TextBlock Margin="0,6,0,0"
                                            Foreground="{StaticResource MutedTextBrush}"
                                            FontSize="12.5"
-                                           Text="Core controls are shown first. Advanced controls stay available but out of the way." />
+                                           Text="{Binding ProfileControlsHintText}" />
 
                                 <Border Margin="0,14,0,0"
                                         Padding="10"
@@ -459,18 +459,18 @@
                                     <StackPanel>
                                         <TextBlock FontSize="14"
                                                    FontWeight="SemiBold"
-                                                   Text="Basic" />
+                                                   Text="{Binding BasicText}" />
                                         <TextBlock Margin="0,4,0,12"
                                                    Foreground="{StaticResource MutedTextBrush}"
                                                    FontSize="11.5"
-                                                   Text="The most useful controls for shaping the current profile quickly." />
+                                                   Text="{Binding BasicHintText}" />
                                         <ItemsControl ItemsSource="{Binding BasicPluginCategories}" />
                                     </StackPanel>
                                 </Border>
 
                                 <Expander Margin="0,12,0,0"
                                           IsExpanded="False"
-                                          Header="Advanced">
+                                          Header="{Binding AdvancedText}">
                                     <Expander.Style>
                                         <Style TargetType="Expander" BasedOn="{StaticResource CompactExpanderStyle}">
                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -485,7 +485,7 @@
                                         <TextBlock Margin="0,0,0,12"
                                                    Foreground="{StaticResource MutedTextBrush}"
                                                    FontSize="11.5"
-                                                   Text="Less common controls for motion tuning, noise, spawn rules, and profile-specific behavior." />
+                                                   Text="{Binding AdvancedHintText}" />
                                         <ItemsControl ItemsSource="{Binding AdvancedPluginCategories}" />
                                     </StackPanel>
                                 </Expander>
@@ -505,13 +505,13 @@
                             </Border.Style>
                             <StackPanel>
                                 <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                           Text="Plugin Diagnostics" />
+                                           Text="{Binding PluginDiagnosticsText}" />
                                 <Grid Margin="0,12,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="110" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Status" />
+                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding DiagnosticsStatusText}" />
                                     <TextBlock Grid.Column="1"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource AccentMutedBrush}"
@@ -522,7 +522,7 @@
                                         <ColumnDefinition Width="110" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Assembly" />
+                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding DiagnosticsAssemblyText}" />
                                     <TextBlock Grid.Column="1"
                                                TextWrapping="Wrap"
                                                Text="{Binding SelectedPluginDiagnosticsAssembly}" />
@@ -532,7 +532,7 @@
                                         <ColumnDefinition Width="110" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Assembly path" />
+                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding DiagnosticsAssemblyPathText}" />
                                     <TextBlock Grid.Column="1"
                                                TextWrapping="Wrap"
                                                Text="{Binding SelectedPluginDiagnosticsAssemblyPath}" />
@@ -542,7 +542,7 @@
                                         <ColumnDefinition Width="110" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Entry type" />
+                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding DiagnosticsEntryTypeText}" />
                                     <TextBlock Grid.Column="1"
                                                TextWrapping="Wrap"
                                                Text="{Binding SelectedPluginDiagnosticsEntryType}" />
@@ -552,7 +552,7 @@
                                         <ColumnDefinition Width="110" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Loaded at" />
+                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding DiagnosticsLoadedAtText}" />
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding SelectedPluginDiagnosticsLoadedAt}" />
                                 </Grid>
@@ -561,7 +561,7 @@
                                         <ColumnDefinition Width="110" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="Last error" />
+                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding DiagnosticsLastErrorText}" />
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding SelectedPluginDiagnosticsLastErrorAt}" />
                                 </Grid>
@@ -594,17 +594,17 @@
                 <StackPanel>
                     <TextBlock FontSize="21"
                                FontWeight="SemiBold"
-                               Text="Profiles" />
+                               Text="{Binding ProfilesText}" />
                     <TextBlock Margin="0,6,0,0"
                                Foreground="{StaticResource MutedTextBrush}"
                                FontSize="13"
-                               Text="Built-in styles stay separate from imported DLL plugins so the library is easier to scan." />
+                               Text="{Binding ProfilesHintText}" />
 
                     <Border Margin="0,14,0,0"
                             Style="{StaticResource PanelCardStyle}">
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                       Text="Built-in Profiles" />
+                                       Text="{Binding BuiltInProfilesText}" />
                             <TextBlock Margin="0,6,0,10"
                                        Foreground="{StaticResource MutedTextBrush}"
                                        FontSize="12"
@@ -624,9 +624,9 @@
                         <StackPanel>
                             <DockPanel LastChildFill="False">
                                 <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                           Text="Imported Plugins" />
+                                           Text="{Binding ImportedPluginsText}" />
                                 <Button DockPanel.Dock="Right"
-                                        Content="Import"
+                                        Content="{Binding ImportShortText}"
                                         Style="{StaticResource SecondaryButtonStyle}"
                                         Command="{Binding ImportTemplateCommand}" />
                             </DockPanel>
@@ -648,4 +648,5 @@
         </Border>
     </Grid>
 </Window>
+
 

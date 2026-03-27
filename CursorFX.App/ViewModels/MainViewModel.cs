@@ -32,7 +32,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly StartupRegistrationService _startupRegistrationService;
     private readonly DispatcherTimer _autosaveTimer;
     private ShaderTemplateDefinition? _selectedPlugin;
-    private string _autosaveStatus = "Settings are synced automatically.";
+    private string _autosaveStatus;
 
     public MainViewModel(
         AppSettings settings,
@@ -56,6 +56,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _settingsStore = settingsStore;
         _templateCatalog = templateCatalog;
         _localizationService = localizationService;
+        _autosaveStatus = _localizationService.Get("main.autosaveReady");
         _assemblyPluginImporter = new AssemblyPluginImporter();
         _pluginWorkspaceService = new PluginWorkspaceService();
         _pluginWorkspaceService.EnsureWorkspace();
@@ -241,11 +242,87 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string ApplicationSignature => $"{ApplicationVersion} | {ApplicationAuthor}";
 
-    public string BuiltInProfilesSummary => $"{BuiltInPlugins.Count} built-in profiles.";
+    public string HeroSubtitle => _localizationService.Get("main.heroSubtitle");
+
+    public string ApplicationSettingsText => _localizationService.Get("main.applicationSettings");
+
+    public string ImportPluginText => _localizationService.Get("main.importPlugin");
+
+    public string CurrentProfileText => _localizationService.Get("main.currentProfile");
+
+    public string SaveSettingsText => _localizationService.Get("main.saveSettings");
+
+    public string ResetProfileText => _localizationService.Get("main.resetProfile");
+
+    public string ChooseIconText => _localizationService.Get("main.chooseIcon");
+
+    public string ClearIconText => _localizationService.Get("main.clearIcon");
+
+    public string OpenPluginFolderText => _localizationService.Get("main.openPluginFolder");
+
+    public string DeletePluginText => _localizationService.Get("main.deletePlugin");
+
+    public string StatusText => _localizationService.Get("main.status");
+
+    public string GeneralControlsText => _localizationService.Get("main.generalControls");
+
+    public string MasterOpacityText => _localizationService.Get("main.masterOpacity");
+
+    public string FpsCapText => _localizationService.Get("main.fpsCap");
+
+    public string CursorAttachText => _localizationService.Get("main.cursorAttach");
+
+    public string CursorAttachHintText => _localizationService.Get("main.cursorAttachHint");
+
+    public string PluginAuthoringText => _localizationService.Get("main.pluginAuthoring");
+
+    public string PluginAuthoringHintText => _localizationService.Get("main.pluginAuthoringHint");
+
+    public string OpenAuthoringGuideText => _localizationService.Get("main.openAuthoringGuide");
+
+    public string ProfileControlsText => _localizationService.Get("main.profileControls");
+
+    public string ProfileControlsHintText => _localizationService.Get("main.profileControlsHint");
+
+    public string BasicText => _localizationService.Get("main.basic");
+
+    public string BasicHintText => _localizationService.Get("main.basicHint");
+
+    public string AdvancedText => _localizationService.Get("main.advanced");
+
+    public string AdvancedHintText => _localizationService.Get("main.advancedHint");
+
+    public string PluginDiagnosticsText => _localizationService.Get("main.pluginDiagnostics");
+
+    public string DiagnosticsStatusText => _localizationService.Get("main.diag.status");
+
+    public string DiagnosticsAssemblyText => _localizationService.Get("main.diag.assembly");
+
+    public string DiagnosticsAssemblyPathText => _localizationService.Get("main.diag.assemblyPath");
+
+    public string DiagnosticsEntryTypeText => _localizationService.Get("main.diag.entryType");
+
+    public string DiagnosticsLoadedAtText => _localizationService.Get("main.diag.loadedAt");
+
+    public string DiagnosticsLastErrorText => _localizationService.Get("main.diag.lastError");
+
+    public string ProfilesText => _localizationService.Get("main.profiles");
+
+    public string ProfilesHintText => _localizationService.Get("main.profilesHint");
+
+    public string BuiltInProfilesText => _localizationService.Get("main.builtInProfiles");
+
+    public string ImportedPluginsText => _localizationService.Get("main.importedPlugins");
+
+    public string ImportShortText => _localizationService.Get("main.importShort");
+
+    public string IconPlaceholderText => _localizationService.Get("main.iconPlaceholder");
+
+    public string BuiltInProfilesSummary => string.Format(_localizationService.Get("main.builtInProfilesSummary"), BuiltInPlugins.Count);
 
     public string ImportedProfilesSummary => ImportedPlugins.Count == 0
-        ? "No imported plugins yet."
-        : $"Imported plugins sorted by newest first ({ImportedPlugins.Count}).";
+        ? _localizationService.Get("main.noImportedPlugins")
+        : string.Format(_localizationService.Get("main.importedPluginsSummary"), ImportedPlugins.Count);
 
     public bool HasAdvancedParameters => AdvancedPluginCategories.Count > 0;
 
@@ -526,6 +603,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ApplyStartupRegistration();
         SaveSettings();
         AutosaveStatus = _localizationService.Get("settings.updated");
+        RefreshLocalizedText();
     }
 
     private void DeleteSelectedPlugin()
@@ -799,6 +877,51 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsLoadedAt));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsLastErrorAt));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsContext));
+    }
+
+    private void RefreshLocalizedText()
+    {
+        OnPropertyChanged(nameof(HeroSubtitle));
+        OnPropertyChanged(nameof(ApplicationSettingsText));
+        OnPropertyChanged(nameof(ImportPluginText));
+        OnPropertyChanged(nameof(CurrentProfileText));
+        OnPropertyChanged(nameof(SaveSettingsText));
+        OnPropertyChanged(nameof(ResetProfileText));
+        OnPropertyChanged(nameof(ChooseIconText));
+        OnPropertyChanged(nameof(ClearIconText));
+        OnPropertyChanged(nameof(OpenPluginFolderText));
+        OnPropertyChanged(nameof(DeletePluginText));
+        OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(GeneralControlsText));
+        OnPropertyChanged(nameof(MasterOpacityText));
+        OnPropertyChanged(nameof(FpsCapText));
+        OnPropertyChanged(nameof(CursorAttachText));
+        OnPropertyChanged(nameof(CursorAttachHintText));
+        OnPropertyChanged(nameof(PluginAuthoringText));
+        OnPropertyChanged(nameof(PluginAuthoringHintText));
+        OnPropertyChanged(nameof(OpenAuthoringGuideText));
+        OnPropertyChanged(nameof(ProfileControlsText));
+        OnPropertyChanged(nameof(ProfileControlsHintText));
+        OnPropertyChanged(nameof(BasicText));
+        OnPropertyChanged(nameof(BasicHintText));
+        OnPropertyChanged(nameof(AdvancedText));
+        OnPropertyChanged(nameof(AdvancedHintText));
+        OnPropertyChanged(nameof(PluginDiagnosticsText));
+        OnPropertyChanged(nameof(DiagnosticsStatusText));
+        OnPropertyChanged(nameof(DiagnosticsAssemblyText));
+        OnPropertyChanged(nameof(DiagnosticsAssemblyPathText));
+        OnPropertyChanged(nameof(DiagnosticsEntryTypeText));
+        OnPropertyChanged(nameof(DiagnosticsLoadedAtText));
+        OnPropertyChanged(nameof(DiagnosticsLastErrorText));
+        OnPropertyChanged(nameof(ProfilesText));
+        OnPropertyChanged(nameof(ProfilesHintText));
+        OnPropertyChanged(nameof(BuiltInProfilesText));
+        OnPropertyChanged(nameof(ImportedPluginsText));
+        OnPropertyChanged(nameof(ImportShortText));
+        OnPropertyChanged(nameof(IconPlaceholderText));
+        OnPropertyChanged(nameof(BuiltInProfilesSummary));
+        OnPropertyChanged(nameof(ImportedProfilesSummary));
+        OnPropertyChanged(nameof(AutosaveStatus));
     }
 
     private void ApplyStartupRegistration()
