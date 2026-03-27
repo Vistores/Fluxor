@@ -106,7 +106,27 @@ public sealed class LocalizationService
                 ["main.autosaveReady"] = "Settings are synced automatically.",
                 ["main.noImportedPlugins"] = "No imported plugins yet.",
                 ["main.importedPluginsSummary"] = "Imported plugins sorted by newest first ({0}).",
-                ["main.builtInProfilesSummary"] = "{0} built-in profiles."
+                ["main.builtInProfilesSummary"] = "{0} built-in profiles.",
+                ["main.selectedPlugin.none"] = "No plugin selected",
+                ["main.selectedPlugin.prompt"] = "Select a plugin profile.",
+                ["main.runtimeKind.imported"] = "Imported DLL plugin",
+                ["main.runtimeKind.builtIn"] = "Built-in profile",
+                ["main.status.profileChanged"] = "Plugin profile changed.",
+                ["main.status.generalChanged"] = "General settings changed.",
+                ["main.status.pluginParametersChanged"] = "Plugin parameters changed.",
+                ["main.status.pluginDeleted"] = "Plugin {0} deleted.",
+                ["main.status.pluginDeletedFilesBusy"] = "Plugin profile removed, but some runtime files are still in use: {0}",
+                ["main.status.savedAt"] = "Saved at {0}",
+                ["main.status.pluginReset"] = "Plugin {0} reset to defaults.",
+                ["main.status.iconUpdated"] = "Icon updated for {0}.",
+                ["main.status.iconCleared"] = "Icon cleared for {0}.",
+                ["main.status.folderOpened"] = "Opened {0}.",
+                ["main.status.builtInLocked"] = "Built-in profiles cannot be deleted.",
+                ["main.dialog.deletePluginTitle"] = "Delete Plugin",
+                ["main.dialog.deletePluginBody"] = "Delete plugin '{0}'?\n\nThis removes the profile from the Fluxor plugin catalog. For external plugins Fluxor will also try to remove the DLL if no other profile references it.",
+                ["main.dialog.deletePluginFailed"] = "Delete Plugin Failed",
+                ["main.dialog.pluginIconFailed"] = "Plugin Icon Failed",
+                ["main.dialog.openFolderFailed"] = "Open Folder Failed"
             },
             ["uk"] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {

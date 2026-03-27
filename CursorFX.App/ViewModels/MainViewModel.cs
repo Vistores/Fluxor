@@ -142,22 +142,22 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged(nameof(SelectedPluginResolvedIconPath));
             OnPropertyChanged(nameof(IsExternalPluginSelected));
             OnPropertyChanged(nameof(SelectedPluginRuntimeKindLabel));
-            ScheduleAutosave("Plugin profile changed.");
+            ScheduleAutosave(_localizationService.Get("main.status.profileChanged"));
             CommandManager.InvalidateRequerySuggested();
         }
     }
 
-    public string SelectedPluginName => SelectedPlugin?.Name ?? "No plugin selected";
+    public string SelectedPluginName => SelectedPlugin?.Name ?? _localizationService.Get("main.selectedPlugin.none");
 
-    public string SelectedPluginDescription => SelectedPlugin?.Description ?? "Select a plugin profile.";
+    public string SelectedPluginDescription => SelectedPlugin?.Description ?? _localizationService.Get("main.selectedPlugin.prompt");
 
     public string SelectedPluginResolvedIconPath => SelectedPlugin?.ResolvedIconPath ?? string.Empty;
 
     public bool IsExternalPluginSelected => SelectedPlugin?.RuntimeKind == TemplateRuntimeKind.ExternalAssembly;
 
     public string SelectedPluginRuntimeKindLabel => SelectedPlugin?.RuntimeKind == TemplateRuntimeKind.ExternalAssembly
-        ? "Imported DLL plugin"
-        : "Built-in profile";
+        ? _localizationService.Get("main.runtimeKind.imported")
+        : _localizationService.Get("main.runtimeKind.builtIn");
 
     public string SelectedPluginDiagnosticsStatus => _customPluginEffect.Status;
 
@@ -187,7 +187,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
             ApplyRuntimeSettings();
             OnPropertyChanged(nameof(EffectOpacityLabel));
-            ScheduleAutosave("General settings changed.");
+            ScheduleAutosave(_localizationService.Get("main.status.generalChanged"));
         }
     }
 
@@ -206,7 +206,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             ApplyRuntimeSettings();
             OnPropertyChanged();
             OnPropertyChanged(nameof(FpsLabel));
-            ScheduleAutosave("General settings changed.");
+            ScheduleAutosave(_localizationService.Get("main.status.generalChanged"));
         }
     }
 
@@ -226,7 +226,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
             ApplyRuntimeSettings();
             OnPropertyChanged(nameof(CursorAttachStrengthLabel));
-            ScheduleAutosave("General settings changed.");
+            ScheduleAutosave(_localizationService.Get("main.status.generalChanged"));
         }
     }
 
@@ -442,7 +442,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         PersistPluginValues();
         ApplyPluginToSettings();
         ApplyRuntimeSettings();
-        ScheduleAutosave("Plugin parameters changed.");
+        ScheduleAutosave(_localizationService.Get("main.status.pluginParametersChanged"));
     }
 
     private void PersistPluginValues()
@@ -566,7 +566,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void OpenPluginFolder()
     {
-        OpenFolder(PluginFolderPath, "Plugin folder opened.");
+        OpenFolder(PluginFolderPath, string.Format(_localizationService.Get("main.status.folderOpened"), "Plugins"));
     }
 
     private void OpenPluginAuthoringGuide()
@@ -615,13 +615,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         if (IsBuiltInPlugin(SelectedPlugin.Id))
         {
-            AutosaveStatus = "Built-in profiles cannot be deleted.";
+            AutosaveStatus = _localizationService.Get("main.status.builtInLocked");
             return;
         }
 
         var result = System.Windows.MessageBox.Show(
-            $"Delete plugin '{SelectedPlugin.Name}'?\n\nThis removes the profile from the Fluxor plugin catalog. For external plugins Fluxor will also try to remove the DLL if no other profile references it.",
-            "Delete Plugin",
+            string.Format(_localizationService.Get("main.dialog.deletePluginBody"), SelectedPlugin.Name),
+            _localizationService.Get("main.dialog.deletePluginTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 
@@ -648,13 +648,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 .FirstOrDefault();
 
             ReloadPlugins(fallbackId);
-            AutosaveStatus = $"Plugin {pluginToDelete.Name} deleted.";
-            ScheduleAutosave("Plugin deleted.");
+            var deletedStatus = string.Format(_localizationService.Get("main.status.pluginDeleted"), pluginToDelete.Name);
+            AutosaveStatus = deletedStatus;
+            ScheduleAutosave(deletedStatus);
         }
         catch (Exception ex)
         {
             AutosaveStatus = ex.Message;
-            System.Windows.MessageBox.Show(ex.Message, "Delete Plugin Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.deletePluginFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -702,7 +703,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         PersistPluginValues();
         ApplyStartupRegistration();
         _settingsStore.Save(_settings);
-        AutosaveStatus = $"Saved at {DateTime.Now:T}";
+        AutosaveStatus = string.Format(_localizationService.Get("main.status.savedAt"), DateTime.Now.ToString("T"));
     }
 
     private void ResetSelectedPluginSettings()
@@ -725,8 +726,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         BuildPluginCategories();
         ApplyPluginToSettings();
         ApplyRuntimeSettings();
-        AutosaveStatus = $"Plugin {SelectedPlugin.Name} reset to defaults.";
-        ScheduleAutosave("Plugin settings reset to defaults.");
+        var resetStatus = string.Format(_localizationService.Get("main.status.pluginReset"), SelectedPlugin.Name);
+        AutosaveStatus = resetStatus;
+        ScheduleAutosave(resetStatus);
     }
 
     private void ChoosePluginIcon()
@@ -752,12 +754,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         {
             var updated = _templateCatalog.SaveTemplate(SelectedPlugin, dialog.FileName);
             ReloadPlugins(updated.Id);
-            AutosaveStatus = $"Icon updated for {updated.Name}.";
+            AutosaveStatus = string.Format(_localizationService.Get("main.status.iconUpdated"), updated.Name);
         }
         catch (Exception ex)
         {
             AutosaveStatus = ex.Message;
-            System.Windows.MessageBox.Show(ex.Message, "Plugin Icon Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.pluginIconFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -788,12 +790,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             });
 
             ReloadPlugins(updated.Id);
-            AutosaveStatus = $"Icon cleared for {updated.Name}.";
+            AutosaveStatus = string.Format(_localizationService.Get("main.status.iconCleared"), updated.Name);
         }
         catch (Exception ex)
         {
             AutosaveStatus = ex.Message;
-            System.Windows.MessageBox.Show(ex.Message, "Plugin Icon Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.pluginIconFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -919,6 +921,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(ImportedPluginsText));
         OnPropertyChanged(nameof(ImportShortText));
         OnPropertyChanged(nameof(IconPlaceholderText));
+        OnPropertyChanged(nameof(SelectedPluginName));
+        OnPropertyChanged(nameof(SelectedPluginDescription));
+        OnPropertyChanged(nameof(SelectedPluginRuntimeKindLabel));
         OnPropertyChanged(nameof(BuiltInProfilesSummary));
         OnPropertyChanged(nameof(ImportedProfilesSummary));
         OnPropertyChanged(nameof(AutosaveStatus));
@@ -1023,7 +1028,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             }
             catch
             {
-                AutosaveStatus = $"Plugin profile removed, but some runtime files are still in use: {Path.GetFileName(filePath)}";
+                AutosaveStatus = string.Format(_localizationService.Get("main.status.pluginDeletedFilesBusy"), Path.GetFileName(filePath));
             }
         }
     }
@@ -1044,7 +1049,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         catch (Exception ex)
         {
             AutosaveStatus = ex.Message;
-            System.Windows.MessageBox.Show(ex.Message, "Open Folder Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.openFolderFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
