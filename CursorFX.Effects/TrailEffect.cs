@@ -12,8 +12,11 @@ public sealed class TrailEffect : IEffect
     private readonly List<Point> _rightEdge = [];
     private TrailSettings _settings;
     private double _masterOpacity = 1.0;
+    private EffectQualityPreset _qualityPreset = EffectQualityPreset.Balanced;
     private Point _lastInputPosition;
+    private Point _latestRawPosition;
     private bool _hasInputPosition;
+    private bool _hasRawPosition;
     private Color _baseColor;
     private double _timeSeconds;
 
@@ -70,9 +73,21 @@ public sealed class TrailEffect : IEffect
 
     public void OnMouseMove(Point position)
     {
+        var rawPosition = position;
+        _latestRawPosition = rawPosition;
+        _hasRawPosition = true;
+
         if (_hasInputPosition)
         {
-            var lerp = 0.42;
+            var rawDistance = (position - _lastInputPosition).Length;
+            var lerp = rawDistance switch
+            {
+                >= 220 => 1.0,
+                >= 140 => 0.9,
+                >= 80 => 0.76,
+                >= 36 => 0.58,
+                _ => 0.42
+            };
             position = new Point(
                 _lastInputPosition.X + ((position.X - _lastInputPosition.X) * lerp),
                 _lastInputPosition.Y + ((position.Y - _lastInputPosition.Y) * lerp));
@@ -90,10 +105,13 @@ public sealed class TrailEffect : IEffect
         var distance = (position - previous).Length;
         if (distance < 1.2)
         {
+            _lastInputPosition = position;
+            _hasInputPosition = true;
             return;
         }
 
-        var steps = Math.Max(1, (int)(distance / 6));
+        var segmentSpacing = distance >= 180 ? 6 : distance >= 100 ? 5 : 4;
+        var steps = Math.Max(1, (int)(distance / segmentSpacing));
         for (var step = 1; step <= steps; step++)
         {
             var t = step / (double)steps;
@@ -104,9 +122,14 @@ public sealed class TrailEffect : IEffect
             _nodes.Add(new TrailNode(interpolated));
         }
 
-        while (_nodes.Count > _settings.MaxPoints)
+        while (_nodes.Count > GetMaxTrailPoints())
         {
             _nodes.RemoveAt(0);
+        }
+
+        if (_nodes.Count >= 2)
+        {
+            _nodes[^1] = new TrailNode(position);
         }
 
         _lastInputPosition = position;
@@ -117,17 +140,31 @@ public sealed class TrailEffect : IEffect
     {
     }
 
-    public void UpdateSettings(TrailSettings settings, double masterOpacity)
+    public void UpdateSettings(TrailSettings settings, double masterOpacity, EffectQualityPreset qualityPreset = EffectQualityPreset.Balanced)
     {
         _settings = Clone(settings);
         _masterOpacity = masterOpacity;
+        _qualityPreset = qualityPreset;
         IsEnabled = settings.IsEnabled;
         _baseColor = ParseColor(_settings.Color);
 
-        while (_nodes.Count > _settings.MaxPoints)
+        while (_nodes.Count > GetMaxTrailPoints())
         {
             _nodes.RemoveAt(0);
         }
+    }
+
+    private int GetMaxTrailPoints()
+    {
+        var cap = _qualityPreset switch
+        {
+            EffectQualityPreset.Low => 18,
+            EffectQualityPreset.Balanced => 32,
+            EffectQualityPreset.High => 48,
+            _ => 32
+        };
+
+        return Math.Min(_settings.MaxPoints, cap);
     }
 
     private void RenderSmoothLine(DrawingContext drawingContext)
@@ -142,9 +179,11 @@ public sealed class TrailEffect : IEffect
                 continue;
             }
 
-            var thickness = Math.Max(1, _settings.Thickness * lifeRatio);
+            var thickness = Math.Max(0.85, _settings.Thickness * lifeRatio);
             var alpha = Math.Clamp(lifeRatio * _masterOpacity, 0, 1);
+            var glowThickness = Math.Max(1.1, thickness * 1.28);
             var pen = CreatePen(_baseColor, thickness, alpha);
+            var glowPen = CreatePen(_baseColor, glowThickness, alpha * 0.22);
 
             var start = previous.Position;
             var end = current.Position;
@@ -154,8 +193,11 @@ public sealed class TrailEffect : IEffect
             context.BeginFigure(start, false, false);
             context.QuadraticBezierTo(control, end, true, true);
             geometry.Freeze();
+            drawingContext.DrawGeometry(null, glowPen, geometry);
             drawingContext.DrawGeometry(null, pen, geometry);
         }
+
+        RenderHeadConnector(drawingContext);
     }
 
     private void RenderRibbon(DrawingContext drawingContext, bool addNoise)
@@ -238,6 +280,41 @@ public sealed class TrailEffect : IEffect
         var fillOpacity = Math.Clamp(_masterOpacity * 0.26, 0, 1);
         drawingContext.DrawGeometry(CreateFillBrush(_baseColor, fillOpacity), null, ribbonGeometry);
         drawingContext.DrawGeometry(null, CreatePen(_baseColor, Math.Max(1.1, _settings.Thickness * 0.16), edgeOpacity), ribbonGeometry);
+        RenderHeadConnector(drawingContext);
+    }
+
+    private void RenderHeadConnector(DrawingContext drawingContext)
+    {
+        if (!_hasRawPosition || _nodes.Count == 0)
+        {
+            return;
+        }
+
+        var lastNode = _nodes[^1];
+        var headDistance = (_latestRawPosition - lastNode.Position).Length;
+        if (headDistance < 1.5)
+        {
+            return;
+        }
+
+        var connectorAlpha = Math.Clamp((_masterOpacity * 0.82) * Math.Min(1.0, headDistance / 28.0), 0, 1);
+        var connectorThickness = Math.Max(0.9, _settings.Thickness * 0.74);
+        var connectorGlowThickness = Math.Max(1.2, connectorThickness * 1.32);
+        var start = lastNode.Position;
+        var end = _latestRawPosition;
+        var control = new Point(
+            start.X + ((end.X - start.X) * 0.72),
+            start.Y + ((end.Y - start.Y) * 0.72));
+
+        var connector = new StreamGeometry();
+        using (var context = connector.Open())
+        {
+            context.BeginFigure(start, false, false);
+            context.QuadraticBezierTo(control, end, true, true);
+        }
+        connector.Freeze();
+        drawingContext.DrawGeometry(null, CreatePen(_baseColor, connectorGlowThickness, connectorAlpha * 0.22), connector);
+        drawingContext.DrawGeometry(null, CreatePen(_baseColor, connectorThickness, connectorAlpha), connector);
     }
 
     private Vector GetTangent(int index)

@@ -7,11 +7,11 @@ using CursorFX.Core.Models;
 
 namespace CursorFX.Effects;
 
-public sealed class TemplateEffect : IEffect
+public sealed partial class TemplateEffect : IEffect
 {
-    private const int MaxClickPulses = 14;
-    private const int MaxMatrixParticles = 96;
-    private const int MaxResidualNodes = 160;
+    private const int BaseMaxClickPulses = 14;
+    private const int BaseMaxMatrixParticles = 96;
+    private const int BaseMaxResidualNodes = 160;
 
     private readonly List<ClickPulse> _clickPulses = [];
     private readonly List<MatrixParticle> _matrixParticles = [];
@@ -29,6 +29,7 @@ public sealed class TemplateEffect : IEffect
     private double _timeSeconds;
     private double _matrixSpawnAccumulator;
     private double _globalCursorAttachStrength = 2.0;
+    private EffectQualityPreset _qualityPreset = EffectQualityPreset.Balanced;
 
     public string Name => "Template Shader";
 
@@ -186,7 +187,7 @@ public sealed class TemplateEffect : IEffect
             return;
         }
 
-        if (_clickPulses.Count >= MaxClickPulses)
+        if (_clickPulses.Count >= GetClickPulseCapacity())
         {
             _clickPulses.RemoveAt(0);
         }
@@ -199,13 +200,15 @@ public sealed class TemplateEffect : IEffect
         IReadOnlyDictionary<string, TemplateParameterValue> parameterValues,
         bool isEnabled,
         double masterOpacity,
-        double globalCursorAttachStrength = 2.0)
+        double globalCursorAttachStrength = 2.0,
+        EffectQualityPreset qualityPreset = EffectQualityPreset.Balanced)
     {
         _template = template;
         _parameterValues = parameterValues.ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.OrdinalIgnoreCase);
         IsEnabled = isEnabled && template is not null;
         _masterOpacity = masterOpacity;
         _globalCursorAttachStrength = globalCursorAttachStrength;
+        _qualityPreset = qualityPreset;
         _clickPulses.Clear();
         _matrixParticles.Clear();
         _residualNodes.Clear();
@@ -291,7 +294,7 @@ public sealed class TemplateEffect : IEffect
             ? _screenSampler.GetSample(Math.Clamp((int)Math.Round(GetNumber("backdropSize", 152)), 64, 280), TimeSpan.FromMilliseconds(24))
             : null;
 
-        for (var step = 0; step <= steps && _residualNodes.Count < MaxResidualNodes; step++)
+        for (var step = 0; step <= steps && _residualNodes.Count < GetResidualNodeCapacity(); step++)
         {
             var t = step / (double)steps;
             var point = previousEmitter + (delta * t);
@@ -321,9 +324,9 @@ public sealed class TemplateEffect : IEffect
             });
         }
 
-        if (_residualNodes.Count > MaxResidualNodes)
+        if (_residualNodes.Count > GetResidualNodeCapacity())
         {
-            _residualNodes.RemoveRange(0, _residualNodes.Count - MaxResidualNodes);
+            _residualNodes.RemoveRange(0, _residualNodes.Count - GetResidualNodeCapacity());
         }
     }
 
@@ -364,7 +367,7 @@ public sealed class TemplateEffect : IEffect
         var spawnCount = Math.Min(8, (int)_matrixSpawnAccumulator);
         _matrixSpawnAccumulator -= spawnCount;
 
-        for (var index = 0; index < spawnCount && _matrixParticles.Count < MaxMatrixParticles; index++)
+        for (var index = 0; index < spawnCount && _matrixParticles.Count < GetMatrixParticleCapacity(); index++)
         {
             _matrixParticles.Add(CreateMatrixParticle(lifetime));
         }
@@ -374,7 +377,7 @@ public sealed class TemplateEffect : IEffect
     {
         var size = GetNumber("size", 54);
         var opacity = GetNumber("opacity", 0.42) * _masterOpacity;
-        var pulse = 1 + (Math.Sin(_timeSeconds * GetNumber("motion", 1.4)) * 0.08);
+        var pulse = 1 + (Math.Sin(_timeSeconds * GetNumber("motion", 1.1)) * 0.04);
         var primaryColor = GetColor("primaryColor", "#22D3EE");
         var accentColor = GetColor("accentColor", "#A5F3FC");
         var radius = size * pulse;
@@ -383,7 +386,8 @@ public sealed class TemplateEffect : IEffect
         var fillBrush = CreateRadialBrush(primaryColor, opacity, 0.0, 1.0);
         var ringPen = CreatePen(accentColor, GetNumber("detail", 3), opacity * 0.9);
         drawingContext.DrawEllipse(fillBrush, null, emitter, radius, radius);
-        drawingContext.DrawEllipse(null, ringPen, emitter, radius * 0.75, radius * 0.75);
+        drawingContext.DrawEllipse(null, ringPen, emitter, radius * 0.7, radius * 0.7);
+        drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.08), null, emitter, radius * 0.22, radius * 0.22);
         RenderClickShockwaves(drawingContext, accentColor, size * 1.45, opacity * 0.8, 2.2);
     }
 
@@ -577,19 +581,20 @@ public sealed class TemplateEffect : IEffect
         var size = GetNumber("size", 58);
         var opacity = GetNumber("opacity", 0.4) * _masterOpacity;
         var detail = Math.Max(5, (int)Math.Round(GetNumber("detail", 7)));
-        var motion = GetNumber("motion", 1.55);
+        var motion = GetNumber("motion", 1.15);
         var primaryColor = GetColor("primaryColor", "#BFDBFE");
         var accentColor = GetColor("accentColor", "#E0F2FE");
         var emitter = GetEmitterPosition();
 
-        drawingContext.DrawEllipse(null, CreatePen(primaryColor, 1.6, opacity * 0.7), emitter, size, size);
-        drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.12), null, emitter, size * 0.55, size * 0.55);
+        drawingContext.DrawEllipse(null, CreatePen(primaryColor, 1.5, opacity * 0.62), emitter, size, size);
+        drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.1), null, emitter, size * 0.5, size * 0.5);
+        drawingContext.DrawEllipse(null, CreatePen(accentColor, 0.9, opacity * 0.34), emitter, size * 0.72, size * 0.72);
 
         for (var index = 0; index < detail; index++)
         {
             var angle = (_timeSeconds * motion) + (index * ((Math.PI * 2.0) / detail));
             var point = emitter + new Vector(Math.Cos(angle), Math.Sin(angle)) * size;
-            DrawSnowflake(drawingContext, point, 4 + (detail * 0.18), accentColor, opacity * 0.85);
+            DrawSnowflake(drawingContext, point, 3.2 + (detail * 0.14), accentColor, opacity * 0.68);
         }
 
         RenderClickSnowBursts(drawingContext, primaryColor, accentColor, opacity);
@@ -665,13 +670,15 @@ public sealed class TemplateEffect : IEffect
         foreach (var particle in _matrixParticles)
         {
             var progress = Math.Clamp(particle.Age / particle.Lifetime, 0, 1);
-            var alpha = opacity * (1.0 - progress) * (0.72 + (0.18 * Math.Sin((_timeSeconds * 4.0) + particle.Seed)));
+            var alpha = opacity * (1.0 - progress) * (0.82 + (0.08 * Math.Sin((_timeSeconds * 3.0) + particle.Seed)));
             var color = particle.Highlight ? accentColor : primaryColor;
+            var trailEnd = particle.Position - (particle.Velocity * 0.035);
+            drawingContext.DrawLine(CreatePen(color, 0.8, alpha * 0.18), particle.Position, trailEnd);
             DrawGlyph(
                 drawingContext,
                 particle.Glyph,
                 particle.Position,
-                glyphSize * (1.0 - (progress * 0.2)),
+                glyphSize * (0.96 - (progress * 0.14)),
                 color,
                 alpha);
         }
@@ -697,12 +704,13 @@ public sealed class TemplateEffect : IEffect
             var progress = Math.Clamp(pulse.Age / lifetime, 0, 1);
             var eased = 1.0 - Math.Pow(1.0 - progress, 2.0);
             var alpha = opacity * (1.0 - progress) * 1.6;
-            var radius = size * (0.8 + (eased * 2.1));
-            var armA = Math.PI * 0.25 + (Math.Sin((_timeSeconds * 7.0) + pulse.Seed) * 0.18);
-            var armB = armA + (Math.PI * 0.5) + (Math.Cos((_timeSeconds * 5.0) + pulse.Seed) * 0.08);
+            var radius = size * (0.72 + (eased * 1.65));
+            var armA = Math.PI * 0.25 + (HashToSigned(pulse.Seed, 7) * 0.16) + (progress * 0.08);
+            var armB = armA + (Math.PI * 0.5) + (HashToSigned(pulse.Seed, 13) * 0.06);
 
             DrawCrossArm(drawingContext, pulse.Position, armA, radius, detail, primaryColor, accentColor, alpha);
             DrawCrossArm(drawingContext, pulse.Position, armB, radius * 0.92, detail * 0.9, primaryColor, accentColor, alpha * 0.92);
+            drawingContext.DrawEllipse(CreateSolidBrush(accentColor, alpha * 0.55), null, pulse.Position, size * 0.11, size * 0.11);
         }
     }
 
@@ -719,23 +727,24 @@ public sealed class TemplateEffect : IEffect
         drawingContext.DrawEllipse(CreateSolidBrush(accentColor, opacity * 0.9), null, emitter, size * 0.18, size * 0.18);
 
         var lifetime = GetClickLifetime();
-        var spikeCount = Math.Max(6, (int)Math.Round(GetNumber("particles", 10)));
+        var spikeCount = Math.Max(5, (int)Math.Round(GetNumber("particles", 8)));
         foreach (var pulse in _clickPulses)
         {
             var progress = Math.Clamp(pulse.Age / lifetime, 0, 1);
             var alpha = opacity * (1.0 - progress) * 1.7;
-            var burstRadius = size * (1.0 + (progress * 4.0));
+            var burstRadius = size * (0.95 + (progress * 3.2));
             for (var index = 0; index < spikeCount; index++)
             {
-                var angle = (index * ((Math.PI * 2.0) / spikeCount)) + (pulse.Seed * 0.5);
-                var longSpike = (index % 2 == 0 ? 1.0 : 0.62) * burstRadius;
-                var inner = pulse.Position + new Vector(Math.Cos(angle), Math.Sin(angle)) * (burstRadius * 0.18);
+                var angle = (index * ((Math.PI * 2.0) / spikeCount)) + (pulse.Seed * 0.42) + (HashToSigned(pulse.Seed, index + 21) * 0.08);
+                var longSpike = (index % 2 == 0 ? 1.0 : 0.7) * burstRadius;
+                var inner = pulse.Position + new Vector(Math.Cos(angle), Math.Sin(angle)) * (burstRadius * 0.12);
                 var outer = pulse.Position + new Vector(Math.Cos(angle), Math.Sin(angle)) * longSpike;
-                drawingContext.DrawLine(CreatePen(primaryColor, 1.4 + (detail * 0.08), alpha * 0.88), inner, outer);
-                drawingContext.DrawLine(CreatePen(accentColor, 0.8 + (detail * 0.04), alpha * 0.95), pulse.Position, outer);
+                drawingContext.DrawLine(CreatePen(primaryColor, 1.2 + (detail * 0.06), alpha * 0.86), inner, outer);
+                drawingContext.DrawLine(CreatePen(accentColor, 0.75 + (detail * 0.03), alpha * 0.82), pulse.Position, pulse.Position + ((outer - pulse.Position) * 0.82));
             }
 
-            drawingContext.DrawEllipse(null, CreatePen(primaryColor, 1.2 + (detail * 0.04), alpha * 0.72), pulse.Position, burstRadius * 0.42, burstRadius * 0.42);
+            drawingContext.DrawEllipse(null, CreatePen(primaryColor, 1.1 + (detail * 0.03), alpha * 0.65), pulse.Position, burstRadius * 0.34, burstRadius * 0.34);
+            drawingContext.DrawEllipse(CreateSolidBrush(accentColor, alpha * 0.18), null, pulse.Position, burstRadius * 0.12, burstRadius * 0.12);
         }
     }
 
@@ -1036,20 +1045,20 @@ public sealed class TemplateEffect : IEffect
             var radialFactor = Math.Sqrt(HashToUnit(phase * 0.913, _matrixParticles.Count + 13));
             var radial = new Vector(Math.Cos(angle), Math.Sin(angle));
             var orbit = new Vector(-radial.Y, radial.X);
-            position = emitter + (radial * (idleRadius * radialFactor * 0.35));
-            velocity = (radial * idleSpeed) + (orbit * (driftStrength * (0.8 + radialFactor)));
+            position = emitter + (radial * (idleRadius * radialFactor * 0.22));
+            velocity = (radial * idleSpeed * 0.78) + (orbit * (driftStrength * (0.35 + (radialFactor * 0.45))));
         }
         else
         {
             var lateral = HashToSigned(phase * 0.77, _matrixParticles.Count) * spread;
-            var wobble = Math.Sin(phase * 2.1) * driftStrength;
-            position = emitter + (normal * (lateral + wobble)) + (direction * (HashToUnit(phase * 1.11, _matrixParticles.Count + 5) * spawnRadius));
-            velocity = (direction * speed) + (normal * (Math.Cos(phase * 1.7) * driftStrength * 8.0));
+            var wobble = Math.Sin(phase * 1.5) * driftStrength * 0.35;
+            position = emitter + (normal * (lateral + wobble)) - (direction * (HashToUnit(phase * 1.11, _matrixParticles.Count + 5) * spawnRadius));
+            velocity = (direction * speed * (0.88 + (HashToUnit(phase, _matrixParticles.Count + 9) * 0.16))) + (normal * (Math.Cos(phase * 1.3) * driftStrength * 2.6));
         }
 
         if (randomness > 0.01)
         {
-            velocity += new Vector(Math.Sin(phase * 3.2), Math.Cos(phase * 2.4)) * (randomness * 6.0);
+            velocity += new Vector(Math.Sin(phase * 2.6), Math.Cos(phase * 2.1)) * (randomness * 2.8);
         }
 
         return new MatrixParticle
@@ -1118,56 +1127,7 @@ public sealed class TemplateEffect : IEffect
         }
     }
 
-    private static void DrawSnowflake(DrawingContext drawingContext, Point center, double size, Color color, double opacity)
-    {
-        var pen = CreatePen(color, 1.1, opacity);
-        for (var index = 0; index < 3; index++)
-        {
-            var angle = index * (Math.PI / 3.0);
-            var direction = new Vector(Math.Cos(angle), Math.Sin(angle));
-            drawingContext.DrawLine(pen, center - (direction * size), center + (direction * size));
-        }
-    }
-
-    private static void DrawRuneMark(DrawingContext drawingContext, Point center, double angle, double size, Color color, double opacity)
-    {
-        var pen = CreatePen(color, 1.0, opacity);
-        drawingContext.PushTransform(new RotateTransform(angle * 180.0 / Math.PI, center.X, center.Y));
-        drawingContext.DrawLine(pen, new Point(center.X, center.Y - size), new Point(center.X, center.Y + size));
-        drawingContext.DrawLine(pen, new Point(center.X - (size * 0.6), center.Y), new Point(center.X + (size * 0.6), center.Y));
-        drawingContext.Pop();
-    }
-
-    private static void DrawCrossArm(DrawingContext drawingContext, Point center, double angle, double radius, double detail, Color primaryColor, Color accentColor, double opacity)
-    {
-        var direction = new Vector(Math.Cos(angle), Math.Sin(angle));
-        var lengthA = radius * 0.78;
-        var lengthB = radius * 1.08;
-        var start = center - (direction * lengthA);
-        var end = center + (direction * lengthB);
-        drawingContext.DrawLine(CreatePen(primaryColor, 1.2 + (detail * 0.08), opacity * 0.82), start, end);
-        drawingContext.DrawLine(CreatePen(accentColor, 0.7 + (detail * 0.04), opacity), center - (direction * (lengthA * 0.54)), center + (direction * (lengthB * 0.76)));
-    }
-
-    private static void DrawGlyph(DrawingContext drawingContext, string glyph, Point point, double fontSize, Color color, double opacity)
-    {
-        var formattedText = new FormattedText(
-            glyph,
-            CultureInfo.InvariantCulture,
-            FlowDirection.LeftToRight,
-            new Typeface("Consolas"),
-            fontSize,
-            CreateSolidBrush(color, opacity),
-            1.0);
-        drawingContext.DrawText(formattedText, new Point(point.X - (formattedText.Width * 0.5), point.Y - (formattedText.Height * 0.5)));
-    }
-
-    private static string GetMatrixGlyph(int stream, int glyphIndex)
-    {
-        const string glyphs = "01ZXCVBNMASDFGHJKLQWERTYUIOP";
-        var index = Math.Abs((stream * 7) + (glyphIndex * 11)) % glyphs.Length;
-        return glyphs[index].ToString();
-    }
+    
 
     private Point GetEmitterPosition()
     {
@@ -1251,6 +1211,39 @@ public sealed class TemplateEffect : IEffect
         return Math.Max(0.2, GetNumber("clickLifetime", GetNumber("motion", 0.85)));
     }
 
+    private int GetClickPulseCapacity()
+    {
+        return _qualityPreset switch
+        {
+            EffectQualityPreset.Low => 8,
+            EffectQualityPreset.Balanced => BaseMaxClickPulses,
+            EffectQualityPreset.High => 20,
+            _ => BaseMaxClickPulses
+        };
+    }
+
+    private int GetMatrixParticleCapacity()
+    {
+        return _qualityPreset switch
+        {
+            EffectQualityPreset.Low => 56,
+            EffectQualityPreset.Balanced => BaseMaxMatrixParticles,
+            EffectQualityPreset.High => 144,
+            _ => BaseMaxMatrixParticles
+        };
+    }
+
+    private int GetResidualNodeCapacity()
+    {
+        return _qualityPreset switch
+        {
+            EffectQualityPreset.Low => 88,
+            EffectQualityPreset.Balanced => BaseMaxResidualNodes,
+            EffectQualityPreset.High => 220,
+            _ => BaseMaxResidualNodes
+        };
+    }
+
     private bool GetToggle(string key, bool defaultValue)
     {
         if (_parameterValues.TryGetValue(key, out var value) && value.BooleanValue.HasValue)
@@ -1272,180 +1265,4 @@ public sealed class TemplateEffect : IEffect
         return (Color)ColorConverter.ConvertFromString(colorValue);
     }
 
-    private static Pen CreatePen(Color color, double thickness, double opacity)
-    {
-        var pen = new Pen(CreateSolidBrush(color, opacity), thickness)
-        {
-            StartLineCap = PenLineCap.Round,
-            EndLineCap = PenLineCap.Round,
-            LineJoin = PenLineJoin.Round
-        };
-        pen.Freeze();
-        return pen;
-    }
-
-    private static SolidColorBrush CreateSolidBrush(Color color, double opacity)
-    {
-        var brush = new SolidColorBrush(WithAlpha(color, opacity));
-        brush.Freeze();
-        return brush;
-    }
-
-    private static RadialGradientBrush CreateRadialBrush(Color color, double opacity, double innerOffset, double outerOffset)
-    {
-        var brush = new RadialGradientBrush
-        {
-            GradientOrigin = new Point(0.5, 0.5),
-            Center = new Point(0.5, 0.5),
-            RadiusX = 0.5,
-            RadiusY = 0.5
-        };
-        brush.GradientStops.Add(new GradientStop(WithAlpha(color, opacity), innerOffset));
-        brush.GradientStops.Add(new GradientStop(WithAlpha(color, 0), outerOffset));
-        brush.Freeze();
-        return brush;
-    }
-
-    private static ImageBrush CreateImageBrush(ImageSource imageSource, double opacity, double offsetX = 0, double offsetY = 0)
-    {
-        var brush = new ImageBrush(imageSource)
-        {
-            Stretch = Stretch.Fill,
-            Opacity = Math.Clamp(opacity, 0, 1),
-            Transform = Math.Abs(offsetX) > 0.001 || Math.Abs(offsetY) > 0.001
-                ? new TranslateTransform(offsetX, offsetY)
-                : Transform.Identity
-        };
-        brush.Freeze();
-        return brush;
-    }
-
-    private static Rect BuildSampleRect(Point center, double width, double height)
-    {
-        return new Rect(center.X - (width * 0.5), center.Y - (height * 0.5), width, height);
-    }
-
-    private static StreamGeometry? BuildResidualRibbonGeometry(
-        IReadOnlyList<ResidualNode> nodes,
-        Func<ResidualNode, double, double> widthSelector,
-        Func<ResidualNode, double, double> waveSelector)
-    {
-        if (nodes.Count < 2)
-        {
-            return null;
-        }
-
-        var leftPoints = new List<Point>(nodes.Count);
-        var rightPoints = new List<Point>(nodes.Count);
-
-        for (var index = 0; index < nodes.Count; index++)
-        {
-            var node = nodes[index];
-            var t = nodes.Count == 1 ? 0.0 : index / (double)(nodes.Count - 1);
-
-            Vector tangent;
-            if (index == 0)
-            {
-                tangent = nodes[index + 1].Position - node.Position;
-            }
-            else if (index == nodes.Count - 1)
-            {
-                tangent = node.Position - nodes[index - 1].Position;
-            }
-            else
-            {
-                tangent = nodes[index + 1].Position - nodes[index - 1].Position;
-            }
-
-            if (tangent.LengthSquared <= 0.0001)
-            {
-                tangent = new Vector(0, -1);
-            }
-
-            tangent.Normalize();
-            var normal = new Vector(-tangent.Y, tangent.X);
-            var width = Math.Max(1.0, widthSelector(node, t));
-            var wave = waveSelector(node, t);
-            var center = node.Position + (normal * wave);
-            leftPoints.Add(center + (normal * width));
-            rightPoints.Add(center - (normal * width));
-        }
-
-        var geometry = new StreamGeometry();
-        using var context = geometry.Open();
-        context.BeginFigure(leftPoints[0], true, true);
-        for (var index = 1; index < leftPoints.Count; index++)
-        {
-            context.LineTo(leftPoints[index], true, false);
-        }
-
-        for (var index = rightPoints.Count - 1; index >= 0; index--)
-        {
-            context.LineTo(rightPoints[index], true, false);
-        }
-
-        geometry.Freeze();
-        return geometry;
-    }
-
-    private static Color WithAlpha(Color color, double opacity)
-    {
-        return Color.FromArgb((byte)(Math.Clamp(opacity, 0, 1) * 255), color.R, color.G, color.B);
-    }
-
-    private static double HashToUnit(double seed, int salt)
-    {
-        var value = Math.Sin((seed * 12.9898) + (salt * 78.233)) * 43758.5453;
-        return value - Math.Floor(value);
-    }
-
-    private static double HashToSigned(double seed, int salt)
-    {
-        return (HashToUnit(seed, salt) * 2.0) - 1.0;
-    }
-
-    private struct ClickPulse(Point position)
-    {
-        public Point Position { get; } = position;
-
-        public double Seed { get; } = (position.X * 0.013) + (position.Y * 0.009);
-
-        public double Age { get; set; }
-    }
-
-    private struct MatrixParticle
-    {
-        public Point Position { get; set; }
-
-        public Vector Velocity { get; set; }
-
-        public double Age { get; set; }
-
-        public double Lifetime { get; set; }
-
-        public string Glyph { get; set; }
-
-        public bool Highlight { get; set; }
-
-        public double Seed { get; set; }
-    }
-
-    private struct ResidualNode
-    {
-        public Point Position { get; set; }
-
-        public Vector Velocity { get; set; }
-
-        public double Age { get; set; }
-
-        public double Lifetime { get; set; }
-
-        public double Seed { get; set; }
-
-        public double Scale { get; set; }
-
-        public BitmapSource? BackdropImage { get; set; }
-
-        public Rect BackdropBounds { get; set; }
-    }
 }

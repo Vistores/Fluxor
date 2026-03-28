@@ -27,13 +27,29 @@ public sealed class GlowEffect : IEffect
 
     public void Update(TimeSpan deltaTime)
     {
+        var lag = (_position - _smoothedPosition).Length;
+        var snapDistance = Math.Max(12.0, _settings.Size * (1.1 - Math.Min(0.45, (_cursorAttachStrength - 1.0) * 0.12)));
+
+        if (lag >= snapDistance)
+        {
+            _smoothedPosition = _position;
+            return;
+        }
+
         if (_cursorAttachStrength >= 3.95)
         {
             _smoothedPosition = _position;
             return;
         }
 
-        var blend = Math.Clamp(deltaTime.TotalSeconds * 18d * Math.Max(1.0, _cursorAttachStrength), 0d, 1d);
+        var followRate = _cursorAttachStrength switch
+        {
+            >= 3.5 => 28d,
+            >= 2.5 => 24d,
+            >= 1.5 => 20d,
+            _ => 16d
+        };
+        var blend = Math.Clamp(deltaTime.TotalSeconds * followRate * Math.Max(1.0, _cursorAttachStrength * 0.85), 0d, 1d);
         _smoothedPosition = new Point(
             _smoothedPosition.X + ((_position.X - _smoothedPosition.X) * blend),
             _smoothedPosition.Y + ((_position.Y - _smoothedPosition.Y) * blend));

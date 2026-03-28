@@ -427,12 +427,28 @@
                                                         Margin="0,6,0,0" />
                                             </StackPanel>
                                         </Border>
+
+                                        <Border Margin="0,0,0,0"
+                                                Padding="10,8"
+                                                Background="{StaticResource SurfaceInsetBrush}"
+                                                BorderBrush="{StaticResource SurfaceBorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="6">
+                                            <StackPanel>
+                                                <TextBlock FontSize="13"
+                                                           Text="{Binding EffectQualityText}" />
+                                                <ComboBox Margin="0,6,0,0"
+                                                          ItemsSource="{Binding QualityPresets}"
+                                                          SelectedItem="{Binding SelectedQualityPreset}"
+                                                          DisplayMemberPath="DisplayName" />
+                                            </StackPanel>
+                                        </Border>
                                     </UniformGrid>
                                     <TextBlock Margin="0,6,0,0"
                                                Foreground="{StaticResource MutedTextBrush}"
                                                FontSize="11.5"
                                                TextWrapping="Wrap"
-                                               Text="{Binding CursorAttachHintText}" />
+                                               Text="{Binding EffectQualityHintText}" />
                                 </StackPanel>
                         </Border>
                         <Border Margin="0,14,0,0">

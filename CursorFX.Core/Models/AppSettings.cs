@@ -27,6 +27,7 @@ public sealed class AppSettings
                 MasterOpacity = 0.85,
                 TargetFps = 60,
                 CursorAttachStrength = 2.0,
+                EffectQuality = EffectQualityPreset.Balanced,
                 LaunchOnStartup = false,
                 RunInBackground = true,
                 PauseWhenCursorHidden = true
@@ -85,11 +86,20 @@ public sealed class GeneralSettings
 
     public double CursorAttachStrength { get; set; } = 2.0;
 
+    public EffectQualityPreset EffectQuality { get; set; } = EffectQualityPreset.Balanced;
+
     public bool LaunchOnStartup { get; set; }
 
     public bool RunInBackground { get; set; }
 
     public bool PauseWhenCursorHidden { get; set; } = true;
+}
+
+public enum EffectQualityPreset
+{
+    Low,
+    Balanced,
+    High
 }
 
 public sealed class TrailSettings

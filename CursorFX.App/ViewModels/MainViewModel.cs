@@ -33,6 +33,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly DispatcherTimer _autosaveTimer;
     private ShaderTemplateDefinition? _selectedPlugin;
     private string _autosaveStatus;
+    private QualityPresetOption? _selectedQualityPreset;
 
     public MainViewModel(
         AppSettings settings,
@@ -61,6 +62,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _pluginWorkspaceService = new PluginWorkspaceService();
         _pluginWorkspaceService.EnsureWorkspace();
         _startupRegistrationService = new StartupRegistrationService();
+        QualityPresets =
+        [
+            new QualityPresetOption(EffectQualityPreset.Low, () => _localizationService.Get("main.quality.low")),
+            new QualityPresetOption(EffectQualityPreset.Balanced, () => _localizationService.Get("main.quality.balanced")),
+            new QualityPresetOption(EffectQualityPreset.High, () => _localizationService.Get("main.quality.high"))
+        ];
 
         _autosaveTimer = new DispatcherTimer
         {
@@ -89,6 +96,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ApplyPluginToSettings();
         ApplyRuntimeSettings();
         ApplyStartupRegistration();
+        SyncSelectedQualityPreset();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -104,6 +112,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public ObservableCollection<PluginCategoryViewModel> BasicPluginCategories { get; } = [];
 
     public ObservableCollection<PluginCategoryViewModel> AdvancedPluginCategories { get; } = [];
+
+    public IReadOnlyList<QualityPresetOption> QualityPresets { get; }
 
     public RelayCommand ImportTemplateCommand { get; }
 
@@ -266,6 +276,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string CursorAttachStrengthLabel => $"Cursor attach: {_settings.General.CursorAttachStrength:0.0}x";
 
+    public QualityPresetOption? SelectedQualityPreset
+    {
+        get => _selectedQualityPreset;
+        set
+        {
+            if (value is null || _selectedQualityPreset?.Preset == value.Preset)
+            {
+                return;
+            }
+
+            _selectedQualityPreset = value;
+            _settings.General.EffectQuality = value.Preset;
+            OnPropertyChanged();
+            ApplyRuntimeSettings();
+            ScheduleAutosave(_localizationService.Get("main.status.generalChanged"));
+        }
+    }
+
     public string PluginFolderPath => _templateCatalog.CatalogDirectory;
 
     public string PluginAuthoringGuidePath => Path.Combine(AppContext.BaseDirectory, "Templates", "plugin-authoring-guide.txt");
@@ -307,6 +335,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string FpsCapText => _localizationService.Get("main.fpsCap");
 
     public string CursorAttachText => _localizationService.Get("main.cursorAttach");
+
+    public string EffectQualityText => _localizationService.Get("main.effectQuality");
+
+    public string EffectQualityHintText => _localizationService.Get("main.effectQualityHint");
 
     public string CursorAttachHintText => _localizationService.Get("main.cursorAttachHint");
 
@@ -855,7 +887,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                     FadeSeconds = _settings.Trail.FadeSeconds,
                     Color = _settings.Trail.Color
                 },
-                _settings.General.MasterOpacity);
+                _settings.General.MasterOpacity,
+                _settings.General.EffectQuality);
 
             _glowEffect.UpdateSettings(
                 new GlowSettings
@@ -878,13 +911,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                     Thickness = _settings.Ripple.Thickness,
                     Color = _settings.Ripple.Color
                 },
-                _settings.General.MasterOpacity);
+                _settings.General.MasterOpacity,
+                _settings.General.EffectQuality);
         }
         else
         {
-            _trailEffect.UpdateSettings(_settings.Trail, _settings.General.MasterOpacity);
+            _trailEffect.UpdateSettings(_settings.Trail, _settings.General.MasterOpacity, _settings.General.EffectQuality);
             _glowEffect.UpdateSettings(_settings.Glow, _settings.General.MasterOpacity, _settings.General.CursorAttachStrength);
-            _rippleEffect.UpdateSettings(_settings.Ripple, _settings.General.MasterOpacity);
+            _rippleEffect.UpdateSettings(_settings.Ripple, _settings.General.MasterOpacity, _settings.General.EffectQuality);
         }
 
         _templateEffect.UpdateTemplate(
@@ -892,7 +926,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             SelectedPlugin is null ? new Dictionary<string, TemplateParameterValue>(StringComparer.OrdinalIgnoreCase) : GetOrCreatePluginValues(SelectedPlugin),
             _settings.TemplateEffect.IsEnabled,
             _settings.General.MasterOpacity,
-            _settings.General.CursorAttachStrength);
+            _settings.General.CursorAttachStrength,
+            _settings.General.EffectQuality);
         try
         {
             _customPluginEffect.UpdatePlugin(
@@ -941,6 +976,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(MasterOpacityText));
         OnPropertyChanged(nameof(FpsCapText));
         OnPropertyChanged(nameof(CursorAttachText));
+        OnPropertyChanged(nameof(EffectQualityText));
+        OnPropertyChanged(nameof(EffectQualityHintText));
         OnPropertyChanged(nameof(CursorAttachHintText));
         OnPropertyChanged(nameof(PluginAuthoringText));
         OnPropertyChanged(nameof(PluginAuthoringHintText));
@@ -974,6 +1011,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsContext));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsWarning));
         OnPropertyChanged(nameof(AutosaveStatus));
+        SyncSelectedQualityPreset();
+    }
+
+    private void SyncSelectedQualityPreset()
+    {
+        var match = QualityPresets.FirstOrDefault(option => option.Preset == _settings.General.EffectQuality)
+            ?? QualityPresets.FirstOrDefault(option => option.Preset == EffectQualityPreset.Balanced)
+            ?? QualityPresets.FirstOrDefault();
+
+        if (!ReferenceEquals(_selectedQualityPreset, match))
+        {
+            _selectedQualityPreset = match;
+            OnPropertyChanged(nameof(SelectedQualityPreset));
+        }
     }
 
     private void ApplyStartupRegistration()
@@ -1162,5 +1213,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
+}
+
+public sealed class QualityPresetOption(EffectQualityPreset preset, Func<string> displayFactory)
+{
+    public EffectQualityPreset Preset { get; } = preset;
+
+    public string DisplayName => displayFactory();
+
+    public override string ToString() => DisplayName;
 }
 

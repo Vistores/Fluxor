@@ -11,6 +11,7 @@ public sealed class ClickRippleEffect : IEffect
     private RippleSettings _settings;
     private double _masterOpacity = 1.0;
     private Color _baseColor;
+    private EffectQualityPreset _qualityPreset = EffectQualityPreset.Balanced;
 
     public ClickRippleEffect(RippleSettings settings)
     {
@@ -71,15 +72,32 @@ public sealed class ClickRippleEffect : IEffect
             return;
         }
 
+        if (_ripples.Count >= GetRippleCapacity())
+        {
+            _ripples.RemoveAt(0);
+        }
+
         _ripples.Add(new RippleInstance(position));
     }
 
-    public void UpdateSettings(RippleSettings settings, double masterOpacity)
+    public void UpdateSettings(RippleSettings settings, double masterOpacity, EffectQualityPreset qualityPreset = EffectQualityPreset.Balanced)
     {
         _settings = Clone(settings);
         _masterOpacity = masterOpacity;
+        _qualityPreset = qualityPreset;
         IsEnabled = settings.IsEnabled;
         _baseColor = ParseColor(_settings.Color);
+    }
+
+    private int GetRippleCapacity()
+    {
+        return _qualityPreset switch
+        {
+            EffectQualityPreset.Low => 6,
+            EffectQualityPreset.Balanced => 12,
+            EffectQualityPreset.High => 18,
+            _ => 12
+        };
     }
 
     private static double EaseOut(double progress)

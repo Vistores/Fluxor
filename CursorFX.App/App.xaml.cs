@@ -48,7 +48,18 @@ public partial class App : System.Windows.Application
 
         _settingsStore = new JsonSettingsStore();
         _templateCatalog = new ShaderTemplateCatalog();
-        _templateCatalog.EnsureCatalog();
+        try
+        {
+            _templateCatalog.EnsureCatalog();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"Fluxor could not fully refresh the local plugin catalog.\n\nThe app will continue using the existing catalog files when possible.\n\n{ex.Message}",
+                "Fluxor Catalog Warning",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
         var settings = _settingsStore.Load();
         _localizationService = new LocalizationService();
         _localizationService.Apply(settings.Localization);
