@@ -35,7 +35,7 @@ public sealed class AppSettings
             Trail = new TrailSettings
             {
                 IsEnabled = true,
-                MaxPoints = 14,
+                MaxPoints = 160,
                 Thickness = 4.5,
                 FadeSeconds = 0.24,
                 Color = "#CBD5E1"
@@ -43,8 +43,8 @@ public sealed class AppSettings
             Glow = new GlowSettings
             {
                 IsEnabled = true,
-                Size = 15,
-                Opacity = 0.14,
+                Size = 12,
+                Opacity = 1,
                 Color = "#E2E8F0"
             },
             Ripple = new RippleSettings
@@ -58,7 +58,7 @@ public sealed class AppSettings
             },
             TemplateEffect = new TemplateEffectSettings
             {
-                IsEnabled = true,
+                IsEnabled = false,
                 SelectedTemplateId = "minimal-suite"
             },
             Localization = new LocalizationSettings
@@ -66,7 +66,7 @@ public sealed class AppSettings
                 UseSystemLanguage = true,
                 LanguageCode = "en"
             },
-            SelectedPreset = "Neon"
+            SelectedPreset = "Minimal"
         };
     }
 }

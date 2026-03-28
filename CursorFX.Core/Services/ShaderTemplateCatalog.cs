@@ -345,9 +345,10 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
 
     private static ShaderTemplateDefinition BuildMinimalSuite() =>
         BuildSuite("minimal-suite", "Minimal Suite", "Soft lightweight profile with subtle built-in effects.", "M", "#AAB8C8", TemplateEffectKind.CursorAura,
-            "#CBD5E1", "#E2E8F0", "#CBD5E1", "#E2E8F0", "#94A3B8", 14, 4.5, 0.24, 15, 0.14, 44, 0.4, 0.28, 1.8, 22, 0.14, 0.75, 2,
+            "#CBD5E1", "#E2E8F0", "#CBD5E1", "#E2E8F0", "#94A3B8", 160, 4.5, 0.24, 12, 1.0, 44, 0.4, 0.28, 1.8, 22, 0.14, 0.75, 2,
             [Number("inertia", "Cursor Inertia", PluginParameterSection.Shader, "Shader", 6, 32, 1, 20), Number("clickLifetime", "Click Accent Lifetime", PluginParameterSection.Ripple, "Ripple", 0.2, 2.5, 0.05, 0.5), Number("particles", "Accent Particles", PluginParameterSection.Shader, "Shader", 4, 24, 1, 6)],
-            sourceLag: 0);
+            sourceLag: 0,
+            shaderEnabled: false);
 
     private static ShaderTemplateDefinition BuildGamingSuite() =>
         BuildSuite("gaming-suite", "Gaming Suite", "Aggressive preset with stronger trail and click feedback.", "G", "#F59E0B", TemplateEffectKind.ClickBurst,
@@ -587,6 +588,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         double shaderMotion,
         double shaderDetail,
         IReadOnlyList<TemplateParameterDefinition>? extraParameters = null,
+        bool shaderEnabled = true,
         bool trailEnabled = true,
         TrailRenderMode trailMode = TrailRenderMode.SmoothLine,
         double waveAmplitude = 0,
@@ -625,7 +627,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
             Number("rippleThickness", "Ripple Thickness", PluginParameterSection.Ripple, "Ripple", 1, 12, 0.5, rippleThickness),
             Color("rippleColor", "Ripple Color", PluginParameterSection.Ripple, "Ripple", rippleColor),
 
-            Toggle("shaderEnabled", "Enable Shader Layer", PluginParameterSection.Shader, "Shader", true),
+            Toggle("shaderEnabled", "Enable Shader Layer", PluginParameterSection.Shader, "Shader", shaderEnabled),
             Color("primaryColor", "Primary Color", PluginParameterSection.Shader, "Shader", shaderPrimary),
             Color("accentColor", "Accent Color", PluginParameterSection.Shader, "Shader", shaderAccent),
             Number("size", "Shader Size", PluginParameterSection.Shader, "Shader", 12, 220, 1, shaderSize),

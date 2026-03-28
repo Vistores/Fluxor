@@ -34,6 +34,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private ShaderTemplateDefinition? _selectedPlugin;
     private string _autosaveStatus;
     private QualityPresetOption? _selectedQualityPreset;
+    private bool _isEffectOperationInProgress;
+    private string _effectOperationTitle = "Updating Cursor Effects";
+    private string _effectOperationMessage = "Please wait while Fluxor applies the current cursor effect.";
 
     public MainViewModel(
         AppSettings settings,
@@ -81,8 +84,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OpenPluginFolderCommand = new RelayCommand(OpenPluginFolder);
         OpenSettingsCommand = new RelayCommand(OpenSettings);
         DeletePluginCommand = new RelayCommand(DeleteSelectedPlugin, CanDeleteSelectedPlugin);
-        ResetPluginSettingsCommand = new RelayCommand(ResetSelectedPluginSettings, () => SelectedPlugin is not null);
-        SaveSettingsCommand = new RelayCommand(SaveSettings);
+        ResetPluginSettingsCommand = new RelayCommand(ResetSelectedPluginSettingsWithFeedback, () => SelectedPlugin is not null);
+        SaveSettingsCommand = new RelayCommand(SaveSettingsWithFeedback);
         ChoosePluginIconCommand = new RelayCommand(ChoosePluginIcon, () => SelectedPlugin is not null);
         ClearPluginIconCommand = new RelayCommand(ClearPluginIcon, () => SelectedPlugin is not null && !string.IsNullOrWhiteSpace(SelectedPlugin.ResolvedIconPath));
         OpenPluginAuthoringGuideCommand = new RelayCommand(OpenPluginAuthoringGuide);
@@ -145,8 +148,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
             EnsurePluginValueState();
             BuildPluginCategories();
-            ApplyPluginToSettings();
-            ApplyRuntimeSettings();
+            RunEffectOperation(
+                _localizationService.Get("main.effectOperation.switchTitle"),
+                _localizationService.Get("main.effectOperation.switchMessage"),
+                () =>
+                {
+                    ApplyPluginToSettings();
+                    ApplyRuntimeSettings();
+                });
             OnPropertyChanged(nameof(SelectedPluginName));
             OnPropertyChanged(nameof(SelectedPluginDescription));
             OnPropertyChanged(nameof(SelectedPluginResolvedIconPath));
@@ -402,6 +411,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         private set => SetProperty(ref _autosaveStatus, value);
     }
 
+    public bool IsEffectOperationInProgress
+    {
+        get => _isEffectOperationInProgress;
+        private set => SetProperty(ref _isEffectOperationInProgress, value);
+    }
+
+    public string EffectOperationTitle
+    {
+        get => _effectOperationTitle;
+        private set => SetProperty(ref _effectOperationTitle, value);
+    }
+
+    public string EffectOperationMessage
+    {
+        get => _effectOperationMessage;
+        private set => SetProperty(ref _effectOperationMessage, value);
+    }
+
     public void Dispose()
     {
         _autosaveTimer.Stop();
@@ -616,13 +643,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         try
         {
-            var importedAssemblyPlugin = _assemblyPluginImporter.Import(
-                importWindow.AssemblyPath,
-                importWindow.SelectedPluginCandidate?.EntryTypeName,
-                _templateCatalog.CatalogDirectory,
-                _templateCatalog,
-                string.IsNullOrWhiteSpace(importWindow.IconPath) ? null : importWindow.IconPath);
-            ReloadPlugins(importedAssemblyPlugin.Id);
+            ShaderTemplateDefinition importedAssemblyPlugin = null!;
+            RunEffectOperation(
+                _localizationService.Get("main.effectOperation.importTitle"),
+                _localizationService.Get("main.effectOperation.importMessage"),
+                () =>
+                {
+                    importedAssemblyPlugin = _assemblyPluginImporter.Import(
+                        importWindow.AssemblyPath,
+                        importWindow.SelectedPluginCandidate?.EntryTypeName,
+                        _templateCatalog.CatalogDirectory,
+                        _templateCatalog,
+                        string.IsNullOrWhiteSpace(importWindow.IconPath) ? null : importWindow.IconPath);
+                    ReloadPlugins(importedAssemblyPlugin.Id);
+                });
             AutosaveStatus = string.Format(_localizationService.Get("main.importedStatus"), importedAssemblyPlugin.Name);
         }
         catch (Exception ex)
@@ -672,9 +706,15 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _localizationService.Apply(_settings.Localization);
 
         OnPropertyChanged(nameof(RunInBackgroundEnabled));
-        ApplyRuntimeSettings();
-        ApplyStartupRegistration();
-        SaveSettings();
+        RunEffectOperation(
+            _localizationService.Get("main.effectOperation.settingsTitle"),
+            _localizationService.Get("main.effectOperation.settingsMessage"),
+            () =>
+            {
+                ApplyRuntimeSettings();
+                ApplyStartupRegistration();
+                SaveSettings();
+            });
         AutosaveStatus = _localizationService.Get("settings.updated");
         RefreshLocalizedText();
     }
@@ -779,6 +819,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         AutosaveStatus = string.Format(_localizationService.Get("main.status.savedAt"), DateTime.Now.ToString("T"));
     }
 
+    private void SaveSettingsWithFeedback()
+    {
+        RunEffectOperation(
+            _localizationService.Get("main.effectOperation.saveTitle"),
+            _localizationService.Get("main.effectOperation.saveMessage"),
+            SaveSettings);
+    }
+
     private void ResetSelectedPluginSettings()
     {
         if (SelectedPlugin is null)
@@ -802,6 +850,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         var resetStatus = string.Format(_localizationService.Get("main.status.pluginReset"), SelectedPlugin.Name);
         AutosaveStatus = resetStatus;
         ScheduleAutosave(resetStatus);
+    }
+
+    private void ResetSelectedPluginSettingsWithFeedback()
+    {
+        RunEffectOperation(
+            _localizationService.Get("main.effectOperation.resetTitle"),
+            _localizationService.Get("main.effectOperation.resetMessage"),
+            ResetSelectedPluginSettings);
     }
 
     private void ChoosePluginIcon()
@@ -1183,6 +1239,36 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         return values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value.ColorValue)
             ? value.ColorValue!
             : fallback;
+    }
+
+    private void RunEffectOperation(string title, string message, Action action)
+    {
+        EffectOperationTitle = title;
+        EffectOperationMessage = message;
+        IsEffectOperationInProgress = true;
+        FlushUi();
+
+        try
+        {
+            action();
+        }
+        finally
+        {
+            IsEffectOperationInProgress = false;
+            FlushUi();
+        }
+    }
+
+    private static void FlushUi()
+    {
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
+        {
+            return;
+        }
+
+        dispatcher.Invoke(() => { }, DispatcherPriority.Background);
+        dispatcher.Invoke(() => { }, DispatcherPriority.Render);
     }
 
     private bool SetProperty<T>(ref T storage, T value, [CallerMemberName] string? propertyName = null)
