@@ -1,7 +1,7 @@
 <Window x:Class="CursorFX.App.ColorPickerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Fluxor · Color Picker"
+        Title="{Binding WindowTitle}"
         Icon="pack://application:,,,/Assets/FluxorIco.ico"
         Width="460"
         Height="560"
@@ -17,8 +17,8 @@
                 BorderBrush="{StaticResource SurfaceBorderBrush}"
                 BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel" Style="{StaticResource SecondaryButtonStyle}" Click="OnCancelClick" />
-                <Button Content="OK" Click="OnAcceptClick" />
+                <Button Content="{Binding CancelText}" Style="{StaticResource SecondaryButtonStyle}" Click="OnCancelClick" />
+                <Button Content="{Binding ConfirmText}" Click="OnAcceptClick" />
             </StackPanel>
         </Border>
 
@@ -32,7 +32,7 @@
                         BorderThickness="1"
                         Background="{Binding PreviewBrush}" />
 
-                <TextBlock Text="HEX" />
+                <TextBlock Text="{Binding HexLabel}" />
                 <TextBox Text="{Binding HexColor, UpdateSourceTrigger=PropertyChanged}" />
 
                 <Grid Margin="0,10,0,0">

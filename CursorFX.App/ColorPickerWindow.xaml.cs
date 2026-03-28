@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Media;
+using CursorFX.App.Services;
 
 namespace CursorFX.App;
 
@@ -13,9 +14,11 @@ public partial class ColorPickerWindow : Window, INotifyPropertyChanged
     private byte _red;
     private byte _green;
     private byte _blue;
+    private readonly LocalizationService _localizationService;
 
-    public ColorPickerWindow(string title, string initialColor)
+    public ColorPickerWindow(string title, string initialColor, LocalizationService localizationService)
     {
+        _localizationService = localizationService;
         InitializeComponent();
         PickerTitle = title;
         _hexColor = NormalizeHex(initialColor);
@@ -26,6 +29,14 @@ public partial class ColorPickerWindow : Window, INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string PickerTitle { get; }
+
+    public string WindowTitle => _localizationService.Get("colorPicker.windowTitle");
+
+    public string CancelText => _localizationService.Get("colorPicker.cancel");
+
+    public string ConfirmText => _localizationService.Get("colorPicker.confirm");
+
+    public string HexLabel => _localizationService.Get("colorPicker.hex");
 
     public string SelectedColor => HexColor;
 

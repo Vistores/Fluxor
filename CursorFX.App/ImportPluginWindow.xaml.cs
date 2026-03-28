@@ -98,14 +98,18 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
     }
 
     public string SelectedPluginSummary => SelectedPluginCandidate is null
-        ? "No plugin type selected yet."
-        : $"{SelectedPluginCandidate.DisplayName} - {SelectedPluginCandidate.PluginId}{Environment.NewLine}{SelectedPluginCandidate.Description}";
+        ? _localizationService.Get("import.preview.noSelection")
+        : string.Format(
+            _localizationService.Get("import.preview.summary"),
+            SelectedPluginCandidate.DisplayName,
+            SelectedPluginCandidate.PluginId,
+            SelectedPluginCandidate.Description);
 
-    public string SelectedPluginDisplayName => SelectedPluginCandidate?.DisplayName ?? "Not selected";
+    public string SelectedPluginDisplayName => SelectedPluginCandidate?.DisplayName ?? _localizationService.Get("import.preview.notSelected");
 
-    public string SelectedPluginId => SelectedPluginCandidate?.PluginId ?? "Will be generated from the selected plugin.";
+    public string SelectedPluginId => SelectedPluginCandidate?.PluginId ?? _localizationService.Get("import.preview.generatedId");
 
-    public string SelectedPluginEntryType => SelectedPluginCandidate?.EntryTypeName ?? "Select a plugin type to preview it.";
+    public string SelectedPluginEntryType => SelectedPluginCandidate?.EntryTypeName ?? _localizationService.Get("import.preview.chooseType");
 
     private void OnBrowseAssemblyClick(object sender, RoutedEventArgs e)
     {

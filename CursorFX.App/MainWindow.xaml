@@ -82,7 +82,7 @@
                                        Text="{Binding ColorValue}" />
                         </StackPanel>
                         <Button DockPanel.Dock="Right"
-                                Content="Pick"
+                                Content="{Binding DataContext.ColorPickText, RelativeSource={RelativeSource AncestorType=Window}}"
                                 Style="{StaticResource SecondaryButtonStyle}"
                                 Command="{Binding PickColorCommand}" />
                     </DockPanel>
@@ -90,7 +90,7 @@
                     <CheckBox Margin="0,6,0,0"
                               Visibility="{Binding ToggleVisibility}"
                               IsChecked="{Binding BooleanValue}"
-                              Content="Enabled" />
+                              Content="{Binding DataContext.EnabledToggleText, RelativeSource={RelativeSource AncestorType=Window}}" />
                 </StackPanel>
             </Border>
         </DataTemplate>
@@ -230,8 +230,15 @@
                             <Button Content="{Binding ApplicationSettingsText}"
                                     Style="{StaticResource SecondaryButtonStyle}"
                                     Command="{Binding OpenSettingsCommand}" />
-                            <Button Content="{Binding ImportPluginText}"
-                                    Command="{Binding ImportTemplateCommand}" />
+                            <Button Content="{Binding ImportMenuText}"
+                                    Click="OnProfileActionsClick">
+                                <Button.ContextMenu>
+                                    <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                        <MenuItem Header="{Binding ImportPluginText}" Command="{Binding ImportTemplateCommand}" />
+                                        <MenuItem Header="{Binding ImportArchiveText}" Command="{Binding ImportProfileArchiveCommand}" />
+                                    </ContextMenu>
+                                </Button.ContextMenu>
+                            </Button>
                         </WrapPanel>
                     </Grid>
                 </Border>
@@ -318,6 +325,9 @@
                                                 <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
                                                     <MenuItem Header="{Binding ChooseIconText}" Command="{Binding ChoosePluginIconCommand}" />
                                                     <MenuItem Header="{Binding ClearIconText}" Command="{Binding ClearPluginIconCommand}" />
+                                                    <Separator />
+                                                    <MenuItem Header="{Binding SaveAsProfileText}" Command="{Binding SaveProfileAsCommand}" />
+                                                    <MenuItem Header="{Binding ExportProfileText}" Command="{Binding ExportProfileArchiveCommand}" />
                                                     <Separator />
                                                     <MenuItem Header="{Binding OpenPluginFolderText}" Command="{Binding OpenPluginFolderCommand}" />
                                                     <MenuItem Header="{Binding OpenAuthoringGuideText}" Command="{Binding OpenPluginAuthoringGuideCommand}" />
@@ -514,8 +524,14 @@
                                 </Style>
                             </Border.Style>
                             <StackPanel>
-                                <TextBlock Style="{StaticResource SectionTitleTextStyle}"
-                                           Text="{Binding PluginDiagnosticsText}" />
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Style="{StaticResource SectionTitleTextStyle}"
+                                               Text="{Binding PluginDiagnosticsText}" />
+                                    <Button DockPanel.Dock="Right"
+                                            Content="{Binding DiagnosticsReloadText}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Command="{Binding ReloadPluginRuntimeCommand}" />
+                                </DockPanel>
                                 <Grid Margin="0,12,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="110" />
@@ -647,9 +663,16 @@
                                 <TextBlock Style="{StaticResource SectionTitleTextStyle}"
                                            Text="{Binding ImportedPluginsText}" />
                                 <Button DockPanel.Dock="Right"
-                                        Content="{Binding ImportShortText}"
+                                        Content="{Binding ImportMenuText}"
                                         Style="{StaticResource SecondaryButtonStyle}"
-                                        Command="{Binding ImportTemplateCommand}" />
+                                        Click="OnProfileActionsClick">
+                                    <Button.ContextMenu>
+                                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                            <MenuItem Header="{Binding ImportPluginText}" Command="{Binding ImportTemplateCommand}" />
+                                            <MenuItem Header="{Binding ImportArchiveText}" Command="{Binding ImportProfileArchiveCommand}" />
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
                             </DockPanel>
                             <TextBlock Margin="0,6,0,10"
                                        Foreground="{StaticResource MutedTextBrush}"

@@ -28,6 +28,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly IShaderTemplateCatalog _templateCatalog;
     private readonly LocalizationService _localizationService;
     private readonly AssemblyPluginImporter _assemblyPluginImporter;
+    private readonly ProfileArchiveService _profileArchiveService;
     private readonly PluginWorkspaceService _pluginWorkspaceService;
     private readonly StartupRegistrationService _startupRegistrationService;
     private readonly DispatcherTimer _autosaveTimer;
@@ -62,6 +63,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         _localizationService = localizationService;
         _autosaveStatus = _localizationService.Get("main.autosaveReady");
         _assemblyPluginImporter = new AssemblyPluginImporter();
+        _profileArchiveService = new ProfileArchiveService();
         _pluginWorkspaceService = new PluginWorkspaceService();
         _pluginWorkspaceService.EnsureWorkspace();
         _startupRegistrationService = new StartupRegistrationService();
@@ -83,6 +85,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ImportTemplateCommand = new RelayCommand(ImportPlugin);
         OpenPluginFolderCommand = new RelayCommand(OpenPluginFolder);
         OpenSettingsCommand = new RelayCommand(OpenSettings);
+        SaveProfileAsCommand = new RelayCommand(SaveSelectedProfileAs, () => SelectedPlugin is not null);
+        ExportProfileArchiveCommand = new RelayCommand(ExportSelectedProfileArchive, () => SelectedPlugin is not null);
+        ImportProfileArchiveCommand = new RelayCommand(ImportProfileArchive);
+        ReloadPluginRuntimeCommand = new RelayCommand(ReloadSelectedPluginRuntime, () => IsExternalPluginSelected);
         DeletePluginCommand = new RelayCommand(DeleteSelectedPlugin, CanDeleteSelectedPlugin);
         ResetPluginSettingsCommand = new RelayCommand(ResetSelectedPluginSettingsWithFeedback, () => SelectedPlugin is not null);
         SaveSettingsCommand = new RelayCommand(SaveSettingsWithFeedback);
@@ -123,6 +129,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public RelayCommand OpenPluginFolderCommand { get; }
 
     public RelayCommand OpenSettingsCommand { get; }
+
+    public RelayCommand SaveProfileAsCommand { get; }
+
+    public RelayCommand ExportProfileArchiveCommand { get; }
+
+    public RelayCommand ImportProfileArchiveCommand { get; }
+
+    public RelayCommand ReloadPluginRuntimeCommand { get; }
 
     public RelayCommand DeletePluginCommand { get; }
 
@@ -307,7 +321,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string PluginAuthoringGuidePath => Path.Combine(AppContext.BaseDirectory, "Templates", "plugin-authoring-guide.txt");
 
-    public string ApplicationVersion => "v0.0.4";
+    public string ApplicationVersion => "v0.0.5";
 
     public string ApplicationAuthor => "Dokzya_dev";
 
@@ -318,6 +332,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string ApplicationSettingsText => _localizationService.Get("main.applicationSettings");
 
     public string ImportPluginText => _localizationService.Get("main.importPlugin");
+
+    public string ImportArchiveText => _localizationService.Get("main.importArchive");
+
+    public string ImportMenuText => _localizationService.Get("main.importMenu");
+
+    public string ColorPickText => _localizationService.Get("main.pickColor");
+
+    public string EnabledToggleText => _localizationService.Get("main.enabledToggle");
 
     public string CurrentProfileText => _localizationService.Get("main.currentProfile");
 
@@ -332,6 +354,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string ClearIconText => _localizationService.Get("main.clearIcon");
 
     public string OpenPluginFolderText => _localizationService.Get("main.openPluginFolder");
+
+    public string SaveAsProfileText => _localizationService.Get("main.saveAsProfile");
+
+    public string ExportProfileText => _localizationService.Get("main.exportProfile");
 
     public string DeletePluginText => _localizationService.Get("main.deletePlugin");
 
@@ -382,6 +408,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string DiagnosticsLoadedAtText => _localizationService.Get("main.diag.loadedAt");
 
     public string DiagnosticsLastErrorText => _localizationService.Get("main.diag.lastError");
+
+    public string DiagnosticsReloadText => _localizationService.Get("main.diag.reload");
 
     public string ProfilesText => _localizationService.Get("main.profiles");
 
@@ -621,7 +649,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private string? PickPluginColor(string title, string currentColor)
     {
         var owner = System.Windows.Application.Current?.MainWindow;
-        var picker = new ColorPickerWindow(title, currentColor)
+        var picker = new ColorPickerWindow(title, currentColor, _localizationService)
         {
             Owner = owner
         };
@@ -662,7 +690,44 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         catch (Exception ex)
         {
             AutosaveStatus = ex.Message;
-            System.Windows.MessageBox.Show(ex.Message, "Plugin Import Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.pluginImportFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void ImportProfileArchive()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = _localizationService.Get("main.archiveImport.dialogTitle"),
+            Filter = _localizationService.Get("main.archiveImport.dialogFilter"),
+            CheckFileExists = true
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            ShaderTemplateDefinition importedTemplate = null!;
+            RunEffectOperation(
+                _localizationService.Get("main.effectOperation.importArchiveTitle"),
+                _localizationService.Get("main.effectOperation.importArchiveMessage"),
+                () =>
+                {
+                    importedTemplate = _profileArchiveService.ImportArchive(dialog.FileName, _templateCatalog);
+                    ReloadPlugins(importedTemplate.Id);
+                });
+
+            var importedStatus = string.Format(_localizationService.Get("main.archiveImport.success"), importedTemplate.Name);
+            AutosaveStatus = importedStatus;
+            ScheduleAutosave(importedStatus);
+        }
+        catch (Exception ex)
+        {
+            AutosaveStatus = ex.Message;
+            System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.archiveImportFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -679,6 +744,96 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         };
 
         guideWindow.ShowDialog();
+    }
+
+    private void SaveSelectedProfileAs()
+    {
+        if (SelectedPlugin is null)
+        {
+            return;
+        }
+
+        var dialog = new SaveProfileWindow(
+            $"{SelectedPlugin.Name} {_localizationService.Get("saveProfile.copySuffix")}",
+            SelectedPlugin.Description,
+            _localizationService)
+        {
+            Owner = System.Windows.Application.Current?.MainWindow
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            ShaderTemplateDefinition savedTemplate = null!;
+            RunEffectOperation(
+                _localizationService.Get("main.effectOperation.saveAsTitle"),
+                _localizationService.Get("main.effectOperation.saveAsMessage"),
+                () =>
+                {
+                    savedTemplate = CreateProfileSnapshot(dialog.ProfileName.Trim(), dialog.ProfileDescription.Trim());
+                    savedTemplate = _templateCatalog.SaveTemplate(
+                        savedTemplate,
+                        string.IsNullOrWhiteSpace(SelectedPlugin.ResolvedIconPath) ? null : SelectedPlugin.ResolvedIconPath);
+                    _settings.TemplateEffect.PluginParameterValues[savedTemplate.Id] = CreateParameterValueSnapshot(savedTemplate.Parameters);
+                    ReloadPlugins(savedTemplate.Id);
+                });
+
+            var savedStatus = string.Format(_localizationService.Get("main.status.profileSavedAs"), savedTemplate.Name);
+            AutosaveStatus = savedStatus;
+            ScheduleAutosave(savedStatus);
+        }
+        catch (Exception ex)
+        {
+            AutosaveStatus = ex.Message;
+            System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.saveProfileFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void ExportSelectedProfileArchive()
+    {
+        if (SelectedPlugin is null)
+        {
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = _localizationService.Get("main.archiveExport.dialogTitle"),
+            Filter = _localizationService.Get("main.archiveExport.dialogFilter"),
+            FileName = $"{ToKebabCase(SelectedPlugin.Name)}.fluxor-profile.zip",
+            DefaultExt = ".zip",
+            AddExtension = true
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            RunEffectOperation(
+                _localizationService.Get("main.effectOperation.exportTitle"),
+                _localizationService.Get("main.effectOperation.exportMessage"),
+                () =>
+                {
+                    var snapshot = CreateProfileSnapshot(SelectedPlugin.Name, SelectedPlugin.Description, preserveIdentity: true);
+                    _profileArchiveService.ExportArchive(snapshot, _templateCatalog.CatalogDirectory, dialog.FileName);
+                });
+
+            var exportedStatus = string.Format(_localizationService.Get("main.archiveExport.success"), Path.GetFileName(dialog.FileName));
+            AutosaveStatus = exportedStatus;
+            ScheduleAutosave(exportedStatus);
+        }
+        catch (Exception ex)
+        {
+            AutosaveStatus = ex.Message;
+            System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.archiveExportFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void OpenSettings()
@@ -869,7 +1024,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Title = $"Choose icon for {SelectedPlugin.Name}",
+            Title = string.Format(_localizationService.Get("main.dialog.chooseIconTitle"), SelectedPlugin.Name),
             Filter = "Image files (*.png;*.jpg;*.jpeg;*.bmp;*.ico;*.webp)|*.png;*.jpg;*.jpeg;*.bmp;*.ico;*.webp|All files (*.*)|*.*",
             CheckFileExists = true
         };
@@ -926,6 +1081,20 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             AutosaveStatus = ex.Message;
             System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.pluginIconFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    private void ReloadSelectedPluginRuntime()
+    {
+        if (SelectedPlugin is null || SelectedPlugin.RuntimeKind != TemplateRuntimeKind.ExternalAssembly)
+        {
+            return;
+        }
+
+        RunEffectOperation(
+            _localizationService.Get("main.effectOperation.reloadTitle"),
+            _localizationService.Get("main.effectOperation.reloadMessage"),
+            ApplyRuntimeSettings);
+        AutosaveStatus = _localizationService.Get("main.status.pluginReloaded");
     }
 
     private void ApplyRuntimeSettings()
@@ -1019,6 +1188,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(HeroSubtitle));
         OnPropertyChanged(nameof(ApplicationSettingsText));
         OnPropertyChanged(nameof(ImportPluginText));
+        OnPropertyChanged(nameof(ImportArchiveText));
+        OnPropertyChanged(nameof(ImportMenuText));
+        OnPropertyChanged(nameof(ColorPickText));
+        OnPropertyChanged(nameof(EnabledToggleText));
         OnPropertyChanged(nameof(CurrentProfileText));
         OnPropertyChanged(nameof(MoreActionsText));
         OnPropertyChanged(nameof(SaveSettingsText));
@@ -1026,6 +1199,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(ChooseIconText));
         OnPropertyChanged(nameof(ClearIconText));
         OnPropertyChanged(nameof(OpenPluginFolderText));
+        OnPropertyChanged(nameof(SaveAsProfileText));
+        OnPropertyChanged(nameof(ExportProfileText));
         OnPropertyChanged(nameof(DeletePluginText));
         OnPropertyChanged(nameof(StatusText));
         OnPropertyChanged(nameof(GeneralControlsText));
@@ -1051,6 +1226,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(DiagnosticsEntryTypeText));
         OnPropertyChanged(nameof(DiagnosticsLoadedAtText));
         OnPropertyChanged(nameof(DiagnosticsLastErrorText));
+        OnPropertyChanged(nameof(DiagnosticsReloadText));
         OnPropertyChanged(nameof(DiagnosticsWarningText));
         OnPropertyChanged(nameof(ProfilesText));
         OnPropertyChanged(nameof(ProfilesHintText));
@@ -1151,6 +1327,143 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             "critical-spike" => 5,
             _ => 100
         };
+    }
+
+    private ShaderTemplateDefinition CreateProfileSnapshot(string requestedName, string requestedDescription, bool preserveIdentity = false)
+    {
+        if (SelectedPlugin is null)
+        {
+            throw new InvalidOperationException("No profile is selected.");
+        }
+
+        var existingTemplates = _templateCatalog.LoadTemplates();
+        var finalName = preserveIdentity
+            ? requestedName
+            : EnsureUniqueName(requestedName, existingTemplates.Select(template => template.Name));
+        var finalId = preserveIdentity
+            ? SelectedPlugin.Id
+            : EnsureUniqueId(ToKebabCase(finalName), existingTemplates.Select(template => template.Id));
+        var values = GetOrCreatePluginValues(SelectedPlugin);
+
+        return new ShaderTemplateDefinition
+        {
+            Id = finalId,
+            Name = finalName,
+            Description = string.IsNullOrWhiteSpace(requestedDescription) ? SelectedPlugin.Description : requestedDescription,
+            IconGlyph = SelectedPlugin.IconGlyph,
+            IconPath = SelectedPlugin.IconPath,
+            ResolvedIconPath = SelectedPlugin.ResolvedIconPath,
+            AccentColor = SelectedPlugin.AccentColor,
+            RuntimeKind = SelectedPlugin.RuntimeKind,
+            AssemblyFileName = SelectedPlugin.AssemblyFileName,
+            EntryTypeName = SelectedPlugin.EntryTypeName,
+            Kind = SelectedPlugin.Kind,
+            Trigger = SelectedPlugin.Trigger,
+            Parameters = SelectedPlugin.Parameters
+                .Select(parameter => CloneParameterWithCurrentDefaults(parameter, values))
+                .ToList()
+        };
+    }
+
+    private static TemplateParameterDefinition CloneParameterWithCurrentDefaults(
+        TemplateParameterDefinition parameter,
+        IReadOnlyDictionary<string, TemplateParameterValue> values)
+    {
+        values.TryGetValue(parameter.Key, out var value);
+        return new TemplateParameterDefinition
+        {
+            Key = parameter.Key,
+            DisplayName = parameter.DisplayName,
+            Section = parameter.Section,
+            SectionName = parameter.SectionName,
+            Type = parameter.Type,
+            Min = parameter.Min,
+            Max = parameter.Max,
+            Step = parameter.Step,
+            DefaultNumber = value?.NumberValue ?? parameter.DefaultNumber,
+            DefaultColor = string.IsNullOrWhiteSpace(value?.ColorValue) ? parameter.DefaultColor : value!.ColorValue!,
+            DefaultBoolean = value?.BooleanValue ?? parameter.DefaultBoolean,
+            IsAdvanced = parameter.IsAdvanced
+        };
+    }
+
+    private static Dictionary<string, TemplateParameterValue> CreateParameterValueSnapshot(IEnumerable<TemplateParameterDefinition> parameters)
+    {
+        return parameters.ToDictionary(
+            parameter => parameter.Key,
+            parameter => new TemplateParameterValue
+            {
+                NumberValue = parameter.DefaultNumber,
+                ColorValue = parameter.DefaultColor,
+                BooleanValue = parameter.DefaultBoolean
+            },
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string EnsureUniqueName(string requestedName, IEnumerable<string> existingNames)
+    {
+        var usedNames = new HashSet<string>(existingNames, StringComparer.OrdinalIgnoreCase);
+        var baseName = string.IsNullOrWhiteSpace(requestedName) ? "Profile" : requestedName.Trim();
+        if (!usedNames.Contains(baseName))
+        {
+            return baseName;
+        }
+
+        var suffix = 2;
+        while (usedNames.Contains($"{baseName} {suffix}"))
+        {
+            suffix++;
+        }
+
+        return $"{baseName} {suffix}";
+    }
+
+    private static string EnsureUniqueId(string requestedId, IEnumerable<string> existingIds)
+    {
+        var usedIds = new HashSet<string>(existingIds, StringComparer.OrdinalIgnoreCase);
+        var baseId = string.IsNullOrWhiteSpace(requestedId) ? "profile" : requestedId.Trim();
+        if (!usedIds.Contains(baseId))
+        {
+            return baseId;
+        }
+
+        var suffix = 2;
+        while (usedIds.Contains($"{baseId}-{suffix}"))
+        {
+            suffix++;
+        }
+
+        return $"{baseId}-{suffix}";
+    }
+
+    private static string ToKebabCase(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "profile";
+        }
+
+        var builder = new System.Text.StringBuilder(value.Length + 8);
+        var needsDash = false;
+        foreach (var character in value.Trim())
+        {
+            if (char.IsLetterOrDigit(character))
+            {
+                if (needsDash && builder.Length > 0 && builder[^1] != '-')
+                {
+                    builder.Append('-');
+                }
+
+                builder.Append(char.ToLowerInvariant(character));
+                needsDash = false;
+            }
+            else
+            {
+                needsDash = true;
+            }
+        }
+
+        return builder.Length == 0 ? "profile" : builder.ToString();
     }
 
     private void TryDeletePluginAssembly(ShaderTemplateDefinition plugin)
