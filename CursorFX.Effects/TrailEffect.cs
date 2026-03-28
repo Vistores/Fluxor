@@ -110,7 +110,7 @@ public sealed class TrailEffect : IEffect
             return;
         }
 
-        var segmentSpacing = distance >= 180 ? 6 : distance >= 100 ? 5 : 4;
+        var segmentSpacing = distance >= 220 ? 5 : distance >= 140 ? 4 : 3;
         var steps = Math.Max(1, (int)(distance / segmentSpacing));
         for (var step = 1; step <= steps; step++)
         {
@@ -158,10 +158,10 @@ public sealed class TrailEffect : IEffect
     {
         var cap = _qualityPreset switch
         {
-            EffectQualityPreset.Low => 18,
-            EffectQualityPreset.Balanced => 32,
-            EffectQualityPreset.High => 48,
-            _ => 32
+            EffectQualityPreset.Low => 40,
+            EffectQualityPreset.Balanced => 80,
+            EffectQualityPreset.High => 132,
+            _ => 80
         };
 
         return Math.Min(_settings.MaxPoints, cap);
@@ -297,14 +297,15 @@ public sealed class TrailEffect : IEffect
             return;
         }
 
-        var connectorAlpha = Math.Clamp((_masterOpacity * 0.82) * Math.Min(1.0, headDistance / 28.0), 0, 1);
-        var connectorThickness = Math.Max(0.9, _settings.Thickness * 0.74);
-        var connectorGlowThickness = Math.Max(1.2, connectorThickness * 1.32);
+        var connectorStrength = Math.Clamp(headDistance / 80.0, 0, 1);
+        var connectorAlpha = Math.Clamp((_masterOpacity * 0.76) * connectorStrength, 0, 1);
+        var connectorThickness = Math.Max(0.7, _settings.Thickness * (0.42 + (0.18 * connectorStrength)));
+        var connectorGlowThickness = Math.Max(1.0, connectorThickness * 1.24);
         var start = lastNode.Position;
         var end = _latestRawPosition;
         var control = new Point(
-            start.X + ((end.X - start.X) * 0.72),
-            start.Y + ((end.Y - start.Y) * 0.72));
+            start.X + ((end.X - start.X) * 0.84),
+            start.Y + ((end.Y - start.Y) * 0.84));
 
         var connector = new StreamGeometry();
         using (var context = connector.Open())

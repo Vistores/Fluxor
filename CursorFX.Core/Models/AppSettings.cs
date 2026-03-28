@@ -16,7 +16,7 @@ public sealed class AppSettings
 
     public LocalizationSettings Localization { get; set; } = new();
 
-    public string SelectedPreset { get; set; } = "Neon";
+    public string SelectedPreset { get; set; } = "Minimal";
 
     public static AppSettings CreateDefault()
     {
@@ -24,10 +24,10 @@ public sealed class AppSettings
         {
             General = new GeneralSettings
             {
-                MasterOpacity = 0.85,
-                TargetFps = 60,
-                CursorAttachStrength = 2.0,
-                EffectQuality = EffectQualityPreset.Balanced,
+                MasterOpacity = 1.0,
+                TargetFps = 142,
+                CursorAttachStrength = 4.0,
+                EffectQuality = EffectQualityPreset.High,
                 LaunchOnStartup = false,
                 RunInBackground = true,
                 PauseWhenCursorHidden = true
@@ -35,31 +35,31 @@ public sealed class AppSettings
             Trail = new TrailSettings
             {
                 IsEnabled = true,
-                MaxPoints = 32,
-                Thickness = 12,
-                FadeSeconds = 0.55,
-                Color = "#22D3EE"
+                MaxPoints = 14,
+                Thickness = 4.5,
+                FadeSeconds = 0.24,
+                Color = "#CBD5E1"
             },
             Glow = new GlowSettings
             {
                 IsEnabled = true,
-                Size = 32,
-                Opacity = 0.42,
-                Color = "#67E8F9"
+                Size = 15,
+                Opacity = 0.14,
+                Color = "#E2E8F0"
             },
             Ripple = new RippleSettings
             {
                 IsEnabled = true,
-                MaxRadius = 86,
-                LifetimeSeconds = 0.7,
-                Opacity = 0.75,
-                Thickness = 3,
-                Color = "#A5F3FC"
+                MaxRadius = 44,
+                LifetimeSeconds = 0.4,
+                Opacity = 0.28,
+                Thickness = 1.8,
+                Color = "#CBD5E1"
             },
             TemplateEffect = new TemplateEffectSettings
             {
-                IsEnabled = false,
-                SelectedTemplateId = "neon-suite"
+                IsEnabled = true,
+                SelectedTemplateId = "minimal-suite"
             },
             Localization = new LocalizationSettings
             {

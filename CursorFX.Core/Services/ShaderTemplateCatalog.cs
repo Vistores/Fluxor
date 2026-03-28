@@ -603,7 +603,7 @@ public sealed class ShaderTemplateCatalog : IShaderTemplateCatalog
         var parameters = new List<TemplateParameterDefinition>
         {
             Toggle("trailEnabled", "Enable Trail", PluginParameterSection.Trail, "Trail", trailEnabled),
-            Number("trailLength", "Trail Length", PluginParameterSection.Trail, "Trail", 8, 96, 1, trailLength),
+            Number("trailLength", "Trail Length", PluginParameterSection.Trail, "Trail", 8, 160, 1, trailLength),
             Number("trailThickness", "Trail Thickness", PluginParameterSection.Trail, "Trail", 2, 28, 0.5, trailThickness),
             Number("trailFade", "Trail Fade", PluginParameterSection.Trail, "Trail", 0.15, 2.4, 0.05, trailFade),
             Color("trailColor", "Trail Color", PluginParameterSection.Trail, "Trail", trailColor),
