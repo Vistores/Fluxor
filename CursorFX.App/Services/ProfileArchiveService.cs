@@ -8,6 +8,10 @@ namespace CursorFX.App.Services;
 
 public sealed class ProfileArchiveService
 {
+    public const string ArchiveExtension = ".fluxorprofile";
+
+    private const string ArchiveMetadataFileName = "fluxor-profile.archive.json";
+
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         WriteIndented = true
@@ -15,6 +19,7 @@ public sealed class ProfileArchiveService
 
     public void ExportArchive(ShaderTemplateDefinition template, string catalogDirectory, string destinationArchivePath)
     {
+        destinationArchivePath = NormalizeArchivePath(destinationArchivePath);
         var tempDirectory = Path.Combine(Path.GetTempPath(), $"FluxorProfileExport-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDirectory);
 
@@ -57,6 +62,18 @@ public sealed class ProfileArchiveService
 
             var manifestPath = Path.Combine(tempDirectory, $"{archiveTemplate.Id}.cursorfx-plugin.json");
             File.WriteAllText(manifestPath, JsonSerializer.Serialize(archiveTemplate, SerializerOptions));
+            File.WriteAllText(
+                Path.Combine(tempDirectory, ArchiveMetadataFileName),
+                JsonSerializer.Serialize(
+                    new FluxorProfileArchiveMetadata
+                    {
+                        Format = "fluxor-profile-archive",
+                        Version = 1,
+                        ExportedAtUtc = DateTime.UtcNow,
+                        ProfileId = archiveTemplate.Id,
+                        ProfileName = archiveTemplate.Name
+                    },
+                    SerializerOptions));
 
             Directory.CreateDirectory(Path.GetDirectoryName(destinationArchivePath)!);
             if (File.Exists(destinationArchivePath))
@@ -85,6 +102,7 @@ public sealed class ProfileArchiveService
         try
         {
             ZipFile.ExtractToDirectory(archivePath, tempDirectory);
+            ValidateArchiveMetadata(tempDirectory);
 
             var manifestPath = Directory.EnumerateFiles(tempDirectory, "*.cursorfx-plugin.json", SearchOption.TopDirectoryOnly).FirstOrDefault()
                 ?? throw new InvalidOperationException("The selected archive does not contain a Fluxor profile manifest.");
@@ -238,4 +256,47 @@ public sealed class ProfileArchiveService
         {
         }
     }
+
+    private static string NormalizeArchivePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return path;
+        }
+
+        return Path.GetExtension(path).Length == 0
+            ? path + ArchiveExtension
+            : path;
+    }
+
+    private static void ValidateArchiveMetadata(string extractedDirectory)
+    {
+        var metadataPath = Path.Combine(extractedDirectory, ArchiveMetadataFileName);
+        if (!File.Exists(metadataPath))
+        {
+            return;
+        }
+
+        var json = File.ReadAllText(metadataPath);
+        var metadata = JsonSerializer.Deserialize<FluxorProfileArchiveMetadata>(json, SerializerOptions)
+            ?? throw new InvalidOperationException("The selected profile archive metadata is invalid.");
+
+        if (!string.Equals(metadata.Format, "fluxor-profile-archive", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The selected archive is not a valid Fluxor profile archive.");
+        }
+    }
+}
+
+internal sealed class FluxorProfileArchiveMetadata
+{
+    public string Format { get; set; } = string.Empty;
+
+    public int Version { get; set; }
+
+    public DateTime ExportedAtUtc { get; set; }
+
+    public string ProfileId { get; set; } = string.Empty;
+
+    public string ProfileName { get; set; } = string.Empty;
 }

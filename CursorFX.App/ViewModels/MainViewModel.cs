@@ -804,8 +804,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         {
             Title = _localizationService.Get("main.archiveExport.dialogTitle"),
             Filter = _localizationService.Get("main.archiveExport.dialogFilter"),
-            FileName = $"{ToKebabCase(SelectedPlugin.Name)}.fluxor-profile.zip",
-            DefaultExt = ".zip",
+            FileName = $"{ToKebabCase(SelectedPlugin.Name)}{ProfileArchiveService.ArchiveExtension}",
+            DefaultExt = ProfileArchiveService.ArchiveExtension,
             AddExtension = true
         };
 
