@@ -89,6 +89,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ExportProfileArchiveCommand = new RelayCommand(ExportSelectedProfileArchive, () => SelectedPlugin is not null);
         ImportProfileArchiveCommand = new RelayCommand(ImportProfileArchive);
         ReloadPluginRuntimeCommand = new RelayCommand(ReloadSelectedPluginRuntime, () => IsExternalPluginSelected);
+        RevealPluginFilesCommand = new RelayCommand(RevealSelectedPluginFiles, () => IsExternalPluginSelected && !string.IsNullOrWhiteSpace(SelectedPluginDiagnosticsAssemblyPath));
+        SwitchToSafeProfileCommand = new RelayCommand(SwitchToSafeProfile, () => AvailablePlugins.Any(plugin => string.Equals(plugin.Id, "minimal-suite", StringComparison.OrdinalIgnoreCase)));
         DeletePluginCommand = new RelayCommand(DeleteSelectedPlugin, CanDeleteSelectedPlugin);
         ResetPluginSettingsCommand = new RelayCommand(ResetSelectedPluginSettingsWithFeedback, () => SelectedPlugin is not null);
         SaveSettingsCommand = new RelayCommand(SaveSettingsWithFeedback);
@@ -137,6 +139,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public RelayCommand ImportProfileArchiveCommand { get; }
 
     public RelayCommand ReloadPluginRuntimeCommand { get; }
+
+    public RelayCommand RevealPluginFilesCommand { get; }
+
+    public RelayCommand SwitchToSafeProfileCommand { get; }
 
     public RelayCommand DeletePluginCommand { get; }
 
@@ -426,6 +432,10 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string DiagnosticsLastErrorText => _localizationService.Get("main.diag.lastError");
 
     public string DiagnosticsReloadText => _localizationService.Get("main.diag.reload");
+
+    public string DiagnosticsRevealFilesText => _localizationService.Get("main.diag.revealFiles");
+
+    public string DiagnosticsUseSafeProfileText => _localizationService.Get("main.diag.useSafeProfile");
 
     public string ProfilesText => _localizationService.Get("main.profiles");
 
@@ -1181,6 +1191,49 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         AutosaveStatus = _localizationService.Get("main.status.pluginReloaded");
     }
 
+    private void RevealSelectedPluginFiles()
+    {
+        if (SelectedPlugin is null || SelectedPlugin.RuntimeKind != TemplateRuntimeKind.ExternalAssembly)
+        {
+            return;
+        }
+
+        var assemblyPath = SelectedPluginDiagnosticsAssemblyPath;
+        if (!string.IsNullOrWhiteSpace(assemblyPath) && File.Exists(assemblyPath))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"/select,\"{assemblyPath}\"",
+                    UseShellExecute = true
+                });
+                AutosaveStatus = _localizationService.Get("main.status.pluginFilesRevealed");
+                return;
+            }
+            catch
+            {
+            }
+        }
+
+        OpenPluginFolder();
+    }
+
+    private void SwitchToSafeProfile()
+    {
+        var safeProfile = AvailablePlugins.FirstOrDefault(plugin => string.Equals(plugin.Id, "minimal-suite", StringComparison.OrdinalIgnoreCase))
+            ?? BuiltInPlugins.FirstOrDefault();
+        if (safeProfile is null)
+        {
+            return;
+        }
+
+        SelectedPlugin = safeProfile;
+        AutosaveStatus = string.Format(_localizationService.Get("main.status.safeProfileActivated"), safeProfile.Name);
+        ScheduleAutosave(AutosaveStatus);
+    }
+
     private void ApplyRuntimeSettings()
     {
         var useExternalPlugin = SelectedPlugin?.RuntimeKind == TemplateRuntimeKind.ExternalAssembly;
@@ -1311,6 +1364,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(DiagnosticsLoadedAtText));
         OnPropertyChanged(nameof(DiagnosticsLastErrorText));
         OnPropertyChanged(nameof(DiagnosticsReloadText));
+        OnPropertyChanged(nameof(DiagnosticsRevealFilesText));
+        OnPropertyChanged(nameof(DiagnosticsUseSafeProfileText));
         OnPropertyChanged(nameof(DiagnosticsWarningText));
         OnPropertyChanged(nameof(ProfilesText));
         OnPropertyChanged(nameof(ProfilesHintText));

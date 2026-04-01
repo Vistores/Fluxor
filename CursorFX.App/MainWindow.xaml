@@ -525,12 +525,22 @@
                             </Border.Style>
                             <StackPanel>
                                 <DockPanel LastChildFill="False">
+                                    <StackPanel DockPanel.Dock="Right"
+                                                Orientation="Horizontal">
+                                        <Button Content="{Binding DiagnosticsReloadText}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Command="{Binding ReloadPluginRuntimeCommand}" />
+                                        <Button Margin="8,0,0,0"
+                                                Content="{Binding DiagnosticsRevealFilesText}"
+                                                Style="{StaticResource GhostButtonStyle}"
+                                                Command="{Binding RevealPluginFilesCommand}" />
+                                        <Button Margin="8,0,0,0"
+                                                Content="{Binding DiagnosticsUseSafeProfileText}"
+                                                Style="{StaticResource GhostButtonStyle}"
+                                                Command="{Binding SwitchToSafeProfileCommand}" />
+                                    </StackPanel>
                                     <TextBlock Style="{StaticResource SectionTitleTextStyle}"
                                                Text="{Binding PluginDiagnosticsText}" />
-                                    <Button DockPanel.Dock="Right"
-                                            Content="{Binding DiagnosticsReloadText}"
-                                            Style="{StaticResource SecondaryButtonStyle}"
-                                            Command="{Binding ReloadPluginRuntimeCommand}" />
                                 </DockPanel>
                                 <Grid Margin="0,12,0,0">
                                     <Grid.ColumnDefinitions>
