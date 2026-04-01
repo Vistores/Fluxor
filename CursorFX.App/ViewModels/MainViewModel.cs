@@ -343,7 +343,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string PluginAuthoringGuidePath => Path.Combine(AppContext.BaseDirectory, "Templates", "plugin-authoring-guide.txt");
 
-    public string ApplicationVersion => "v0.0.5";
+    public string ApplicationVersion => "v0.0.6";
 
     public string ApplicationAuthor => "Dokzya_dev";
 
