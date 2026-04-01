@@ -772,22 +772,16 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         try
         {
             var inspection = _profileArchiveService.InspectArchive(dialog.FileName, _templateCatalog);
-            var replaceExisting = false;
-            var previewResult = System.Windows.MessageBox.Show(
-                BuildArchiveImportPreview(inspection),
-                _localizationService.Get("main.archiveImport.previewTitle"),
-                inspection.ExistingById is null ? MessageBoxButton.OKCancel : MessageBoxButton.YesNoCancel,
-                MessageBoxImage.Information);
-
-            if (previewResult == MessageBoxResult.Cancel)
+            var previewWindow = new ArchiveImportPreviewWindow(inspection, _localizationService)
+            {
+                Owner = System.Windows.Application.Current?.MainWindow
+            };
+            if (previewWindow.ShowDialog() != true)
             {
                 return;
             }
 
-            if (previewResult == MessageBoxResult.Yes && inspection.ExistingById is not null)
-            {
-                replaceExisting = true;
-            }
+            var replaceExisting = previewWindow.SelectedDecision == ArchiveImportDecision.ReplaceExisting;
 
             ShaderTemplateDefinition importedTemplate = null!;
             RunEffectOperation(
@@ -1537,51 +1531,6 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 BooleanValue = parameter.DefaultBoolean
             },
             StringComparer.OrdinalIgnoreCase);
-    }
-
-    private string BuildArchiveImportPreview(ProfileArchiveInspectionResult inspection)
-    {
-        var lines = new List<string>
-        {
-            string.Format(_localizationService.Get("main.archiveImport.previewName"), inspection.Template.Name),
-            string.Format(_localizationService.Get("main.archiveImport.previewId"), inspection.Template.Id),
-            string.Format(_localizationService.Get("main.archiveImport.previewRuntime"), inspection.Template.RuntimeKind == TemplateRuntimeKind.ExternalAssembly ? _localizationService.Get("main.runtimeKind.imported") : _localizationService.Get("main.runtimeKind.builtIn")),
-            string.Format(_localizationService.Get("main.archiveImport.previewParameters"), inspection.Template.Parameters.Count),
-            string.Format(_localizationService.Get("main.archiveImport.previewIcon"), inspection.HasIcon ? _localizationService.Get("main.diag.bool.yes") : _localizationService.Get("main.diag.bool.no")),
-            string.Format(_localizationService.Get("main.archiveImport.previewAssembly"), inspection.Template.RuntimeKind == TemplateRuntimeKind.ExternalAssembly && inspection.HasAssembly ? _localizationService.Get("main.diag.bool.yes") : _localizationService.Get("main.diag.bool.no"))
-        };
-
-        if (!string.IsNullOrWhiteSpace(inspection.Template.Description))
-        {
-            lines.Add(string.Empty);
-            lines.Add(inspection.Template.Description);
-        }
-
-        if (inspection.ExistingById is not null)
-        {
-            lines.Add(string.Empty);
-            lines.Add(string.Format(_localizationService.Get("main.archiveImport.previewReplacePrompt"), inspection.ExistingById.Name));
-        }
-
-        if (inspection.Warnings.Count > 0)
-        {
-            lines.Add(string.Empty);
-            lines.Add(_localizationService.Get("main.archiveImport.previewWarnings"));
-            lines.AddRange(inspection.Warnings.Select(warning => $"• {warning}"));
-        }
-
-        if (inspection.ExistingById is not null)
-        {
-            lines.Add(string.Empty);
-            lines.Add(_localizationService.Get("main.archiveImport.previewButtonsReplace"));
-        }
-        else
-        {
-            lines.Add(string.Empty);
-            lines.Add(_localizationService.Get("main.archiveImport.previewButtonsImport"));
-        }
-
-        return string.Join(Environment.NewLine, lines);
     }
 
     private static Dictionary<string, TemplateParameterValue> MergeParameterValuesPreservingMatches(
