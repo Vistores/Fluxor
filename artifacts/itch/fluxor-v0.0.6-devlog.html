@@ -1,0 +1,40 @@
+<h1>Fluxor v0.0.6 - Archive Preview, Plugin Replace Flow, and Runtime Safety</h1>
+
+<p>This update focuses on plugin reliability, archive import clarity, and safer recovery when an external plugin breaks.</p>
+
+<h2>New</h2>
+<ul>
+  <li><strong>Archive Preview Window</strong> — importing a <code>.fluxorprofile</code> now opens a dedicated preview dialog before anything is added to the library</li>
+  <li><strong>Plugin Replace Flow</strong> — when importing a DLL that matches an existing imported profile, Fluxor can replace it instead of creating a duplicate</li>
+  <li><strong>Runtime Safety Actions</strong> — the diagnostics panel now includes actions to reveal plugin files and switch to a safe built-in profile</li>
+</ul>
+
+<h2>Improved</h2>
+<ul>
+  <li>archive import now validates profile content and warns about missing files or ID conflicts before import</li>
+  <li>plugin updates preserve compatible parameter values when matching keys still exist in the new build</li>
+  <li>broken external plugins now surface clearer diagnostics for missing assemblies, invalid runtime metadata, and runtime failures</li>
+  <li>plugin reload and recovery workflow is more practical during testing and support</li>
+</ul>
+
+<h2>Archive Import Workflow</h2>
+<ul>
+  <li>preview profile name, ID, runtime type, parameter count, icon presence, and bundled plugin DLL state</li>
+  <li>replace an existing profile with the same ID</li>
+  <li>import the same archive as a separate copy when you do not want to overwrite the existing profile</li>
+</ul>
+
+<h2>Diagnostics and Recovery</h2>
+<ul>
+  <li><strong>Reload</strong> refreshes the current plugin runtime</li>
+  <li><strong>Reveal Files</strong> opens the plugin location in Explorer</li>
+  <li><strong>Use Safe Profile</strong> switches back to a built-in fallback profile when an imported plugin is unstable or broken</li>
+</ul>
+
+<h2>Version Update</h2>
+<ul>
+  <li>app version updated to <strong>v0.0.6</strong></li>
+  <li>installer rebuilt for the current version</li>
+</ul>
+
+<p>This release continues the 0.0.x polish phase and makes Fluxor safer and easier to use when working with external plugins and shared profiles.</p>
