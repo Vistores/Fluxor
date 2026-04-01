@@ -13,14 +13,21 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
     private string _assemblyPath = string.Empty;
     private string _iconPath = string.Empty;
     private PluginAssemblyCandidate? _selectedPluginCandidate;
+    private readonly IReadOnlyList<PluginImportMatch> _existingImportedPlugins;
     private readonly AssemblyPluginImporter _assemblyPluginImporter = new();
     private readonly string _pluginWorkspacePath;
     private readonly LocalizationService _localizationService;
+    private PluginImportMatch? _matchedExistingPlugin;
+    private bool _replaceExistingPlugin;
 
-    public ImportPluginWindow(string pluginWorkspacePath, LocalizationService localizationService)
+    public ImportPluginWindow(
+        string pluginWorkspacePath,
+        LocalizationService localizationService,
+        IReadOnlyList<PluginImportMatch>? existingImportedPlugins = null)
     {
         _pluginWorkspacePath = pluginWorkspacePath;
         _localizationService = localizationService;
+        _existingImportedPlugins = existingImportedPlugins ?? [];
         DataContext = this;
         InitializeComponent();
     }
@@ -48,6 +55,10 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
     public string IconPlaceholderText => _localizationService.Get("import.iconPlaceholder");
     public string CancelButtonText => _localizationService.Get("import.cancel");
     public string ImportButtonText => _localizationService.Get("import.confirm");
+    public string InstallModeTitleText => _localizationService.Get("import.installModeTitle");
+    public string InstallModeHintText => _localizationService.Get("import.installModeHint");
+    public string ReplaceExistingText => _localizationService.Get("import.replaceExisting");
+    public string ImportAsNewText => _localizationService.Get("import.importAsNew");
 
     public string AssemblyPath
     {
@@ -110,6 +121,42 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
     public string SelectedPluginId => SelectedPluginCandidate?.PluginId ?? _localizationService.Get("import.preview.generatedId");
 
     public string SelectedPluginEntryType => SelectedPluginCandidate?.EntryTypeName ?? _localizationService.Get("import.preview.chooseType");
+
+    public PluginImportMatch? MatchedExistingPlugin
+    {
+        get => _matchedExistingPlugin;
+        private set
+        {
+            if (!SetProperty(ref _matchedExistingPlugin, value))
+            {
+                return;
+            }
+
+            if (_matchedExistingPlugin is null)
+            {
+                ReplaceExistingPlugin = false;
+            }
+
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasMatchedExistingPlugin)));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(MatchedExistingPluginSummary)));
+        }
+    }
+
+    public bool HasMatchedExistingPlugin => MatchedExistingPlugin is not null;
+
+    public bool ReplaceExistingPlugin
+    {
+        get => _replaceExistingPlugin;
+        set => SetProperty(ref _replaceExistingPlugin, value);
+    }
+
+    public string MatchedExistingPluginSummary => MatchedExistingPlugin is null
+        ? _localizationService.Get("import.match.none")
+        : string.Format(
+            _localizationService.Get("import.match.summary"),
+            MatchedExistingPlugin.Name,
+            MatchedExistingPlugin.Id,
+            MatchedExistingPlugin.MatchReason);
 
     private void OnBrowseAssemblyClick(object sender, RoutedEventArgs e)
     {
@@ -194,6 +241,7 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
     {
         AvailablePlugins.Clear();
         SelectedPluginCandidate = null;
+        MatchedExistingPlugin = null;
 
         if (string.IsNullOrWhiteSpace(AssemblyPath) || !File.Exists(AssemblyPath))
         {
@@ -224,9 +272,40 @@ public partial class ImportPluginWindow : Window, INotifyPropertyChanged
 
     private void RaisePluginPreviewProperties()
     {
+        UpdateMatchedExistingPlugin();
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginSummary)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginDisplayName)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginId)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(SelectedPluginEntryType)));
     }
+
+    private void UpdateMatchedExistingPlugin()
+    {
+        if (SelectedPluginCandidate is null)
+        {
+            MatchedExistingPlugin = null;
+            return;
+        }
+
+        var idMatch = _existingImportedPlugins.FirstOrDefault(match =>
+            string.Equals(match.Id, SelectedPluginCandidate.PluginId, StringComparison.OrdinalIgnoreCase));
+        if (idMatch is not null)
+        {
+            MatchedExistingPlugin = idMatch with { MatchReason = _localizationService.Get("import.match.reason.pluginId") };
+            return;
+        }
+
+        var entryTypeMatch = _existingImportedPlugins.FirstOrDefault(match =>
+            !string.IsNullOrWhiteSpace(match.EntryTypeName) &&
+            string.Equals(match.EntryTypeName, SelectedPluginCandidate.EntryTypeName, StringComparison.Ordinal));
+        MatchedExistingPlugin = entryTypeMatch is null
+            ? null
+            : entryTypeMatch with { MatchReason = _localizationService.Get("import.match.reason.entryType") };
+    }
 }
+
+public sealed record PluginImportMatch(
+    string Id,
+    string Name,
+    string EntryTypeName,
+    string MatchReason);

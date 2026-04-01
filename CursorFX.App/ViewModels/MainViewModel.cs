@@ -194,6 +194,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string SelectedPluginDiagnosticsStatus => _customPluginEffect.Status switch
     {
+        "Broken" => _localizationService.Get("main.diag.status.broken"),
         "Loaded" => _localizationService.Get("main.diag.status.loaded"),
         "Error" => _localizationService.Get("main.diag.status.error"),
         _ => _localizationService.Get("main.diag.status.idle")
@@ -223,6 +224,21 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         get
         {
+            if (_customPluginEffect.IsAssemblyMissing)
+            {
+                return _localizationService.Get("main.diag.warning.assemblyMissing");
+            }
+
+            if (_customPluginEffect.HasRuntimeConfigurationIssue)
+            {
+                return _localizationService.Get("main.diag.warning.configIssue");
+            }
+
+            if (string.Equals(_customPluginEffect.Status, "Error", StringComparison.Ordinal))
+            {
+                return _localizationService.Get("main.diag.warning.runtimeError");
+            }
+
             if (!_customPluginEffect.IsCursorVisibleInContext)
             {
                 return _localizationService.Get("main.diag.warning.hiddenCursor");
@@ -659,7 +675,16 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void ImportPlugin()
     {
-        var importWindow = new ImportPluginWindow(_pluginWorkspaceService.WorkspaceDirectory, _localizationService)
+        var importWindow = new ImportPluginWindow(
+            _pluginWorkspaceService.WorkspaceDirectory,
+            _localizationService,
+            ImportedPlugins
+                .Select(plugin => new PluginImportMatch(
+                    plugin.Id,
+                    plugin.Name,
+                    plugin.EntryTypeName,
+                    string.Empty))
+                .ToList())
         {
             Owner = System.Windows.Application.Current?.MainWindow
         };
@@ -672,20 +697,46 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         try
         {
             ShaderTemplateDefinition importedAssemblyPlugin = null!;
+            var replaceTarget = importWindow.ReplaceExistingPlugin && importWindow.MatchedExistingPlugin is not null
+                ? AvailablePlugins.FirstOrDefault(plugin => string.Equals(plugin.Id, importWindow.MatchedExistingPlugin.Id, StringComparison.OrdinalIgnoreCase))
+                : null;
             RunEffectOperation(
                 _localizationService.Get("main.effectOperation.importTitle"),
                 _localizationService.Get("main.effectOperation.importMessage"),
                 () =>
                 {
-                    importedAssemblyPlugin = _assemblyPluginImporter.Import(
-                        importWindow.AssemblyPath,
-                        importWindow.SelectedPluginCandidate?.EntryTypeName,
-                        _templateCatalog.CatalogDirectory,
-                        _templateCatalog,
-                        string.IsNullOrWhiteSpace(importWindow.IconPath) ? null : importWindow.IconPath);
+                    if (replaceTarget is not null)
+                    {
+                        var previousAssemblyOwner = replaceTarget;
+                        var previousValues = _settings.TemplateEffect.PluginParameterValues.TryGetValue(previousAssemblyOwner.Id, out var values)
+                            ? new Dictionary<string, TemplateParameterValue>(values, StringComparer.OrdinalIgnoreCase)
+                            : new Dictionary<string, TemplateParameterValue>(StringComparer.OrdinalIgnoreCase);
+
+                        importedAssemblyPlugin = _assemblyPluginImporter.Replace(
+                            importWindow.AssemblyPath,
+                            importWindow.SelectedPluginCandidate?.EntryTypeName,
+                            _templateCatalog.CatalogDirectory,
+                            _templateCatalog,
+                            previousAssemblyOwner,
+                            string.IsNullOrWhiteSpace(importWindow.IconPath) ? null : importWindow.IconPath);
+                        _settings.TemplateEffect.PluginParameterValues[previousAssemblyOwner.Id] = MergeParameterValuesPreservingMatches(previousValues, importedAssemblyPlugin.Parameters);
+                        TryDeletePluginAssembly(previousAssemblyOwner);
+                    }
+                    else
+                    {
+                        importedAssemblyPlugin = _assemblyPluginImporter.Import(
+                            importWindow.AssemblyPath,
+                            importWindow.SelectedPluginCandidate?.EntryTypeName,
+                            _templateCatalog.CatalogDirectory,
+                            _templateCatalog,
+                            string.IsNullOrWhiteSpace(importWindow.IconPath) ? null : importWindow.IconPath);
+                    }
+
                     ReloadPlugins(importedAssemblyPlugin.Id);
                 });
-            AutosaveStatus = string.Format(_localizationService.Get("main.importedStatus"), importedAssemblyPlugin.Name);
+            AutosaveStatus = string.Format(
+                replaceTarget is null ? _localizationService.Get("main.importedStatus") : _localizationService.Get("main.importedStatusReplaced"),
+                importedAssemblyPlugin.Name);
         }
         catch (Exception ex)
         {
@@ -710,17 +761,50 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         try
         {
+            var inspection = _profileArchiveService.InspectArchive(dialog.FileName, _templateCatalog);
+            var replaceExisting = false;
+            var previewResult = System.Windows.MessageBox.Show(
+                BuildArchiveImportPreview(inspection),
+                _localizationService.Get("main.archiveImport.previewTitle"),
+                inspection.ExistingById is null ? MessageBoxButton.OKCancel : MessageBoxButton.YesNoCancel,
+                MessageBoxImage.Information);
+
+            if (previewResult == MessageBoxResult.Cancel)
+            {
+                return;
+            }
+
+            if (previewResult == MessageBoxResult.Yes && inspection.ExistingById is not null)
+            {
+                replaceExisting = true;
+            }
+
             ShaderTemplateDefinition importedTemplate = null!;
             RunEffectOperation(
                 _localizationService.Get("main.effectOperation.importArchiveTitle"),
                 _localizationService.Get("main.effectOperation.importArchiveMessage"),
                 () =>
                 {
-                    importedTemplate = _profileArchiveService.ImportArchive(dialog.FileName, _templateCatalog);
+                    var previousTemplate = replaceExisting ? inspection.ExistingById : null;
+                    var previousValues = previousTemplate is not null && _settings.TemplateEffect.PluginParameterValues.TryGetValue(previousTemplate.Id, out var values)
+                        ? new Dictionary<string, TemplateParameterValue>(values, StringComparer.OrdinalIgnoreCase)
+                        : null;
+
+                    importedTemplate = _profileArchiveService.ImportArchive(dialog.FileName, _templateCatalog, replaceExisting);
+                    if (previousTemplate is not null)
+                    {
+                        _settings.TemplateEffect.PluginParameterValues[previousTemplate.Id] = MergeParameterValuesPreservingMatches(
+                            previousValues ?? new Dictionary<string, TemplateParameterValue>(StringComparer.OrdinalIgnoreCase),
+                            importedTemplate.Parameters);
+                        TryDeletePluginAssembly(previousTemplate);
+                    }
+
                     ReloadPlugins(importedTemplate.Id);
                 });
 
-            var importedStatus = string.Format(_localizationService.Get("main.archiveImport.success"), importedTemplate.Name);
+            var importedStatus = string.Format(
+                replaceExisting ? _localizationService.Get("main.archiveImport.replaced") : _localizationService.Get("main.archiveImport.success"),
+                importedTemplate.Name);
             AutosaveStatus = importedStatus;
             ScheduleAutosave(importedStatus);
         }
@@ -1396,6 +1480,79 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 NumberValue = parameter.DefaultNumber,
                 ColorValue = parameter.DefaultColor,
                 BooleanValue = parameter.DefaultBoolean
+            },
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private string BuildArchiveImportPreview(ProfileArchiveInspectionResult inspection)
+    {
+        var lines = new List<string>
+        {
+            string.Format(_localizationService.Get("main.archiveImport.previewName"), inspection.Template.Name),
+            string.Format(_localizationService.Get("main.archiveImport.previewId"), inspection.Template.Id),
+            string.Format(_localizationService.Get("main.archiveImport.previewRuntime"), inspection.Template.RuntimeKind == TemplateRuntimeKind.ExternalAssembly ? _localizationService.Get("main.runtimeKind.imported") : _localizationService.Get("main.runtimeKind.builtIn")),
+            string.Format(_localizationService.Get("main.archiveImport.previewParameters"), inspection.Template.Parameters.Count),
+            string.Format(_localizationService.Get("main.archiveImport.previewIcon"), inspection.HasIcon ? _localizationService.Get("main.diag.bool.yes") : _localizationService.Get("main.diag.bool.no")),
+            string.Format(_localizationService.Get("main.archiveImport.previewAssembly"), inspection.Template.RuntimeKind == TemplateRuntimeKind.ExternalAssembly && inspection.HasAssembly ? _localizationService.Get("main.diag.bool.yes") : _localizationService.Get("main.diag.bool.no"))
+        };
+
+        if (!string.IsNullOrWhiteSpace(inspection.Template.Description))
+        {
+            lines.Add(string.Empty);
+            lines.Add(inspection.Template.Description);
+        }
+
+        if (inspection.ExistingById is not null)
+        {
+            lines.Add(string.Empty);
+            lines.Add(string.Format(_localizationService.Get("main.archiveImport.previewReplacePrompt"), inspection.ExistingById.Name));
+        }
+
+        if (inspection.Warnings.Count > 0)
+        {
+            lines.Add(string.Empty);
+            lines.Add(_localizationService.Get("main.archiveImport.previewWarnings"));
+            lines.AddRange(inspection.Warnings.Select(warning => $"• {warning}"));
+        }
+
+        if (inspection.ExistingById is not null)
+        {
+            lines.Add(string.Empty);
+            lines.Add(_localizationService.Get("main.archiveImport.previewButtonsReplace"));
+        }
+        else
+        {
+            lines.Add(string.Empty);
+            lines.Add(_localizationService.Get("main.archiveImport.previewButtonsImport"));
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static Dictionary<string, TemplateParameterValue> MergeParameterValuesPreservingMatches(
+        IReadOnlyDictionary<string, TemplateParameterValue> existingValues,
+        IEnumerable<TemplateParameterDefinition> parameters)
+    {
+        return parameters.ToDictionary(
+            parameter => parameter.Key,
+            parameter =>
+            {
+                if (existingValues.TryGetValue(parameter.Key, out var previous))
+                {
+                    return new TemplateParameterValue
+                    {
+                        NumberValue = parameter.Type == TemplateParameterType.Number ? previous.NumberValue ?? parameter.DefaultNumber : parameter.DefaultNumber,
+                        ColorValue = parameter.Type == TemplateParameterType.Color ? previous.ColorValue ?? parameter.DefaultColor : parameter.DefaultColor,
+                        BooleanValue = parameter.Type == TemplateParameterType.Toggle ? previous.BooleanValue ?? parameter.DefaultBoolean : parameter.DefaultBoolean
+                    };
+                }
+
+                return new TemplateParameterValue
+                {
+                    NumberValue = parameter.DefaultNumber,
+                    ColorValue = parameter.DefaultColor,
+                    BooleanValue = parameter.DefaultBoolean
+                };
             },
             StringComparer.OrdinalIgnoreCase);
     }

@@ -89,7 +89,93 @@ public sealed class ProfileArchiveService
         }
     }
 
+    public ProfileArchiveInspectionResult InspectArchive(string archivePath, IShaderTemplateCatalog templateCatalog)
+    {
+        if (!File.Exists(archivePath))
+        {
+            throw new FileNotFoundException("Profile archive was not found.", archivePath);
+        }
+
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"FluxorProfileInspect-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            ZipFile.ExtractToDirectory(archivePath, tempDirectory);
+            var metadata = ReadArchiveMetadata(tempDirectory);
+
+            var manifestPath = Directory.EnumerateFiles(tempDirectory, "*.cursorfx-plugin.json", SearchOption.TopDirectoryOnly).FirstOrDefault()
+                ?? throw new InvalidOperationException("The selected archive does not contain a Fluxor profile manifest.");
+
+            var json = File.ReadAllText(manifestPath);
+            var template = JsonSerializer.Deserialize<ShaderTemplateDefinition>(json, SerializerOptions)
+                ?? throw new InvalidOperationException("The selected archive manifest could not be read.");
+
+            var existingTemplates = templateCatalog.LoadTemplates();
+            var existingById = existingTemplates.FirstOrDefault(item => string.Equals(item.Id, template.Id, StringComparison.OrdinalIgnoreCase));
+            var existingByName = existingTemplates.FirstOrDefault(item => string.Equals(item.Name, template.Name, StringComparison.OrdinalIgnoreCase));
+
+            var warnings = new List<string>();
+            if (existingById is not null)
+            {
+                warnings.Add($"A profile with ID '{template.Id}' already exists. Fluxor will import this archive as a copy unless you replace the existing profile.");
+            }
+
+            if (existingByName is not null && !string.Equals(existingByName.Id, template.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                warnings.Add($"A profile named '{template.Name}' already exists. Fluxor will adjust the imported name to avoid a collision.");
+            }
+
+            var hasManifestIcon = !string.IsNullOrWhiteSpace(template.IconPath);
+            var iconFound = hasManifestIcon && File.Exists(Path.Combine(tempDirectory, template.IconPath));
+            if (hasManifestIcon && !iconFound)
+            {
+                warnings.Add("The archive references a profile icon, but the icon file is missing.");
+            }
+
+            var hasAssembly = template.RuntimeKind == TemplateRuntimeKind.ExternalAssembly;
+            var assemblyFound = false;
+            if (hasAssembly)
+            {
+                if (string.IsNullOrWhiteSpace(template.AssemblyFileName))
+                {
+                    warnings.Add("The archive references an external plugin profile, but the assembly file name is missing.");
+                }
+                else
+                {
+                    assemblyFound = File.Exists(Path.Combine(tempDirectory, template.AssemblyFileName));
+                    if (!assemblyFound)
+                    {
+                        warnings.Add("The archive references an external plugin DLL, but the DLL file is missing.");
+                    }
+                }
+            }
+
+            return new ProfileArchiveInspectionResult
+            {
+                ArchivePath = archivePath,
+                FileName = Path.GetFileName(archivePath),
+                Template = template,
+                Metadata = metadata,
+                ExistingById = existingById,
+                ExistingByName = existingByName,
+                HasIcon = iconFound,
+                HasAssembly = assemblyFound,
+                Warnings = warnings
+            };
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
     public ShaderTemplateDefinition ImportArchive(string archivePath, IShaderTemplateCatalog templateCatalog)
+    {
+        return ImportArchive(archivePath, templateCatalog, replaceExisting: false);
+    }
+
+    public ShaderTemplateDefinition ImportArchive(string archivePath, IShaderTemplateCatalog templateCatalog, bool replaceExisting)
     {
         if (!File.Exists(archivePath))
         {
@@ -112,8 +198,15 @@ public sealed class ProfileArchiveService
                 ?? throw new InvalidOperationException("The selected archive manifest could not be read.");
 
             var existing = templateCatalog.LoadTemplates();
-            var uniqueName = EnsureUniqueName(template.Name, existing.Select(item => item.Name));
-            var uniqueId = EnsureUniqueId(template.Id, existing.Select(item => item.Id));
+            var replaceTarget = replaceExisting
+                ? existing.FirstOrDefault(item => string.Equals(item.Id, template.Id, StringComparison.OrdinalIgnoreCase))
+                : null;
+            var uniqueName = replaceTarget is null
+                ? EnsureUniqueName(template.Name, existing.Select(item => item.Name))
+                : replaceTarget.Name;
+            var uniqueId = replaceTarget is null
+                ? EnsureUniqueId(template.Id, existing.Select(item => item.Id))
+                : replaceTarget.Id;
 
             var iconSourcePath = string.IsNullOrWhiteSpace(template.IconPath)
                 ? null
@@ -147,10 +240,10 @@ public sealed class ProfileArchiveService
             {
                 Id = uniqueId,
                 Name = uniqueName,
-                Description = template.Description,
-                IconGlyph = template.IconGlyph,
-                IconPath = template.IconPath,
-                AccentColor = template.AccentColor,
+                Description = replaceTarget?.Description ?? template.Description,
+                IconGlyph = replaceTarget?.IconGlyph ?? template.IconGlyph,
+                IconPath = replaceTarget?.IconPath ?? template.IconPath,
+                AccentColor = replaceTarget?.AccentColor ?? template.AccentColor,
                 RuntimeKind = template.RuntimeKind,
                 AssemblyFileName = assemblyFileName,
                 EntryTypeName = template.EntryTypeName,
@@ -159,7 +252,10 @@ public sealed class ProfileArchiveService
                 Parameters = template.Parameters
             };
 
-            return templateCatalog.SaveTemplate(importedTemplate, iconSourcePath);
+            return templateCatalog.SaveTemplate(
+                importedTemplate,
+                iconSourcePath
+                ?? (!string.IsNullOrWhiteSpace(replaceTarget?.ResolvedIconPath) ? replaceTarget.ResolvedIconPath : null));
         }
         finally
         {
@@ -269,17 +365,26 @@ public sealed class ProfileArchiveService
             : path;
     }
 
-    private static void ValidateArchiveMetadata(string extractedDirectory)
+    private static FluxorProfileArchiveMetadata? ReadArchiveMetadata(string extractedDirectory)
     {
         var metadataPath = Path.Combine(extractedDirectory, ArchiveMetadataFileName);
         if (!File.Exists(metadataPath))
         {
-            return;
+            return null;
         }
 
         var json = File.ReadAllText(metadataPath);
-        var metadata = JsonSerializer.Deserialize<FluxorProfileArchiveMetadata>(json, SerializerOptions)
+        return JsonSerializer.Deserialize<FluxorProfileArchiveMetadata>(json, SerializerOptions)
             ?? throw new InvalidOperationException("The selected profile archive metadata is invalid.");
+    }
+
+    private static void ValidateArchiveMetadata(string extractedDirectory)
+    {
+        var metadata = ReadArchiveMetadata(extractedDirectory);
+        if (metadata is null)
+        {
+            return;
+        }
 
         if (!string.Equals(metadata.Format, "fluxor-profile-archive", StringComparison.Ordinal))
         {
@@ -288,7 +393,7 @@ public sealed class ProfileArchiveService
     }
 }
 
-internal sealed class FluxorProfileArchiveMetadata
+public sealed class FluxorProfileArchiveMetadata
 {
     public string Format { get; set; } = string.Empty;
 
@@ -299,4 +404,25 @@ internal sealed class FluxorProfileArchiveMetadata
     public string ProfileId { get; set; } = string.Empty;
 
     public string ProfileName { get; set; } = string.Empty;
+}
+
+public sealed class ProfileArchiveInspectionResult
+{
+    public string ArchivePath { get; init; } = string.Empty;
+
+    public string FileName { get; init; } = string.Empty;
+
+    public required ShaderTemplateDefinition Template { get; init; }
+
+    public FluxorProfileArchiveMetadata? Metadata { get; init; }
+
+    public ShaderTemplateDefinition? ExistingById { get; init; }
+
+    public ShaderTemplateDefinition? ExistingByName { get; init; }
+
+    public bool HasIcon { get; init; }
+
+    public bool HasAssembly { get; init; }
+
+    public IReadOnlyList<string> Warnings { get; init; } = [];
 }

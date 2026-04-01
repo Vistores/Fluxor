@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using CursorFX.Core.Interfaces;
@@ -32,9 +33,22 @@ public sealed class CustomPluginEffect : IEffect, IPluginRuntimeContextSink, IDi
 
     public string Status => _runtime is not null
         ? "Loaded"
+        : IsAssemblyMissing || HasRuntimeConfigurationIssue
+            ? "Broken"
         : string.IsNullOrWhiteSpace(_lastError)
             ? "Idle"
             : "Error";
+
+    public bool IsAssemblyMissing =>
+        _currentDefinition is not null &&
+        _currentDefinition.RuntimeKind == TemplateRuntimeKind.ExternalAssembly &&
+        !string.IsNullOrWhiteSpace(_currentDefinition.AssemblyFileName) &&
+        !File.Exists(RuntimeAssemblyPath);
+
+    public bool HasRuntimeConfigurationIssue =>
+        _currentDefinition is not null &&
+        _currentDefinition.RuntimeKind == TemplateRuntimeKind.ExternalAssembly &&
+        (string.IsNullOrWhiteSpace(_currentDefinition.AssemblyFileName) || string.IsNullOrWhiteSpace(_currentDefinition.EntryTypeName));
 
     public bool HasCursorSnapshot => _cursorSnapshot is not null;
 
@@ -44,6 +58,10 @@ public sealed class CustomPluginEffect : IEffect, IPluginRuntimeContextSink, IDi
 
     public string StatusDetails => _runtime is not null
         ? "Plugin runtime loaded and active."
+        : IsAssemblyMissing
+            ? "The plugin assembly file could not be found at the expected path."
+        : HasRuntimeConfigurationIssue
+            ? "The imported plugin profile is missing required runtime metadata."
         : !string.IsNullOrWhiteSpace(_lastError)
             ? _lastError
             : "No external plugin is active.";

@@ -73,6 +73,64 @@
                         BorderThickness="1"
                         CornerRadius="10">
                     <StackPanel>
+                        <TextBlock FontWeight="SemiBold" Text="{Binding InstallModeTitleText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        <TextBlock Margin="0,6,0,0"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding InstallModeHintText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        <TextBlock Margin="0,8,0,0"
+                                   Foreground="{StaticResource AccentMutedBrush}"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding MatchedExistingPluginSummary}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMatchedExistingPlugin}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <CheckBox Margin="0,10,0,0"
+                                  Content="{Binding ReplaceExistingText, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  IsChecked="{Binding ReplaceExistingPlugin, UpdateSourceTrigger=PropertyChanged}">
+                            <CheckBox.Style>
+                                <Style TargetType="CheckBox">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMatchedExistingPlugin}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </CheckBox.Style>
+                        </CheckBox>
+                        <TextBlock Margin="0,8,0,0"
+                                   Foreground="{StaticResource SubtleTextBrush}"
+                                   Text="{Binding ImportAsNewText, RelativeSource={RelativeSource AncestorType=Window}}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasMatchedExistingPlugin}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,16,0,0"
+                        Padding="16"
+                        Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource SurfaceBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <StackPanel>
                         <TextBlock FontWeight="SemiBold" Text="{Binding PreviewTitleText, RelativeSource={RelativeSource AncestorType=Window}}" />
                         <TextBlock Margin="0,8,0,0"
                                    Foreground="{StaticResource MutedTextBrush}"

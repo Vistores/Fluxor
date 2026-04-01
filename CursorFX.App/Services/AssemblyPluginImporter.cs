@@ -9,6 +9,16 @@ namespace CursorFX.App.Services;
 
 public sealed class AssemblyPluginImporter
 {
+    public ShaderTemplateDefinition InspectDefinition(string assemblyFilePath, string? entryTypeName)
+    {
+        if (!File.Exists(assemblyFilePath))
+        {
+            throw new FileNotFoundException("Plugin DLL was not found.", assemblyFilePath);
+        }
+
+        return BuildDefinitionFromAssembly(assemblyFilePath, entryTypeName);
+    }
+
     public ShaderTemplateDefinition Import(
         string assemblyFilePath,
         string? entryTypeName,
@@ -51,6 +61,54 @@ public sealed class AssemblyPluginImporter
         };
 
         return templateCatalog.SaveTemplate(updatedManifest, iconOverridePath);
+    }
+
+    public ShaderTemplateDefinition Replace(
+        string assemblyFilePath,
+        string? entryTypeName,
+        string catalogDirectory,
+        IShaderTemplateCatalog templateCatalog,
+        ShaderTemplateDefinition existingTemplate,
+        string? iconOverridePath = null)
+    {
+        if (!File.Exists(assemblyFilePath))
+        {
+            throw new FileNotFoundException("Plugin DLL was not found.", assemblyFilePath);
+        }
+
+        Directory.CreateDirectory(catalogDirectory);
+
+        var manifest = BuildDefinitionFromAssembly(assemblyFilePath, entryTypeName);
+
+        var assemblyBaseName = Path.GetFileNameWithoutExtension(assemblyFilePath);
+        var uniqueAssemblyName = $"{assemblyBaseName}-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
+        foreach (var filePath in EnumerateAssemblyFiles(assemblyFilePath))
+        {
+            var destinationPath = Path.Combine(catalogDirectory, uniqueAssemblyName + Path.GetExtension(filePath));
+            File.Copy(filePath, destinationPath, overwrite: true);
+        }
+
+        var updatedManifest = new ShaderTemplateDefinition
+        {
+            Id = existingTemplate.Id,
+            Name = existingTemplate.Name,
+            Description = string.IsNullOrWhiteSpace(existingTemplate.Description) ? manifest.Description : existingTemplate.Description,
+            IconGlyph = string.IsNullOrWhiteSpace(existingTemplate.IconGlyph) ? manifest.IconGlyph : existingTemplate.IconGlyph,
+            IconPath = existingTemplate.IconPath,
+            ResolvedIconPath = existingTemplate.ResolvedIconPath,
+            AccentColor = string.IsNullOrWhiteSpace(existingTemplate.AccentColor) ? manifest.AccentColor : existingTemplate.AccentColor,
+            RuntimeKind = TemplateRuntimeKind.ExternalAssembly,
+            AssemblyFileName = uniqueAssemblyName + ".dll",
+            EntryTypeName = manifest.EntryTypeName,
+            Kind = manifest.Kind,
+            Trigger = manifest.Trigger,
+            Parameters = manifest.Parameters
+        };
+
+        return templateCatalog.SaveTemplate(
+            updatedManifest,
+            iconOverridePath
+            ?? (!string.IsNullOrWhiteSpace(existingTemplate.ResolvedIconPath) ? existingTemplate.ResolvedIconPath : null));
     }
 
     public IReadOnlyList<PluginAssemblyCandidate> DiscoverPlugins(string assemblyFilePath)
