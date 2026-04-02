@@ -50,6 +50,7 @@ public partial class App : System.Windows.Application
 
         _settingsStore = new JsonSettingsStore();
         _templateCatalog = new ShaderTemplateCatalog();
+        _localizationService = new LocalizationService();
         try
         {
             _templateCatalog.EnsureCatalog();
@@ -57,13 +58,14 @@ public partial class App : System.Windows.Application
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show(
-                $"Fluxor could not fully refresh the local plugin catalog.\n\nThe app will continue using the existing catalog files when possible.\n\n{ex.Message}",
-                "Fluxor Catalog Warning",
+                string.Format(
+                    _localizationService.Get("startup.catalogWarningMessage"),
+                    ex.Message),
+                _localizationService.Get("startup.catalogWarningTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }
         var settings = _settingsStore.Load();
-        _localizationService = new LocalizationService();
         _localizationService.Apply(settings.Localization);
         var startupRecovery = TryRecoverStartupProfile(settings, _templateCatalog, _localizationService);
         if (startupRecovery.Recovered)
@@ -122,7 +124,13 @@ public partial class App : System.Windows.Application
         mainWindow.StateChanged += OnMainWindowStateChanged;
 
         MainWindow = mainWindow;
-        _trayIconService = new TrayIconService(ShowMainWindow, ExitApplication, AppIconPath);
+        _trayIconService = new TrayIconService(
+            ShowMainWindow,
+            ExitApplication,
+            AppIconPath,
+            _localizationService.Get("tray.open"),
+            _localizationService.Get("tray.exit"),
+            "Fluxor");
         mainWindow.Show();
         if (startupRecovery.Recovered)
         {
@@ -250,7 +258,7 @@ public partial class App : System.Windows.Application
 
         e.Cancel = true;
         MainWindow.Hide();
-        _trayIconService?.ShowBalloon("Fluxor", "Fluxor continues running in the background.");
+        _trayIconService?.ShowBalloon("Fluxor", _localizationService?.Get("tray.backgroundContinue") ?? "Fluxor continues running in the background.");
     }
 
     private void OnMainWindowStateChanged(object? sender, EventArgs e)
@@ -266,7 +274,7 @@ public partial class App : System.Windows.Application
         }
 
         MainWindow.Hide();
-        _trayIconService?.ShowBalloon("Fluxor", "The main window was minimized to the tray.");
+        _trayIconService?.ShowBalloon("Fluxor", _localizationService?.Get("tray.minimized") ?? "The main window was minimized to the tray.");
     }
 
     private void ShowMainWindow()

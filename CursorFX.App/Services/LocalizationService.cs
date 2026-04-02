@@ -266,6 +266,12 @@ public sealed class LocalizationService
                 ["startup.recovery.invalidMetadata"] = "The imported profile '{0}' is missing required runtime metadata, so Fluxor switched to the safe profile '{1}'.",
                 ["startup.recovery.renderFailedTitle"] = "Fluxor rendering could not fully start",
                 ["startup.recovery.renderFailedMessage"] = "Fluxor kept the main window open so you can review settings and diagnostics.\n\n{0}",
+                ["startup.catalogWarningTitle"] = "Fluxor Catalog Warning",
+                ["startup.catalogWarningMessage"] = "Fluxor could not fully refresh the local plugin catalog.\n\nThe app will continue using the existing catalog files when possible.\n\n{0}",
+                ["tray.open"] = "Open Fluxor",
+                ["tray.exit"] = "Exit",
+                ["tray.backgroundContinue"] = "Fluxor continues running in the background.",
+                ["tray.minimized"] = "The main window was minimized to the tray.",
                 ["colorPicker.cancel"] = "Cancel",
                 ["colorPicker.confirm"] = "OK",
                 ["colorPicker.hex"] = "HEX"

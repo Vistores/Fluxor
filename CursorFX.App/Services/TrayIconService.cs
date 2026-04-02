@@ -9,16 +9,22 @@ public sealed class TrayIconService : IDisposable
 {
     private readonly Forms.NotifyIcon _notifyIcon;
 
-    public TrayIconService(Action openAction, Action exitAction, string? iconPath = null)
+    public TrayIconService(
+        Action openAction,
+        Action exitAction,
+        string? iconPath = null,
+        string? openText = null,
+        string? exitText = null,
+        string? tooltipText = null)
     {
         var contextMenu = new Forms.ContextMenuStrip();
-        contextMenu.Items.Add("Open Fluxor", null, (_, _) => openAction());
-        contextMenu.Items.Add("Exit", null, (_, _) => exitAction());
+        contextMenu.Items.Add(string.IsNullOrWhiteSpace(openText) ? "Open Fluxor" : openText, null, (_, _) => openAction());
+        contextMenu.Items.Add(string.IsNullOrWhiteSpace(exitText) ? "Exit" : exitText, null, (_, _) => exitAction());
 
         _notifyIcon = new Forms.NotifyIcon
         {
             Icon = ResolveIcon(iconPath),
-            Text = "Fluxor",
+            Text = string.IsNullOrWhiteSpace(tooltipText) ? "Fluxor" : tooltipText,
             Visible = true,
             ContextMenuStrip = contextMenu
         };
