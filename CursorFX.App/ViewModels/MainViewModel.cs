@@ -95,6 +95,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ExportProfileArchiveCommand = new RelayCommand(ExportSelectedProfileArchive, () => SelectedPlugin is not null);
         ImportProfileArchiveCommand = new RelayCommand(ImportProfileArchive);
         ReloadPluginRuntimeCommand = new RelayCommand(ReloadSelectedPluginRuntime, () => IsExternalPluginSelected);
+        OpenPluginDiagnosticsDetailsCommand = new RelayCommand(OpenPluginDiagnosticsDetails, () => IsExternalPluginSelected);
         RevealPluginFilesCommand = new RelayCommand(RevealSelectedPluginFiles, () => IsExternalPluginSelected && !string.IsNullOrWhiteSpace(SelectedPluginDiagnosticsAssemblyPath));
         SwitchToSafeProfileCommand = new RelayCommand(SwitchToSafeProfile, () => AvailablePlugins.Any(plugin => string.Equals(plugin.Id, "minimal-suite", StringComparison.OrdinalIgnoreCase)));
         DismissStartupRecoveryNoticeCommand = new RelayCommand(DismissStartupRecoveryNotice, () => HasStartupRecoveryNotice);
@@ -152,6 +153,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public RelayCommand ImportProfileArchiveCommand { get; }
 
     public RelayCommand ReloadPluginRuntimeCommand { get; }
+
+    public RelayCommand OpenPluginDiagnosticsDetailsCommand { get; }
 
     public RelayCommand RevealPluginFilesCommand { get; }
 
@@ -454,6 +457,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public string DiagnosticsReloadText => _localizationService.Get("main.diag.reload");
 
+    public string DiagnosticsDetailsText => _localizationService.Get("main.diag.details");
+
     public string DiagnosticsRevealFilesText => _localizationService.Get("main.diag.revealFiles");
 
     public string DiagnosticsUseSafeProfileText => _localizationService.Get("main.diag.useSafeProfile");
@@ -477,6 +482,61 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         : string.Format(_localizationService.Get("main.importedPluginsSummary"), ImportedPlugins.Count);
 
     public bool HasAdvancedParameters => AdvancedPluginCategories.Count > 0;
+
+    public string DiagnosticsNextStepsText => _localizationService.Get("main.diag.nextSteps");
+
+    public string SelectedPluginDiagnosticsNextSteps
+    {
+        get
+        {
+            if (_customPluginEffect.IsAssemblyMissing)
+            {
+                return _localizationService.Get("main.diag.nextSteps.assemblyMissing");
+            }
+
+            if (_customPluginEffect.HasRuntimeConfigurationIssue)
+            {
+                return _localizationService.Get("main.diag.nextSteps.configIssue");
+            }
+
+            if (string.Equals(_customPluginEffect.Status, "Error", StringComparison.Ordinal))
+            {
+                return _localizationService.Get("main.diag.nextSteps.runtimeError");
+            }
+
+            if (!_customPluginEffect.IsCursorVisibleInContext)
+            {
+                return _localizationService.Get("main.diag.nextSteps.hiddenCursor");
+            }
+
+            if (!_customPluginEffect.HasCursorSnapshot)
+            {
+                return _localizationService.Get("main.diag.nextSteps.noSnapshot");
+            }
+
+            if (!_customPluginEffect.HasBackdropSample)
+            {
+                return _localizationService.Get("main.diag.nextSteps.noBackdrop");
+            }
+
+            return _localizationService.Get("main.diag.nextSteps.none");
+        }
+    }
+
+    public string SelectedPluginDiagnosticsDetails => string.Join(
+        Environment.NewLine,
+        [
+            $"Status: {SelectedPluginDiagnosticsStatus}",
+            $"Message: {SelectedPluginDiagnosticsMessage}",
+            $"Assembly: {SelectedPluginDiagnosticsAssembly}",
+            $"Assembly path: {SelectedPluginDiagnosticsAssemblyPath}",
+            $"Entry type: {SelectedPluginDiagnosticsEntryType}",
+            $"Loaded at: {SelectedPluginDiagnosticsLoadedAt}",
+            $"Last error: {SelectedPluginDiagnosticsLastErrorAt}",
+            $"Context: {SelectedPluginDiagnosticsContext}",
+            $"Warning: {SelectedPluginDiagnosticsWarning}",
+            $"Next steps: {SelectedPluginDiagnosticsNextSteps}"
+        ]);
 
     public bool HasStartupRecoveryNotice
     {
@@ -1255,6 +1315,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         AutosaveStatus = _localizationService.Get("main.status.pluginReloaded");
     }
 
+    private void OpenPluginDiagnosticsDetails()
+    {
+        if (!IsExternalPluginSelected)
+        {
+            return;
+        }
+
+        var window = new PluginDiagnosticsDetailsWindow(
+            SelectedPluginDiagnosticsNextSteps,
+            SelectedPluginDiagnosticsDetails,
+            _localizationService)
+        {
+            Owner = System.Windows.Application.Current?.MainWindow
+        };
+
+        window.ShowDialog();
+    }
+
     private void RevealSelectedPluginFiles()
     {
         if (SelectedPlugin is null || SelectedPlugin.RuntimeKind != TemplateRuntimeKind.ExternalAssembly)
@@ -1439,9 +1517,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(DiagnosticsLoadedAtText));
         OnPropertyChanged(nameof(DiagnosticsLastErrorText));
         OnPropertyChanged(nameof(DiagnosticsReloadText));
+        OnPropertyChanged(nameof(DiagnosticsDetailsText));
         OnPropertyChanged(nameof(DiagnosticsRevealFilesText));
         OnPropertyChanged(nameof(DiagnosticsUseSafeProfileText));
         OnPropertyChanged(nameof(DiagnosticsWarningText));
+        OnPropertyChanged(nameof(DiagnosticsNextStepsText));
         OnPropertyChanged(nameof(StartupRecoveryKeepSafeProfileText));
         OnPropertyChanged(nameof(StartupRecoveryOpenPluginsFolderText));
         OnPropertyChanged(nameof(ProfilesText));
@@ -1456,8 +1536,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(BuiltInProfilesSummary));
         OnPropertyChanged(nameof(ImportedProfilesSummary));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsStatus));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsMessage));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsContext));
         OnPropertyChanged(nameof(SelectedPluginDiagnosticsWarning));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsNextSteps));
+        OnPropertyChanged(nameof(SelectedPluginDiagnosticsDetails));
         OnPropertyChanged(nameof(AutosaveStatus));
         SyncSelectedQualityPreset();
     }

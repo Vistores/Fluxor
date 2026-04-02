@@ -571,6 +571,10 @@
                                                 Style="{StaticResource SecondaryButtonStyle}"
                                                 Command="{Binding ReloadPluginRuntimeCommand}" />
                                         <Button Margin="8,0,0,0"
+                                                Content="{Binding DiagnosticsDetailsText}"
+                                                Style="{StaticResource SecondaryButtonStyle}"
+                                                Command="{Binding OpenPluginDiagnosticsDetailsCommand}" />
+                                        <Button Margin="8,0,0,0"
                                                 Content="{Binding DiagnosticsRevealFilesText}"
                                                 Style="{StaticResource GhostButtonStyle}"
                                                 Command="{Binding RevealPluginFilesCommand}" />
@@ -651,6 +655,17 @@
                                                Foreground="{StaticResource MutedTextBrush}"
                                                TextWrapping="Wrap"
                                                Text="{Binding SelectedPluginDiagnosticsWarning}" />
+                                </Grid>
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Foreground="{StaticResource SubtleTextBrush}" Text="{Binding DiagnosticsNextStepsText}" />
+                                    <TextBlock Grid.Column="1"
+                                               Foreground="{StaticResource AccentMutedBrush}"
+                                               TextWrapping="Wrap"
+                                               Text="{Binding SelectedPluginDiagnosticsNextSteps}" />
                                 </Grid>
                                 <TextBlock Margin="0,10,0,0"
                                            Foreground="{StaticResource MutedTextBrush}"

@@ -1,0 +1,60 @@
+<Window x:Class="CursorFX.App.PluginDiagnosticsDetailsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding WindowTitle, RelativeSource={RelativeSource AncestorType=Window}}"
+        Icon="pack://application:,,,/Assets/FluxorIco.ico"
+        Width="700"
+        Height="560"
+        MinWidth="620"
+        MinHeight="500"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBackgroundBrush}">
+    <DockPanel Margin="20">
+        <Border DockPanel.Dock="Bottom"
+                Margin="0,16,0,0"
+                Padding="0,12,0,0"
+                BorderBrush="{StaticResource SurfaceBorderBrush}"
+                BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="{Binding CloseText, RelativeSource={RelativeSource AncestorType=Window}}"
+                        Click="OnCloseClick" />
+            </StackPanel>
+        </Border>
+
+        <StackPanel>
+            <TextBlock FontSize="24"
+                       FontWeight="SemiBold"
+                       Text="{Binding HeadingText, RelativeSource={RelativeSource AncestorType=Window}}" />
+            <TextBlock Margin="0,10,0,18"
+                       Foreground="{StaticResource MutedTextBrush}"
+                       TextWrapping="Wrap"
+                       Text="{Binding IntroText, RelativeSource={RelativeSource AncestorType=Window}}" />
+
+            <Border Padding="16"
+                    Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource SurfaceBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold"
+                               Text="{Binding SummaryTitleText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    <TextBlock Margin="0,8,0,0"
+                               Foreground="{StaticResource MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               Text="{Binding SummaryText, RelativeSource={RelativeSource AncestorType=Window}}" />
+
+                    <TextBlock Margin="0,16,0,0"
+                               FontWeight="SemiBold"
+                               Text="{Binding DetailsTitleText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                    <TextBox Margin="0,8,0,0"
+                             Height="280"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto"
+                             Text="{Binding DetailsText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </DockPanel>
+</Window>
