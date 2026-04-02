@@ -1,0 +1,36 @@
+<h1>Fluxor v0.1.0</h1>
+
+<p>Fluxor 0.1.0 is the first milestone-style release focused on stability, recovery, profile workflow, diagnostics clarity, and overall release polish.</p>
+
+<h2>Safe startup and recovery</h2>
+<ul>
+  <li>Fluxor now starts in a safe built-in profile when the previously selected external plugin profile is missing or broken</li>
+  <li>a startup recovery banner explains what happened and keeps the app usable instead of failing silently</li>
+  <li>recovery flow now points directly to the plugin workspace for faster fixes</li>
+</ul>
+
+<h2>Profile workflow polish</h2>
+<ul>
+  <li>duplicate an existing profile without rebuilding it from scratch</li>
+  <li>rename imported and saved profiles directly inside the app</li>
+  <li>edit profile descriptions without changing profile identity</li>
+  <li>keep built-in profiles protected while still allowing duplication</li>
+</ul>
+
+<h2>Diagnostics improvements</h2>
+<ul>
+  <li>plugin diagnostics now provide clearer broken and error states</li>
+  <li>new <strong>Next steps</strong> guidance explains what to do when a DLL is missing, metadata is invalid, or runtime rendering fails</li>
+  <li>a dedicated diagnostics details window gives quick access to the technical state of the selected plugin</li>
+  <li>safe recovery actions remain available directly from the diagnostics panel</li>
+</ul>
+
+<h2>Localization and polish</h2>
+<ul>
+  <li>startup warnings and tray interactions are now routed through localization instead of hardcoded text</li>
+  <li>profile editing and recovery workflows are integrated more cleanly into the main UI</li>
+  <li>plugin authoring documentation has been updated to match the current plugin API, including <code>PluginRenderContext</code></li>
+</ul>
+
+<h2>Release direction</h2>
+<p>Version 0.1.0 is intended to mark the point where Fluxor feels like a more complete product: safer to launch, easier to recover, easier to organize, and easier to extend through plugins.</p>

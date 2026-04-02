@@ -4,14 +4,65 @@
         Title="{Binding WindowTitle, RelativeSource={RelativeSource AncestorType=Window}}"
         Icon="pack://application:,,,/Assets/FluxorIco.ico"
         Width="520"
-        Height="330"
+        Height="380"
         MinWidth="480"
-        MinHeight="300"
+        MinHeight="340"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResizeWithGrip"
         Background="{StaticResource WindowBackgroundBrush}">
-    <DockPanel Margin="20">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <TextBlock FontSize="24"
+                           FontWeight="SemiBold"
+                           Text="{Binding HeadingText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                <TextBlock Margin="0,10,0,18"
+                           Foreground="{StaticResource MutedTextBrush}"
+                           TextWrapping="Wrap"
+                           Text="{Binding IntroText, RelativeSource={RelativeSource AncestorType=Window}}" />
+
+                <Border Padding="16"
+                        Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource SurfaceBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock FontWeight="SemiBold"
+                                   Text="{Binding NameLabelText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        <TextBox Grid.Row="1"
+                                 Margin="0,8,0,0"
+                                 Text="{Binding ProfileName, UpdateSourceTrigger=PropertyChanged}" />
+
+                        <TextBlock Grid.Row="2"
+                                   Margin="0,16,0,0"
+                                   FontWeight="SemiBold"
+                                   Text="{Binding DescriptionLabelText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        <TextBox Grid.Row="3"
+                                 Margin="0,8,0,0"
+                                 MinHeight="110"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 Text="{Binding ProfileDescription, UpdateSourceTrigger=PropertyChanged}" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
         <Border DockPanel.Dock="Bottom"
+                Grid.Row="1"
                 Margin="0,16,0,0"
                 Padding="0,12,0,0"
                 BorderBrush="{StaticResource SurfaceBorderBrush}"
@@ -24,38 +75,5 @@
                         Click="OnConfirmClick" />
             </StackPanel>
         </Border>
-
-        <StackPanel>
-            <TextBlock FontSize="24"
-                       FontWeight="SemiBold"
-                       Text="{Binding HeadingText, RelativeSource={RelativeSource AncestorType=Window}}" />
-            <TextBlock Margin="0,10,0,18"
-                       Foreground="{StaticResource MutedTextBrush}"
-                       TextWrapping="Wrap"
-                       Text="{Binding IntroText, RelativeSource={RelativeSource AncestorType=Window}}" />
-
-            <Border Padding="16"
-                    Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource SurfaceBorderBrush}"
-                    BorderThickness="1"
-                    CornerRadius="10">
-                <StackPanel>
-                    <TextBlock FontWeight="SemiBold"
-                               Text="{Binding NameLabelText, RelativeSource={RelativeSource AncestorType=Window}}" />
-                    <TextBox Margin="0,8,0,0"
-                             Text="{Binding ProfileName, UpdateSourceTrigger=PropertyChanged}" />
-
-                    <TextBlock Margin="0,16,0,0"
-                               FontWeight="SemiBold"
-                               Text="{Binding DescriptionLabelText, RelativeSource={RelativeSource AncestorType=Window}}" />
-                    <TextBox Margin="0,8,0,0"
-                             Height="78"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             VerticalScrollBarVisibility="Auto"
-                             Text="{Binding ProfileDescription, UpdateSourceTrigger=PropertyChanged}" />
-                </StackPanel>
-            </Border>
-        </StackPanel>
-    </DockPanel>
+    </Grid>
 </Window>
