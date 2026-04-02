@@ -79,13 +79,27 @@ Expose:
 - `Trigger`
 - `GetParameters()`
 
-Implement:
+Preferred modern implementation:
 - `ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)`
+- `Update(PluginRenderContext context)`
+- `Render(PluginRenderContext context, DrawingContext drawingContext)`
+- `OnMouseMove(PluginRenderContext context, Point position)`
+- `OnMouseClick(PluginRenderContext context, Point position)`
+- `Dispose()`
+
+Legacy compatibility still exists for:
 - `Update(TimeSpan deltaTime)`
 - `Render(DrawingContext drawingContext)`
 - `OnMouseMove(Point position)`
 - `OnMouseClick(Point position)`
-- `Dispose()`
+
+But new plugins should prefer `PluginRenderContext`, because Fluxor now provides:
+- `CursorPosition`
+- `RawCursorPosition`
+- `IsCursorVisible`
+- `DeltaTime`
+- `CursorSnapshot`
+- `BackdropSample`
 
 
 6. Minimal skeleton
@@ -103,6 +117,11 @@ namespace MyCompany.FluxorPlugins;
 
 public sealed class MyPlugin : ICursorEffectPlugin
 {
+    private Point _cursorPosition;
+    private double _size = 18;
+    private double _opacity = 0.8;
+    private Color _color = Colors.Cyan;
+
     public string DisplayName => "My Plugin";
     public string PluginId => "my-plugin";
     public string Description => "My custom effect.";
@@ -128,11 +147,32 @@ public sealed class MyPlugin : ICursorEffectPlugin
         }
     ];
 
-    public void ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity) { }
-    public void Update(TimeSpan deltaTime) { }
-    public void Render(DrawingContext drawingContext) { }
-    public void OnMouseMove(Point position) { }
-    public void OnMouseClick(Point position) { }
+    public void ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)
+    {
+        if (parameters.TryGetValue("opacity", out var opacityValue) && opacityValue.NumberValue.HasValue)
+        {
+            _opacity = opacityValue.NumberValue.Value * masterOpacity;
+        }
+    }
+
+    public void Update(PluginRenderContext context)
+    {
+        _cursorPosition = context.CursorPosition;
+    }
+
+    public void Render(PluginRenderContext context, DrawingContext drawingContext)
+    {
+        var brush = new SolidColorBrush(Color.FromArgb((byte)(_opacity * 255), _color.R, _color.G, _color.B));
+        brush.Freeze();
+        drawingContext.DrawEllipse(brush, null, _cursorPosition, _size, _size);
+    }
+
+    public void OnMouseMove(PluginRenderContext context, Point position)
+    {
+        _cursorPosition = context.CursorPosition;
+    }
+
+    public void OnMouseClick(PluginRenderContext context, Point position) { }
     public void Dispose() { }
 }
 ```
@@ -253,7 +293,137 @@ Fluxor.PluginVelvetVoid\bin\Debug\net9.0-windows\Fluxor.PluginVelvetVoid.dll
 ```
 
 
-13. How to import into Fluxor
+13. Step-by-step example: create a simple cursor glow plugin
+------------------------------------------------------------
+
+1. Create a folder:
+   - `Fluxor.PluginSoftDot`
+2. Copy an existing sample `.csproj`
+3. Rename the project file to:
+   - `Fluxor.PluginSoftDot.csproj`
+4. Create one class:
+   - `SoftDotPlugin.cs`
+5. Paste this starter code:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Media;
+using CursorFX.Core.Interfaces;
+using CursorFX.Core.Models;
+
+namespace Fluxor.PluginSoftDot;
+
+public sealed class SoftDotPlugin : ICursorEffectPlugin
+{
+    private Point _cursorPosition;
+    private double _size = 16;
+    private double _opacity = 0.7;
+    private Color _color = Colors.White;
+
+    public string DisplayName => "Soft Dot";
+    public string PluginId => "soft-dot";
+    public string Description => "A simple cursor-locked glow dot.";
+    public string IconGlyph => "S";
+    public string AccentColor => "#E2E8F0";
+    public TemplateEffectKind Kind => TemplateEffectKind.CursorAura;
+    public TemplateTrigger Trigger => TemplateTrigger.FollowCursor;
+
+    public IReadOnlyList<TemplateParameterDefinition> GetParameters() =>
+    [
+        new TemplateParameterDefinition
+        {
+            Key = "size",
+            DisplayName = "Size",
+            Section = PluginParameterSection.Glow,
+            SectionName = "Glow",
+            Type = TemplateParameterType.Number,
+            Min = 4,
+            Max = 48,
+            Step = 1,
+            DefaultNumber = 16
+        },
+        new TemplateParameterDefinition
+        {
+            Key = "opacity",
+            DisplayName = "Opacity",
+            Section = PluginParameterSection.Glow,
+            SectionName = "Glow",
+            Type = TemplateParameterType.Number,
+            Min = 0.05,
+            Max = 1,
+            Step = 0.01,
+            DefaultNumber = 0.7
+        },
+        new TemplateParameterDefinition
+        {
+            Key = "color",
+            DisplayName = "Color",
+            Section = PluginParameterSection.Glow,
+            SectionName = "Glow",
+            Type = TemplateParameterType.Color,
+            DefaultColor = "#F8FAFC"
+        }
+    ];
+
+    public void ApplyParameters(IReadOnlyDictionary<string, TemplateParameterValue> parameters, double masterOpacity)
+    {
+        _size = parameters.TryGetValue("size", out var sizeValue) && sizeValue.NumberValue.HasValue ? sizeValue.NumberValue.Value : 16;
+        _opacity = (parameters.TryGetValue("opacity", out var opacityValue) && opacityValue.NumberValue.HasValue ? opacityValue.NumberValue.Value : 0.7) * masterOpacity;
+        _color = ParseColor(parameters.TryGetValue("color", out var colorValue) ? colorValue.ColorValue : "#F8FAFC");
+    }
+
+    public void Update(PluginRenderContext context)
+    {
+        _cursorPosition = context.CursorPosition;
+    }
+
+    public void Render(PluginRenderContext context, DrawingContext drawingContext)
+    {
+        var brush = new RadialGradientBrush(
+            Color.FromArgb((byte)(_opacity * 255), _color.R, _color.G, _color.B),
+            Color.FromArgb(0, _color.R, _color.G, _color.B));
+        brush.Freeze();
+        drawingContext.DrawEllipse(brush, null, _cursorPosition, _size, _size);
+    }
+
+    public void OnMouseMove(PluginRenderContext context, Point position)
+    {
+        _cursorPosition = context.CursorPosition;
+    }
+
+    public void OnMouseClick(PluginRenderContext context, Point position) { }
+
+    public void Dispose() { }
+
+    private static Color ParseColor(string? value)
+    {
+        try
+        {
+            return (Color)ColorConverter.ConvertFromString(value ?? "#F8FAFC");
+        }
+        catch
+        {
+            return Colors.White;
+        }
+    }
+}
+```
+
+6. Build it:
+
+```powershell
+dotnet build .\Fluxor.PluginSoftDot\Fluxor.PluginSoftDot.csproj -m:1 -v minimal
+```
+
+7. Import the built DLL through `Import Plugin`
+8. Tune `Size`, `Opacity`, and `Color` live inside Fluxor
+
+This is the smallest practical example of the current plugin workflow.
+
+
+14. How to import into Fluxor
 -----------------------------
 
 1. Open Fluxor
@@ -270,7 +440,7 @@ Fluxor will:
 - copy the DLL and runtime companion files into its internal catalog
 
 
-14. Testing checklist
+15. Testing checklist
 ---------------------
 
 Before sharing a plugin, verify:
@@ -282,7 +452,7 @@ Before sharing a plugin, verify:
 - the plugin does not allocate excessively during long use
 
 
-15. Common mistakes
+16. Common mistakes
 -------------------
 
 - missing public parameterless constructor
@@ -290,11 +460,12 @@ Before sharing a plugin, verify:
 - `GetParameters()` returns an empty list
 - key mismatch between schema and code
 - rebuilding heavy resources every frame
+- implementing only legacy methods when the plugin really needs `CursorSnapshot` or `BackdropSample`
 - making soft effects from too many noisy particles
 - depending on another plugin DLL already being loaded
 
 
-16. Maintainability advice
+17. Maintainability advice
 --------------------------
 
 - keep one plugin project per folder

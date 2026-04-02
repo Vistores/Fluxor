@@ -33,6 +33,23 @@ Recommended flow:
 6. In Fluxor click `Import Plugin`.
 7. Choose the built DLL from the plugin folder.
 
+Preferred implementation style:
+- use `PluginRenderContext` in `Update(...)`, `Render(...)`, `OnMouseMove(...)`, and `OnMouseClick(...)`
+- read `CursorPosition` for cursor-locked visuals
+- read `CursorSnapshot` when you need the real cursor alpha/shape
+- read `BackdropSample` when you want distortion, refraction, or other screen-reactive effects
+
+Quick start example:
+1. Copy a sample folder such as `Fluxor.PluginHeatContour`.
+2. Rename the folder, `.csproj`, namespace, class, `DisplayName`, and `PluginId`.
+3. Keep `GetParameters()` small at first:
+   - one `Number`
+   - one `Color`
+   - one `Toggle`
+4. Build:
+   - `dotnet build .\Fluxor.PluginYourEffect\Fluxor.PluginYourEffect.csproj -m:1 -v minimal`
+5. Import the produced DLL into Fluxor and tune it live.
+
 Notes:
 - Keep one plugin project per folder.
 - Fluxor imports DLL metadata directly, so JSON manifests are no longer required.

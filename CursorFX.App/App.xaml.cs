@@ -14,6 +14,8 @@ namespace CursorFX.App;
 
 public partial class App : System.Windows.Application
 {
+    private sealed record StartupRecoveryResult(bool Recovered, string Title, string Message);
+
     private static readonly string AppIconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "FluxorIco.ico");
     private static readonly string SingleInstanceMutexName = "Fluxor.SingleInstance";
     private Mutex? _singleInstanceMutex;
@@ -63,6 +65,11 @@ public partial class App : System.Windows.Application
         var settings = _settingsStore.Load();
         _localizationService = new LocalizationService();
         _localizationService.Apply(settings.Localization);
+        var startupRecovery = TryRecoverStartupProfile(settings, _templateCatalog, _localizationService);
+        if (startupRecovery.Recovered)
+        {
+            _settingsStore.Save(settings);
+        }
 
         var effectManager = new EffectManager();
         var trailEffect = new TrailEffect(settings.Trail);
@@ -117,6 +124,10 @@ public partial class App : System.Windows.Application
         MainWindow = mainWindow;
         _trayIconService = new TrayIconService(ShowMainWindow, ExitApplication, AppIconPath);
         mainWindow.Show();
+        if (startupRecovery.Recovered)
+        {
+            _mainViewModel.ShowStartupRecoveryNotice(startupRecovery.Title, startupRecovery.Message);
+        }
         Dispatcher.BeginInvoke(new Action(StartRuntimeSafely), DispatcherPriority.Background);
     }
 
@@ -146,12 +157,81 @@ public partial class App : System.Windows.Application
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show(
-                $"Fluxor could not fully initialize cursor rendering.\n\n{ex.Message}",
-                "Fluxor Startup Warning",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+            _mainViewModel?.ShowStartupRecoveryNotice(
+                _localizationService?.Get("startup.recovery.renderFailedTitle") ?? "Fluxor Startup Warning",
+                string.Format(
+                    _localizationService?.Get("startup.recovery.renderFailedMessage") ?? "Fluxor could not fully initialize cursor rendering.\n\n{0}",
+                    ex.Message));
         }
+    }
+
+    private static StartupRecoveryResult TryRecoverStartupProfile(
+        CursorFX.Core.Models.AppSettings settings,
+        IShaderTemplateCatalog templateCatalog,
+        LocalizationService localizationService)
+    {
+        var templates = templateCatalog.LoadTemplates();
+        if (templates.Count == 0)
+        {
+            return new StartupRecoveryResult(false, string.Empty, string.Empty);
+        }
+
+        var safeProfile = templates.FirstOrDefault(template => string.Equals(template.Id, "minimal-suite", StringComparison.OrdinalIgnoreCase))
+            ?? templates.FirstOrDefault(template => template.RuntimeKind == CursorFX.Core.Models.TemplateRuntimeKind.BuiltInTemplate)
+            ?? templates.FirstOrDefault();
+        if (safeProfile is null)
+        {
+            return new StartupRecoveryResult(false, string.Empty, string.Empty);
+        }
+
+        var selectedProfile = templates.FirstOrDefault(template => string.Equals(template.Id, settings.TemplateEffect.SelectedTemplateId, StringComparison.OrdinalIgnoreCase));
+        if (selectedProfile is null)
+        {
+            var missingProfileId = settings.TemplateEffect.SelectedTemplateId;
+            settings.TemplateEffect.SelectedTemplateId = safeProfile.Id;
+            settings.SelectedPreset = safeProfile.Name;
+            return new StartupRecoveryResult(
+                true,
+                localizationService.Get("startup.recovery.title"),
+                string.Format(
+                    localizationService.Get("startup.recovery.missingProfile"),
+                    string.IsNullOrWhiteSpace(missingProfileId) ? "unknown" : missingProfileId,
+                    safeProfile.Name));
+        }
+
+        if (selectedProfile.RuntimeKind != CursorFX.Core.Models.TemplateRuntimeKind.ExternalAssembly)
+        {
+            return new StartupRecoveryResult(false, string.Empty, string.Empty);
+        }
+
+        if (string.IsNullOrWhiteSpace(selectedProfile.AssemblyFileName) || string.IsNullOrWhiteSpace(selectedProfile.EntryTypeName))
+        {
+            settings.TemplateEffect.SelectedTemplateId = safeProfile.Id;
+            settings.SelectedPreset = safeProfile.Name;
+            return new StartupRecoveryResult(
+                true,
+                localizationService.Get("startup.recovery.title"),
+                string.Format(
+                    localizationService.Get("startup.recovery.invalidMetadata"),
+                    selectedProfile.Name,
+                    safeProfile.Name));
+        }
+
+        var assemblyPath = Path.Combine(templateCatalog.CatalogDirectory, selectedProfile.AssemblyFileName);
+        if (!File.Exists(assemblyPath))
+        {
+            settings.TemplateEffect.SelectedTemplateId = safeProfile.Id;
+            settings.SelectedPreset = safeProfile.Name;
+            return new StartupRecoveryResult(
+                true,
+                localizationService.Get("startup.recovery.title"),
+                string.Format(
+                    localizationService.Get("startup.recovery.missingAssembly"),
+                    selectedProfile.Name,
+                    safeProfile.Name));
+        }
+
+        return new StartupRecoveryResult(false, string.Empty, string.Empty);
     }
 
     private void OnMainWindowClosing(object? sender, System.ComponentModel.CancelEventArgs e)

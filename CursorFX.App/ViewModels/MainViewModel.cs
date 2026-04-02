@@ -38,6 +38,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private bool _isEffectOperationInProgress;
     private string _effectOperationTitle = "Updating Cursor Effects";
     private string _effectOperationMessage = "Please wait while Fluxor applies the current cursor effect.";
+    private bool _hasStartupRecoveryNotice;
+    private string _startupRecoveryTitle = string.Empty;
+    private string _startupRecoveryMessage = string.Empty;
 
     public MainViewModel(
         AppSettings settings,
@@ -91,6 +94,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ReloadPluginRuntimeCommand = new RelayCommand(ReloadSelectedPluginRuntime, () => IsExternalPluginSelected);
         RevealPluginFilesCommand = new RelayCommand(RevealSelectedPluginFiles, () => IsExternalPluginSelected && !string.IsNullOrWhiteSpace(SelectedPluginDiagnosticsAssemblyPath));
         SwitchToSafeProfileCommand = new RelayCommand(SwitchToSafeProfile, () => AvailablePlugins.Any(plugin => string.Equals(plugin.Id, "minimal-suite", StringComparison.OrdinalIgnoreCase)));
+        DismissStartupRecoveryNoticeCommand = new RelayCommand(DismissStartupRecoveryNotice, () => HasStartupRecoveryNotice);
         DeletePluginCommand = new RelayCommand(DeleteSelectedPlugin, CanDeleteSelectedPlugin);
         ResetPluginSettingsCommand = new RelayCommand(ResetSelectedPluginSettingsWithFeedback, () => SelectedPlugin is not null);
         SaveSettingsCommand = new RelayCommand(SaveSettingsWithFeedback);
@@ -143,6 +147,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public RelayCommand RevealPluginFilesCommand { get; }
 
     public RelayCommand SwitchToSafeProfileCommand { get; }
+
+    public RelayCommand DismissStartupRecoveryNoticeCommand { get; }
 
     public RelayCommand DeletePluginCommand { get; }
 
@@ -457,6 +463,28 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public bool HasAdvancedParameters => AdvancedPluginCategories.Count > 0;
 
+    public bool HasStartupRecoveryNotice
+    {
+        get => _hasStartupRecoveryNotice;
+        private set => SetProperty(ref _hasStartupRecoveryNotice, value);
+    }
+
+    public string StartupRecoveryTitle
+    {
+        get => _startupRecoveryTitle;
+        private set => SetProperty(ref _startupRecoveryTitle, value);
+    }
+
+    public string StartupRecoveryMessage
+    {
+        get => _startupRecoveryMessage;
+        private set => SetProperty(ref _startupRecoveryMessage, value);
+    }
+
+    public string StartupRecoveryKeepSafeProfileText => _localizationService.Get("main.startupRecovery.keepSafeProfile");
+
+    public string StartupRecoveryOpenPluginsFolderText => _localizationService.Get("main.startupRecovery.openPluginsFolder");
+
     public bool RunInBackgroundEnabled => _settings.General.RunInBackground;
 
     public string AutosaveStatus
@@ -487,6 +515,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     {
         _autosaveTimer.Stop();
         _autosaveTimer.Tick -= OnAutosaveTick;
+    }
+
+    public void ShowStartupRecoveryNotice(string title, string message)
+    {
+        StartupRecoveryTitle = title;
+        StartupRecoveryMessage = message;
+        HasStartupRecoveryNotice = true;
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private void EnsurePluginValueState()
@@ -1228,6 +1264,14 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         ScheduleAutosave(AutosaveStatus);
     }
 
+    private void DismissStartupRecoveryNotice()
+    {
+        HasStartupRecoveryNotice = false;
+        StartupRecoveryTitle = string.Empty;
+        StartupRecoveryMessage = string.Empty;
+        CommandManager.InvalidateRequerySuggested();
+    }
+
     private void ApplyRuntimeSettings()
     {
         var useExternalPlugin = SelectedPlugin?.RuntimeKind == TemplateRuntimeKind.ExternalAssembly;
@@ -1361,6 +1405,8 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(DiagnosticsRevealFilesText));
         OnPropertyChanged(nameof(DiagnosticsUseSafeProfileText));
         OnPropertyChanged(nameof(DiagnosticsWarningText));
+        OnPropertyChanged(nameof(StartupRecoveryKeepSafeProfileText));
+        OnPropertyChanged(nameof(StartupRecoveryOpenPluginsFolderText));
         OnPropertyChanged(nameof(ProfilesText));
         OnPropertyChanged(nameof(ProfilesHintText));
         OnPropertyChanged(nameof(BuiltInProfilesText));

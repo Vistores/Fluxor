@@ -249,6 +249,43 @@
                               VerticalScrollBarVisibility="Auto"
                               PreviewMouseWheel="OnNestedScrollViewerMouseWheel">
                     <StackPanel>
+                        <Border Margin="0,0,0,14"
+                                Padding="14"
+                                Background="#1F2B1826"
+                                BorderBrush="{StaticResource AccentStrongBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasStartupRecoveryNotice}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <TextBlock FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Text="{Binding StartupRecoveryTitle}" />
+                                <TextBlock Margin="0,8,0,0"
+                                           Foreground="{StaticResource MutedTextBrush}"
+                                           FontSize="12.5"
+                                           TextWrapping="Wrap"
+                                           Text="{Binding StartupRecoveryMessage}" />
+                                <WrapPanel Margin="0,12,0,0">
+                                    <Button Content="{Binding StartupRecoveryKeepSafeProfileText}"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Command="{Binding DismissStartupRecoveryNoticeCommand}" />
+                                    <Button Content="{Binding StartupRecoveryOpenPluginsFolderText}"
+                                            Margin="8,0,0,0"
+                                            Style="{StaticResource GhostButtonStyle}"
+                                            Command="{Binding OpenPluginFolderCommand}" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
                         <Border Style="{StaticResource PanelCardStyle}">
                             <StackPanel>
                                     <DockPanel LastChildFill="True">
