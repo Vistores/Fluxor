@@ -89,6 +89,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OpenPluginFolderCommand = new RelayCommand(OpenPluginFolder);
         OpenSettingsCommand = new RelayCommand(OpenSettings);
         SaveProfileAsCommand = new RelayCommand(SaveSelectedProfileAs, () => SelectedPlugin is not null);
+        DuplicateProfileCommand = new RelayCommand(SaveSelectedProfileAs, () => SelectedPlugin is not null);
+        RenameProfileCommand = new RelayCommand(RenameSelectedProfile, CanEditSelectedProfileMetadata);
+        EditProfileDescriptionCommand = new RelayCommand(EditSelectedProfileDescription, CanEditSelectedProfileMetadata);
         ExportProfileArchiveCommand = new RelayCommand(ExportSelectedProfileArchive, () => SelectedPlugin is not null);
         ImportProfileArchiveCommand = new RelayCommand(ImportProfileArchive);
         ReloadPluginRuntimeCommand = new RelayCommand(ReloadSelectedPluginRuntime, () => IsExternalPluginSelected);
@@ -137,6 +140,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public RelayCommand OpenSettingsCommand { get; }
 
     public RelayCommand SaveProfileAsCommand { get; }
+
+    public RelayCommand DuplicateProfileCommand { get; }
+
+    public RelayCommand RenameProfileCommand { get; }
+
+    public RelayCommand EditProfileDescriptionCommand { get; }
 
     public RelayCommand ExportProfileArchiveCommand { get; }
 
@@ -384,6 +393,12 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     public string OpenPluginFolderText => _localizationService.Get("main.openPluginFolder");
 
     public string SaveAsProfileText => _localizationService.Get("main.saveAsProfile");
+
+    public string DuplicateProfileText => _localizationService.Get("main.duplicateProfile");
+
+    public string RenameProfileText => _localizationService.Get("main.renameProfile");
+
+    public string EditProfileDescriptionText => _localizationService.Get("main.editProfileDescription");
 
     public string ExportProfileText => _localizationService.Get("main.exportProfile");
 
@@ -917,6 +932,24 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
+    private void RenameSelectedProfile()
+    {
+        EditSelectedProfileMetadata(
+            _localizationService.Get("profileMeta.rename.windowTitle"),
+            _localizationService.Get("profileMeta.rename.heading"),
+            _localizationService.Get("profileMeta.rename.intro"),
+            _localizationService.Get("profileMeta.rename.confirm"));
+    }
+
+    private void EditSelectedProfileDescription()
+    {
+        EditSelectedProfileMetadata(
+            _localizationService.Get("profileMeta.description.windowTitle"),
+            _localizationService.Get("profileMeta.description.heading"),
+            _localizationService.Get("profileMeta.description.intro"),
+            _localizationService.Get("profileMeta.description.confirm"));
+    }
+
     private void ExportSelectedProfileArchive()
     {
         if (SelectedPlugin is null)
@@ -1088,6 +1121,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         OnPropertyChanged(nameof(BuiltInProfilesSummary));
         OnPropertyChanged(nameof(ImportedProfilesSummary));
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private void SaveSettings()
@@ -1375,6 +1409,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         OnPropertyChanged(nameof(ClearIconText));
         OnPropertyChanged(nameof(OpenPluginFolderText));
         OnPropertyChanged(nameof(SaveAsProfileText));
+        OnPropertyChanged(nameof(DuplicateProfileText));
+        OnPropertyChanged(nameof(RenameProfileText));
+        OnPropertyChanged(nameof(EditProfileDescriptionText));
         OnPropertyChanged(nameof(ExportProfileText));
         OnPropertyChanged(nameof(DeletePluginText));
         OnPropertyChanged(nameof(StatusText));
@@ -1479,6 +1516,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     }
 
     private bool CanDeleteSelectedPlugin()
+    {
+        return SelectedPlugin is not null && !IsBuiltInPlugin(SelectedPlugin.Id);
+    }
+
+    private bool CanEditSelectedProfileMetadata()
     {
         return SelectedPlugin is not null && !IsBuiltInPlugin(SelectedPlugin.Id);
     }
@@ -1759,6 +1801,62 @@ public sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         return values.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value.ColorValue)
             ? value.ColorValue!
             : fallback;
+    }
+
+    private void EditSelectedProfileMetadata(string windowTitle, string headingText, string introText, string confirmText)
+    {
+        if (SelectedPlugin is null || !CanEditSelectedProfileMetadata())
+        {
+            return;
+        }
+
+        var dialog = new SaveProfileWindow(
+            SelectedPlugin.Name,
+            SelectedPlugin.Description,
+            _localizationService,
+            windowTitle,
+            headingText,
+            introText,
+            confirmText)
+        {
+            Owner = System.Windows.Application.Current?.MainWindow
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            ShaderTemplateDefinition updatedTemplate = null!;
+            RunEffectOperation(
+                _localizationService.Get("main.effectOperation.updateProfileTitle"),
+                _localizationService.Get("main.effectOperation.updateProfileMessage"),
+                () =>
+                {
+                    updatedTemplate = CreateProfileSnapshot(dialog.ProfileName.Trim(), dialog.ProfileDescription.Trim(), preserveIdentity: true);
+                    updatedTemplate = _templateCatalog.SaveTemplate(
+                        updatedTemplate,
+                        string.IsNullOrWhiteSpace(SelectedPlugin.ResolvedIconPath) ? null : SelectedPlugin.ResolvedIconPath);
+
+                    if (_settings.TemplateEffect.PluginParameterValues.TryGetValue(SelectedPlugin.Id, out var existingValues))
+                    {
+                        _settings.TemplateEffect.PluginParameterValues[updatedTemplate.Id] = MergeParameterValuesPreservingMatches(existingValues, updatedTemplate.Parameters);
+                    }
+
+                    ReloadPlugins(updatedTemplate.Id);
+                });
+
+            var updatedStatus = string.Format(_localizationService.Get("main.status.profileUpdated"), updatedTemplate.Name);
+            AutosaveStatus = updatedStatus;
+            ScheduleAutosave(updatedStatus);
+        }
+        catch (Exception ex)
+        {
+            AutosaveStatus = ex.Message;
+            System.Windows.MessageBox.Show(ex.Message, _localizationService.Get("main.dialog.saveProfileFailed"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
     }
 
     private void RunEffectOperation(string title, string message, Action action)

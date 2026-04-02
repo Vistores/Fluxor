@@ -363,6 +363,9 @@
                                                     <MenuItem Header="{Binding ChooseIconText}" Command="{Binding ChoosePluginIconCommand}" />
                                                     <MenuItem Header="{Binding ClearIconText}" Command="{Binding ClearPluginIconCommand}" />
                                                     <Separator />
+                                                    <MenuItem Header="{Binding DuplicateProfileText}" Command="{Binding DuplicateProfileCommand}" />
+                                                    <MenuItem Header="{Binding RenameProfileText}" Command="{Binding RenameProfileCommand}" />
+                                                    <MenuItem Header="{Binding EditProfileDescriptionText}" Command="{Binding EditProfileDescriptionCommand}" />
                                                     <MenuItem Header="{Binding SaveAsProfileText}" Command="{Binding SaveProfileAsCommand}" />
                                                     <MenuItem Header="{Binding ExportProfileText}" Command="{Binding ExportProfileArchiveCommand}" />
                                                     <Separator />

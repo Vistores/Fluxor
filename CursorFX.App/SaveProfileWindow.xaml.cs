@@ -8,12 +8,27 @@ namespace CursorFX.App;
 public partial class SaveProfileWindow : Window, INotifyPropertyChanged
 {
     private readonly LocalizationService _localizationService;
+    private readonly string _windowTitle;
+    private readonly string _headingText;
+    private readonly string _introText;
+    private readonly string _confirmText;
     private string _profileName;
     private string _profileDescription;
 
-    public SaveProfileWindow(string defaultName, string defaultDescription, LocalizationService localizationService)
+    public SaveProfileWindow(
+        string defaultName,
+        string defaultDescription,
+        LocalizationService localizationService,
+        string? windowTitle = null,
+        string? headingText = null,
+        string? introText = null,
+        string? confirmText = null)
     {
         _localizationService = localizationService;
+        _windowTitle = string.IsNullOrWhiteSpace(windowTitle) ? _localizationService.Get("saveProfile.windowTitle") : windowTitle;
+        _headingText = string.IsNullOrWhiteSpace(headingText) ? _localizationService.Get("saveProfile.heading") : headingText;
+        _introText = string.IsNullOrWhiteSpace(introText) ? _localizationService.Get("saveProfile.intro") : introText;
+        _confirmText = string.IsNullOrWhiteSpace(confirmText) ? _localizationService.Get("saveProfile.confirm") : confirmText;
         _profileName = defaultName;
         _profileDescription = defaultDescription;
         DataContext = this;
@@ -22,13 +37,13 @@ public partial class SaveProfileWindow : Window, INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public string WindowTitle => _localizationService.Get("saveProfile.windowTitle");
-    public string HeadingText => _localizationService.Get("saveProfile.heading");
-    public string IntroText => _localizationService.Get("saveProfile.intro");
+    public string WindowTitle => _windowTitle;
+    public string HeadingText => _headingText;
+    public string IntroText => _introText;
     public string NameLabelText => _localizationService.Get("saveProfile.name");
     public string DescriptionLabelText => _localizationService.Get("saveProfile.description");
     public string CancelText => _localizationService.Get("saveProfile.cancel");
-    public string ConfirmText => _localizationService.Get("saveProfile.confirm");
+    public string ConfirmText => _confirmText;
 
     public string ProfileName
     {
