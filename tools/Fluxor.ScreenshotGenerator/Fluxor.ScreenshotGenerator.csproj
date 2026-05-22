@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CursorFX.App\CursorFX.App.csproj" />
+    <ProjectReference Include="..\..\CursorFX.Core\CursorFX.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\..\CursorFX.App\Assets\FluxorIco.ico" Link="Assets\FluxorIco.ico" />
+  </ItemGroup>
+</Project>

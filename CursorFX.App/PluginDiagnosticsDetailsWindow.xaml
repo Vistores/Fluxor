@@ -52,7 +52,7 @@
                              AcceptsReturn="True"
                              VerticalScrollBarVisibility="Auto"
                              HorizontalScrollBarVisibility="Auto"
-                             Text="{Binding DetailsText, RelativeSource={RelativeSource AncestorType=Window}}" />
+                             Text="{Binding DetailsText, RelativeSource={RelativeSource AncestorType=Window}, Mode=OneWay}" />
                 </StackPanel>
             </Border>
         </StackPanel>
