@@ -18,6 +18,8 @@ dotnet build .\Plugins\Fluxor.PluginVelvetVoid\Fluxor.PluginVelvetVoid.csproj -c
 if ($LASTEXITCODE -ne 0) { throw "Fluxor.PluginVelvetVoid build failed." }
 dotnet build .\Plugins\Fluxor.PluginFireflySwarm\Fluxor.PluginFireflySwarm.csproj -c Release -m:1 -v minimal
 if ($LASTEXITCODE -ne 0) { throw "Fluxor.PluginFireflySwarm build failed." }
+dotnet build .\Plugins\Fluxor.PluginRetroTrace\Fluxor.PluginRetroTrace.csproj -c Release -m:1 -v minimal
+if ($LASTEXITCODE -ne 0) { throw "Fluxor.PluginRetroTrace build failed." }
 
 dotnet build .\CursorFX.App\CursorFX.App.csproj -c Release -m:1 -v minimal
 if ($LASTEXITCODE -ne 0) { throw "Fluxor app build failed." }

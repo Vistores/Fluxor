@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluxor.PluginVelvetVoid", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluxor.PluginFireflySwarm", "Plugins\Fluxor.PluginFireflySwarm\Fluxor.PluginFireflySwarm.csproj", "{A182920C-8168-4148-9C3E-D9426A82FF5E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluxor.PluginRetroTrace", "Plugins\Fluxor.PluginRetroTrace\Fluxor.PluginRetroTrace.csproj", "{8B3A4EF5-C535-45D7-AF34-B6405E2C59F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,10 +64,15 @@ Global
 		{A182920C-8168-4148-9C3E-D9426A82FF5E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A182920C-8168-4148-9C3E-D9426A82FF5E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A182920C-8168-4148-9C3E-D9426A82FF5E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B3A4EF5-C535-45D7-AF34-B6405E2C59F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B3A4EF5-C535-45D7-AF34-B6405E2C59F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B3A4EF5-C535-45D7-AF34-B6405E2C59F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B3A4EF5-C535-45D7-AF34-B6405E2C59F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BD2AA237-18B6-4EEB-83CA-2E37AE74ED28} = {74FB3C53-482D-4C19-9D77-EE9C7C3738EA}
 		{07848D2D-0FE6-47AF-94C5-8EA9D958BAA3} = {74FB3C53-482D-4C19-9D77-EE9C7C3738EA}
 		{A182920C-8168-4148-9C3E-D9426A82FF5E} = {74FB3C53-482D-4C19-9D77-EE9C7C3738EA}
+		{8B3A4EF5-C535-45D7-AF34-B6405E2C59F9} = {74FB3C53-482D-4C19-9D77-EE9C7C3738EA}
 	EndGlobalSection
 EndGlobal

@@ -43,10 +43,13 @@ Source: "{#PluginsDir}\Fluxor.PluginVelvetVoid\VelvetVoidPlugin.cs"; DestDir: "{
 Source: "{#PluginsDir}\Fluxor.PluginVelvetVoid\Fluxor.PluginVelvetVoid.csproj"; DestDir: "{userdocs}\Fluxor\Plugins\Fluxor.PluginVelvetVoid"; Flags: ignoreversion
 Source: "{#PluginsDir}\Fluxor.PluginFireflySwarm\FireflySwarmPlugin.cs"; DestDir: "{userdocs}\Fluxor\Plugins\Fluxor.PluginFireflySwarm"; Flags: ignoreversion
 Source: "{#PluginsDir}\Fluxor.PluginFireflySwarm\Fluxor.PluginFireflySwarm.csproj"; DestDir: "{userdocs}\Fluxor\Plugins\Fluxor.PluginFireflySwarm"; Flags: ignoreversion
+Source: "{#PluginsDir}\Fluxor.PluginRetroTrace\RetroTracePlugin.cs"; DestDir: "{userdocs}\Fluxor\Plugins\Fluxor.PluginRetroTrace"; Flags: ignoreversion
+Source: "{#PluginsDir}\Fluxor.PluginRetroTrace\Fluxor.PluginRetroTrace.csproj"; DestDir: "{userdocs}\Fluxor\Plugins\Fluxor.PluginRetroTrace"; Flags: ignoreversion
 
 Source: "{#PluginsDir}\Fluxor.PluginCursorFlameContour\bin\Release\net9.0-windows\Fluxor.PluginCursorFlameContour.dll"; DestDir: "{userdocs}\Fluxor\Plugins\ReadyToImport"; Flags: ignoreversion
 Source: "{#PluginsDir}\Fluxor.PluginVelvetVoid\bin\Release\net9.0-windows\Fluxor.PluginVelvetVoid.dll"; DestDir: "{userdocs}\Fluxor\Plugins\ReadyToImport"; Flags: ignoreversion
 Source: "{#PluginsDir}\Fluxor.PluginFireflySwarm\bin\Release\net9.0-windows\Fluxor.PluginFireflySwarm.dll"; DestDir: "{userdocs}\Fluxor\Plugins\ReadyToImport"; Flags: ignoreversion
+Source: "{#PluginsDir}\Fluxor.PluginRetroTrace\bin\Release\net9.0-windows\Fluxor.PluginRetroTrace.dll"; DestDir: "{userdocs}\Fluxor\Plugins\ReadyToImport"; Flags: ignoreversion
 
 Source: "{#PublishDir}\CursorFX.Core.dll"; DestDir: "{userdocs}\Fluxor\Plugins\Fluxor.PluginSdk"; Flags: ignoreversion
 Source: "{#RepoRoot}\CursorFX.App\Assets\FluxorIco.ico"; DestDir: "{userdocs}\Fluxor\Plugins\Fluxor.PluginSdk"; Flags: ignoreversion
