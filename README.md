@@ -145,3 +145,9 @@ https://dokzya.itch.io/fluxor
 ```
 
 Very new unsigned builds may still trigger Windows SmartScreen, Smart App Control, or antivirus reputation warnings. Release builds should be distributed through the installer package.
+
+## Copyright
+
+Copyright (c) 2026 Dokzya_dev. All rights reserved.
+
+This repository is public for portfolio and technology-stack demonstration purposes. The source code, assets, branding, installer scripts, and plugin samples are not open-source unless a separate written license says otherwise. Copying, redistribution, resale, or reuse in another product requires explicit permission from the author.

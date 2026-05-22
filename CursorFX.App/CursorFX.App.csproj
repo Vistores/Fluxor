@@ -26,6 +26,7 @@
     <Company>Dokzya_dev</Company>
     <Product>Fluxor</Product>
     <Authors>Dokzya_dev</Authors>
+    <Copyright>Copyright (c) 2026 Dokzya_dev. All rights reserved.</Copyright>
     <ApplicationIcon>Assets\FluxorIco.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
