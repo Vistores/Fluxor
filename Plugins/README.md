@@ -14,6 +14,10 @@ Included sample projects:
   - sparse glowing fireflies with curved micro-trails
 - `Fluxor.PluginRetroTrace`
   - old-monitor style noisy afterimages left behind by cursor movement
+- `Fluxor.PluginLightningTail`
+  - cursor-locked lightning tail with forked bolts and tap impact
+- `Fluxor.PluginSakuraInk`
+  - sakura petals and ink-like cursor marks with tuned profile defaults
 
 Recommended flow:
 1. Duplicate one of the sample folders or create a new folder here.

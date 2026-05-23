@@ -20,6 +20,10 @@ dotnet build .\Plugins\Fluxor.PluginFireflySwarm\Fluxor.PluginFireflySwarm.cspro
 if ($LASTEXITCODE -ne 0) { throw "Fluxor.PluginFireflySwarm build failed." }
 dotnet build .\Plugins\Fluxor.PluginRetroTrace\Fluxor.PluginRetroTrace.csproj -c Release -m:1 -v minimal
 if ($LASTEXITCODE -ne 0) { throw "Fluxor.PluginRetroTrace build failed." }
+dotnet build .\Plugins\Fluxor.PluginLightningTail\Fluxor.PluginLightningTail.csproj -c Release -m:1 -v minimal
+if ($LASTEXITCODE -ne 0) { throw "Fluxor.PluginLightningTail build failed." }
+dotnet build .\Plugins\Fluxor.PluginSakuraInk\Fluxor.PluginSakuraInk.csproj -c Release -m:1 -v minimal
+if ($LASTEXITCODE -ne 0) { throw "Fluxor.PluginSakuraInk build failed." }
 
 dotnet build .\CursorFX.App\CursorFX.App.csproj -c Release -m:1 -v minimal
 if ($LASTEXITCODE -ne 0) { throw "Fluxor app build failed." }

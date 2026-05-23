@@ -4,7 +4,7 @@ Fluxor is a Windows desktop app for real-time cursor effects. It lets users appl
 
 [Fluxor on itch.io](https://dokzya.itch.io/fluxor)
 
-[Download Fluxor v0.1.0](https://github.com/Vistores/Fluxor/releases/tag/v0.1.0)
+[Download Fluxor v0.1.1](https://github.com/Vistores/Fluxor/releases/tag/v0.1.1)
 
 ![Fluxor logo banner](docs/screenshots/fluxor-logo-banner.png)
 
@@ -61,6 +61,8 @@ Included plugin samples:
 - `Fluxor.PluginVelvetVoid`
 - `Fluxor.PluginFireflySwarm`
 - `Fluxor.PluginRetroTrace`
+- `Fluxor.PluginLightningTail`
+- `Fluxor.PluginSakuraInk`
 
 ![Import plugin window](docs/screenshots/import-plugin-window.png)
 
