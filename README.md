@@ -61,9 +61,6 @@ Included plugin samples:
 - `Fluxor.PluginVelvetVoid`
 - `Fluxor.PluginFireflySwarm`
 - `Fluxor.PluginRetroTrace`
-- `Fluxor.PluginLightningTail`
-- `Fluxor.PluginSakuraInk`
-
 ![Import plugin window](docs/screenshots/import-plugin-window.png)
 
 ## Diagnostics and Recovery
