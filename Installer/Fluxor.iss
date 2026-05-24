@@ -1,5 +1,5 @@
 #define MyAppName "Fluxor"
-#define MyAppVersion "0.1.1"
+#define MyAppVersion "0.1.2"
 #define MyAppPublisher "Dokzya_dev"
 #define MyAppExeName "Fluxor.exe"
 #define RepoRoot ".."

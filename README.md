@@ -4,7 +4,7 @@ Fluxor is a Windows desktop app for real-time cursor effects. It lets users appl
 
 [Fluxor on itch.io](https://dokzya.itch.io/fluxor)
 
-[Download Fluxor v0.1.1](https://github.com/Vistores/Fluxor/releases/tag/v0.1.1)
+[Download Fluxor v0.1.2](https://github.com/Vistores/Fluxor/releases/tag/v0.1.2)
 
 ![Fluxor logo banner](docs/screenshots/fluxor-logo-banner.png)
 
